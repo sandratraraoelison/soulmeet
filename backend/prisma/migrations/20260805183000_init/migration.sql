@@ -1,0 +1,18 @@
+CREATE TYPE "AuthProvider" AS ENUM ('EMAIL', 'GOOGLE', 'APPLE');
+CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
+CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'NON_BINARY', 'OTHER', 'PREFER_NOT_TO_SAY');
+CREATE TYPE "SexualOrientation" AS ENUM ('HETEROSEXUAL', 'HOMOSEXUAL', 'BISEXUAL', 'PANSEXUAL', 'ASEXUAL', 'OTHER', 'PREFER_NOT_TO_SAY');
+CREATE TYPE "CoachGender" AS ENUM ('MALE', 'FEMALE');
+CREATE TYPE "CoachPersonality" AS ENUM ('FUNNY', 'CARING', 'DIRECT', 'THERAPIST');
+CREATE TABLE "User" ("id" UUID NOT NULL, "email" TEXT NOT NULL, "passwordHash" TEXT, "authProvider" "AuthProvider" NOT NULL DEFAULT 'EMAIL', "providerId" TEXT, "role" "Role" NOT NULL DEFAULT 'USER', "isActive" BOOLEAN NOT NULL DEFAULT true, "emailVerified" BOOLEAN NOT NULL DEFAULT false, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, "lastLoginAt" TIMESTAMP(3), CONSTRAINT "User_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "RefreshToken" ("id" UUID NOT NULL, "tokenHash" TEXT NOT NULL, "userId" UUID NOT NULL, "expiresAt" TIMESTAMP(3) NOT NULL, "revokedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "deviceInfo" TEXT, CONSTRAINT "RefreshToken_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Profile" ("id" UUID NOT NULL, "userId" UUID NOT NULL, "firstName" TEXT NOT NULL, "birthDate" TIMESTAMP(3) NOT NULL, "gender" "Gender" NOT NULL, "sexualOrientation" "SexualOrientation" NOT NULL, "country" TEXT NOT NULL, "city" TEXT NOT NULL, "onboardingCompleted" BOOLEAN NOT NULL DEFAULT false, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Profile_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Coach" ("id" UUID NOT NULL, "userId" UUID NOT NULL, "name" TEXT NOT NULL, "gender" "CoachGender" NOT NULL, "personality" "CoachPersonality" NOT NULL, "customInstructions" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Coach_pkey" PRIMARY KEY ("id"));
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX "User_authProvider_providerId_key" ON "User"("authProvider", "providerId");
+CREATE INDEX "RefreshToken_userId_idx" ON "RefreshToken"("userId");
+CREATE UNIQUE INDEX "Profile_userId_key" ON "Profile"("userId");
+CREATE UNIQUE INDEX "Coach_userId_key" ON "Coach"("userId");
+ALTER TABLE "RefreshToken" ADD CONSTRAINT "RefreshToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Profile" ADD CONSTRAINT "Profile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Coach" ADD CONSTRAINT "Coach_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

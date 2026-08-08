@@ -1,0 +1,21 @@
+import { Global, Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { LLM_PROVIDER } from '../guidance/llm/llm.types';
+import { OllamaProvider } from '../guidance/llm/ollama.provider';
+import { OpenAiCompatibleProvider } from '../guidance/llm/openai-compatible.provider';
+
+@Global()
+@Module({
+  providers: [
+    OllamaProvider,
+    OpenAiCompatibleProvider,
+    {
+      provide: LLM_PROVIDER,
+      inject: [ConfigService, OllamaProvider, OpenAiCompatibleProvider],
+      useFactory: (config: ConfigService, ollama: OllamaProvider, compatible: OpenAiCompatibleProvider) =>
+        config.get<string>('LLM_PROVIDER', 'ollama').toLowerCase() === 'ollama' ? ollama : compatible,
+    },
+  ],
+  exports: [LLM_PROVIDER],
+})
+export class LlmModule {}

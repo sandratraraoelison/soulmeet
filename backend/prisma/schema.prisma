@@ -1,0 +1,423 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  APPLE
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  NON_GENDERED
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum InterestGender {
+  MALE
+  FEMALE
+  NON_GENDERED
+}
+
+enum SexualOrientation {
+  HETEROSEXUAL
+  HOMOSEXUAL
+  BISEXUAL
+  PANSEXUAL
+  ASEXUAL
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum CoachGender {
+  MALE
+  FEMALE
+  NON_GENDERED
+}
+
+enum CoachPersonality {
+  FRIENDLY
+  BRO_VIBE
+  SISTER_VIBE
+  FUNNY
+  CARING
+  SERIOUS
+  DIRECT
+  SOFT
+  EMPATHETIC
+  THERAPIST
+  DATING_EXPERT
+  PROTECTIVE
+  SARCASTIC
+  MORE_DIRECTIVE
+  LESS_DIRECTIVE
+}
+
+enum ConversationType {
+  PRIVATE
+}
+
+enum MessageType {
+  TEXT
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+enum GuidanceMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum GuidanceConversationStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum SoulprintCategory {
+  PERSONALITY
+  CORE_VALUE
+  INTEREST
+  RELATIONSHIP_GOAL
+  PARTNER_PREFERENCE
+  COMMUNICATION_STYLE
+  LOVE_LANGUAGE
+  EMOTIONAL_NEED
+  BOUNDARY
+  STRENGTH
+  CHALLENGE
+  DISLIKE
+  HABIT
+  LIFESTYLE
+  PAST_EXPERIENCE
+  RELATIONSHIP_PATTERN
+  DEAL_BREAKER
+  IMPORTANT_PERSON
+  IMPORTANT_EVENT
+  LOCATION_PREFERENCE
+  FUTURE_PLAN
+  OTHER
+}
+
+enum SoulprintSource {
+  USER_PROFILE
+  USER_DECLARED
+  USER_CONFIRMED
+  AI_INFERRED
+  MANUAL_USER_ENTRY
+  SYSTEM_MIGRATION
+}
+
+enum SoulprintEntryStatus {
+  PENDING_CONFIRMATION
+  ACTIVE
+  CONFIRMED
+  REJECTED
+  SUPERSEDED
+  DELETED
+}
+
+enum SoulprintVisibility {
+  PRIVATE
+  GUIDANCE_ONLY
+  MATCHING_ALLOWED
+}
+
+enum SoulprintSensitivity {
+  NORMAL
+  PERSONAL
+  SENSITIVE
+  HIGHLY_SENSITIVE
+}
+
+model User {
+  id                    String                    @id @default(uuid()) @db.Uuid
+  email                 String                    @unique
+  passwordHash          String?
+  authProvider          AuthProvider              @default(EMAIL)
+  providerId            String?
+  role                  Role                      @default(USER)
+  isActive              Boolean                   @default(true)
+  emailVerified         Boolean                   @default(false)
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  lastLoginAt           DateTime?
+  refreshTokens         RefreshToken[]
+  profile               Profile?
+  coach                 Coach?
+  conversations         ConversationParticipant[]
+  messages              Message[]
+  blocksCreated         Block[]                   @relation("Blocker")
+  blocksReceived        Block[]                   @relation("Blocked")
+  guidanceConversations GuidanceConversation[]
+  memories              UserMemory[]
+  soulprint             Soulprint?
+
+  @@unique([authProvider, providerId])
+}
+
+model Conversation {
+  id            String                    @id @default(uuid()) @db.Uuid
+  type          ConversationType          @default(PRIVATE)
+  pairKey       String                    @unique
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  lastMessageAt DateTime?
+  participants  ConversationParticipant[]
+  messages      Message[]
+
+  @@index([lastMessageAt])
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid()) @db.Uuid
+  conversationId String       @db.Uuid
+  userId         String       @db.Uuid
+  joinedAt       DateTime     @default(now())
+  lastReadAt     DateTime?
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id              String        @id @default(uuid()) @db.Uuid
+  conversationId  String        @db.Uuid
+  senderId        String        @db.Uuid
+  clientMessageId String
+  content         String?
+  type            MessageType   @default(TEXT)
+  status          MessageStatus @default(SENT)
+  isEdited        Boolean       @default(false)
+  editedAt        DateTime?
+  isDeleted       Boolean       @default(false)
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  conversation    Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender          User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, clientMessageId])
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
+model Block {
+  id        String   @id @default(uuid()) @db.Uuid
+  blockerId String   @db.Uuid
+  blockedId String   @db.Uuid
+  createdAt DateTime @default(now())
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  tokenHash  String
+  userId     String    @db.Uuid
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  deviceInfo String?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Profile {
+  id                  String            @id @default(uuid()) @db.Uuid
+  userId              String            @unique @db.Uuid
+  firstName           String
+  birthDate           DateTime
+  gender              Gender
+  sexualOrientation   SexualOrientation
+  interestedInGender  InterestGender?
+  country             String
+  city                String
+  onboardingCompleted Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Coach {
+  id                 String             @id @default(uuid()) @db.Uuid
+  userId             String             @unique @db.Uuid
+  name               String
+  gender             CoachGender?
+  personality        CoachPersonality?
+  traits             CoachPersonality[] @default([])
+  customInstructions String?
+  speakingStyle      String?
+  adviceStyle        String?
+  appearance         String?
+  humorLevel         Int                @default(50)
+  empathyLevel       Int                @default(50)
+  directnessLevel    Int                @default(50)
+  energyLevel        Int                @default(50)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model GuidanceConversation {
+  id                String                     @id @default(uuid()) @db.Uuid
+  userId            String                     @db.Uuid
+  title             String?
+  status            GuidanceConversationStatus @default(ACTIVE)
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+  lastMessageAt     DateTime?
+  user              User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages          GuidanceMessage[]
+  soulprintEvidence SoulprintEvidence[]
+
+  @@index([userId, lastMessageAt])
+  @@index([userId, status, lastMessageAt])
+}
+
+model GuidanceMessage {
+  id                String               @id @default(uuid()) @db.Uuid
+  conversationId    String               @db.Uuid
+  role              GuidanceMessageRole
+  content           String?
+  provider          String?
+  model             String?
+  isEdited          Boolean              @default(false)
+  editedAt          DateTime?
+  isDeleted         Boolean              @default(false)
+  deletedAt         DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  conversation      GuidanceConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  soulprintEvidence SoulprintEvidence[]
+
+  @@index([conversationId, createdAt])
+}
+
+model UserMemory {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  content   String
+  category  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+}
+
+model Soulprint {
+  id                    String             @id @default(uuid()) @db.Uuid
+  userId                String             @unique @db.Uuid
+  summary               Json?
+  legacyData            Json?
+  summaryVersion        Int                @default(1)
+  completenessScore     Int                @default(0)
+  lastExtractedAt       DateTime?
+  lastSummarizedAt      DateTime?
+  lastAnalyzedMessageId String?            @db.Uuid
+  promptVersion         String?
+  extractionRunningAt   DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  deletedAt             DateTime?
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries               SoulprintEntry[]
+  versions              SoulprintVersion[]
+}
+
+model SoulprintEntry {
+  id              String                 @id @default(uuid()) @db.Uuid
+  soulprintId     String                 @db.Uuid
+  category        SoulprintCategory
+  key             String?
+  value           String                 @db.Text
+  normalizedValue String?                @db.Text
+  fingerprint     String
+  source          SoulprintSource
+  status          SoulprintEntryStatus
+  visibility      SoulprintVisibility    @default(PRIVATE)
+  sensitivity     SoulprintSensitivity   @default(NORMAL)
+  confidence      Float
+  importance      Int                    @default(50)
+  matchingWeight  Int                    @default(50)
+  firstObservedAt DateTime               @default(now())
+  lastObservedAt  DateTime               @default(now())
+  confirmedAt     DateTime?
+  rejectedAt      DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  soulprint       Soulprint              @relation(fields: [soulprintId], references: [id], onDelete: Cascade)
+  evidence        SoulprintEvidence[]
+  changes         SoulprintEntryChange[]
+
+  @@unique([soulprintId, fingerprint])
+  @@index([soulprintId, category, status])
+  @@index([soulprintId, visibility])
+}
+
+model SoulprintEvidence {
+  id                String                @id @default(uuid()) @db.Uuid
+  entryId           String                @db.Uuid
+  messageId         String?               @db.Uuid
+  conversationId    String?               @db.Uuid
+  sourceExcerptHash String?
+  createdAt         DateTime              @default(now())
+  entry             SoulprintEntry        @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  message           GuidanceMessage?      @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  conversation      GuidanceConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  @@unique([entryId, messageId])
+  @@index([entryId])
+  @@index([messageId])
+}
+
+model SoulprintEntryChange {
+  id            String         @id @default(uuid()) @db.Uuid
+  entryId       String         @db.Uuid
+  changeType    String
+  previousValue Json?
+  newValue      Json?
+  changedBy     String
+  reason        String?
+  createdAt     DateTime       @default(now())
+  entry         SoulprintEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([entryId, createdAt])
+}
+
+model SoulprintVersion {
+  id          String    @id @default(uuid()) @db.Uuid
+  soulprintId String    @db.Uuid
+  version     Int
+  snapshot    Json
+  createdAt   DateTime  @default(now())
+  soulprint   Soulprint @relation(fields: [soulprintId], references: [id], onDelete: Cascade)
+
+  @@unique([soulprintId, version])
+}
