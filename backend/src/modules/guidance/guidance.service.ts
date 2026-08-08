@@ -5,7 +5,7 @@ import { GuidanceException } from './guidance.exception';
 import { GuidancePromptService } from './guidance-prompt.service';
 import { LLM_PROVIDER, LlmProvider } from './llm/llm.types';
 import { SoulprintContextService } from '../soulprint/services/soulprint-context.service';
-import { SoulprintExtractionService } from '../soulprint/services/soulprint-extraction.service';
+import { SoulprintExtractionQueueService } from '../soulprint/services/soulprint-extraction-queue.service';
 
 @Injectable()
 export class GuidanceService {
@@ -14,7 +14,7 @@ export class GuidanceService {
     private readonly prompts: GuidancePromptService,
     @Inject(LLM_PROVIDER) private readonly llm: LlmProvider,
     @Optional() private readonly soulprintContext?: SoulprintContextService,
-    @Optional() private readonly soulprintExtraction?: SoulprintExtractionService,
+    @Optional() private readonly soulprintExtractionQueue?: SoulprintExtractionQueueService,
   ) {}
 
   createConversation(userId: string, title?: string) {
@@ -60,7 +60,7 @@ export class GuidanceService {
     await this.persistUserMessage(conversationId, content);
     const response = await this.llm.complete(await this.contextMessages(userId, conversationId));
     const message = await this.persistAssistant(conversationId, response.content, response.provider, response.model);
-    this.soulprintExtraction?.schedule(userId, conversationId);
+    void this.soulprintExtractionQueue?.enqueue(userId, conversationId);
     return { message };
   }
 
@@ -75,7 +75,7 @@ export class GuidanceService {
     }
     if (!answer.trim()) throw new GuidanceException('LLM_INVALID_RESPONSE', 'The AI provider returned an empty response', HttpStatus.BAD_GATEWAY);
     const assistant = await this.persistAssistant(conversationId, answer.trim(), this.llm.name, this.llm.model);
-    this.soulprintExtraction?.schedule(userId, conversationId);
+    void this.soulprintExtractionQueue?.enqueue(userId, conversationId);
     yield { event: 'complete', data: assistant };
   }
 

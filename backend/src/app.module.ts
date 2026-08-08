@@ -13,6 +13,7 @@ import { UsersModule } from './modules/users/users.module';
 import { GuidanceModule } from './modules/guidance/guidance.module';
 import { LlmModule } from './modules/llm/llm.module';
 import { SoulprintModule } from './modules/soulprint/soulprint.module';
+import { GrowthModule } from './modules/growth/growth.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { SoulprintModule } from './modules/soulprint/soulprint.module';
     GuidanceModule,
     LlmModule,
     SoulprintModule,
+    GrowthModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

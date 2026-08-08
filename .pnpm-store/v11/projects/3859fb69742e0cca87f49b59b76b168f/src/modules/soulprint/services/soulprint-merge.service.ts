@@ -48,6 +48,12 @@ export class SoulprintMergeService {
     return this.prisma.$transaction(async (tx) => {
       const existing = await tx.soulprintEntry.findUnique({
         where: { soulprintId_fingerprint: { soulprintId, fingerprint } },
+        include: {
+          evidence: {
+            where: { messageId: { in: [...new Set(entry.evidenceMessageIds)] } },
+            select: { messageId: true },
+          },
+        },
       });
       if (existing?.status === SoulprintEntryStatus.REJECTED)
         throw new SoulprintException(
@@ -76,13 +82,32 @@ export class SoulprintMergeService {
       };
       let result;
       if (existing) {
+        const existingEvidenceIds = new Set(
+          (existing.evidence ?? []).map((evidence) => evidence.messageId),
+        );
+        const hasNewEvidence = entry.evidenceMessageIds.some(
+          (messageId) => !existingEvidenceIds.has(messageId),
+        );
         const replace =
           priority[entry.source] >= priority[existing.source] &&
           entry.confidence >= existing.confidence;
+        const hasContentChanges =
+          replace &&
+          (existing.category !== data.category ||
+            this.normalize(existing.key ?? '') !== this.normalize(data.key ?? '') ||
+            this.normalize(String(existing.value)) !== this.normalize(data.value) ||
+            this.normalize(existing.normalizedValue ?? '') !== this.normalize(data.normalizedValue ?? '') ||
+            existing.source !== data.source ||
+            existing.status !== data.status ||
+            existing.visibility !== data.visibility ||
+            existing.sensitivity !== data.sensitivity ||
+            existing.confidence !== data.confidence ||
+            existing.importance !== data.importance);
+        if (!hasContentChanges && !hasNewEvidence) return existing;
         result = await tx.soulprintEntry.update({
           where: { id: existing.id },
           data: {
-            ...(replace ? data : {}),
+            ...(hasContentChanges ? data : {}),
             lastObservedAt: new Date(),
             confidence: Math.max(existing.confidence, entry.confidence),
           },
@@ -90,7 +115,7 @@ export class SoulprintMergeService {
         await tx.soulprintEntryChange.create({
           data: {
             entryId: existing.id,
-            changeType: replace ? 'MERGED_UPDATED' : 'EVIDENCE_ADDED',
+            changeType: hasContentChanges ? 'MERGED_UPDATED' : 'EVIDENCE_ADDED',
             changedBy: 'SYSTEM',
             previousValue: existing as unknown as Prisma.InputJsonValue,
             newValue: result as unknown as Prisma.InputJsonValue,

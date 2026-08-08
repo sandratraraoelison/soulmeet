@@ -8,10 +8,12 @@ import {
   SoulprintVisibility,
 } from '@prisma/client';
 import { PrismaService } from '../../../database/prisma.service';
+import { LlmException } from '../../guidance/llm/llm.exception';
 import { LLM_PROVIDER, LlmProvider } from '../../guidance/llm/llm.types';
 import type { SoulprintExtractionResult } from '../interfaces/soulprint.interfaces';
 import {
   soulprintExtractionPrompt,
+  SOULPRINT_EXTRACTION_JSON_SCHEMA,
   SOULPRINT_EXTRACTION_PROMPT_VERSION,
 } from '../prompts/soulprint-extraction.prompt';
 import { SoulprintException } from '../soulprint.exception';
@@ -22,7 +24,6 @@ import { SoulprintSummaryService } from './soulprint-summary.service';
 @Injectable()
 export class SoulprintExtractionService {
   private readonly logger = new Logger(SoulprintExtractionService.name);
-  private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
@@ -31,28 +32,6 @@ export class SoulprintExtractionService {
     private readonly summaries: SoulprintSummaryService,
     @Inject(LLM_PROVIDER) private readonly llm: LlmProvider,
   ) {}
-  schedule(userId: string, conversationId: string) {
-    if (!this.config.get<boolean>('SOULPRINT_EXTRACTION_ENABLED', true)) return;
-    const existing = this.timers.get(userId);
-    if (existing) clearTimeout(existing);
-    const delay =
-      this.config.get<number>('SOULPRINT_EXTRACTION_DEBOUNCE_SECONDS', 30) *
-      1000;
-    const timer = setTimeout(() => {
-      this.timers.delete(userId);
-      void this.extract(userId, conversationId).catch((error: unknown) =>
-        this.logger.warn({
-          userId,
-          conversationId,
-          code:
-            error instanceof SoulprintException
-              ? error.code
-              : 'SOULPRINT_EXTRACTION_FAILED',
-        }),
-      );
-    }, delay);
-    this.timers.set(userId, timer);
-  }
   async extract(userId: string, conversationId?: string, force = false) {
     if (!this.config.get<boolean>('SOULPRINT_EXTRACTION_ENABLED', true))
       throw new SoulprintException(
@@ -81,7 +60,11 @@ export class SoulprintExtractionService {
         HttpStatus.CONFLICT,
       );
     try {
-      const last = soulprint.lastAnalyzedMessageId
+      const promptVersion = this.config.get<string>(
+        'SOULPRINT_PROMPT_VERSION',
+        SOULPRINT_EXTRACTION_PROMPT_VERSION,
+      );
+      const last = soulprint.promptVersion === promptVersion && soulprint.lastAnalyzedMessageId
         ? await this.prisma.guidanceMessage.findUnique({
             where: { id: soulprint.lastAnalyzedMessageId },
             select: { createdAt: true },
@@ -121,7 +104,7 @@ export class SoulprintExtractionService {
         userMessages.length <
           this.config.get<number>(
             'SOULPRINT_EXTRACTION_MIN_USER_MESSAGES',
-            3,
+            1,
           ) &&
         chars <
           this.config.get<number>('SOULPRINT_EXTRACTION_MIN_CHARACTERS', 300)
@@ -129,17 +112,46 @@ export class SoulprintExtractionService {
         return this.release(soulprint.id).then(() => ({ skipped: true, reason: 'threshold' as const }));
       if (!userMessages.length)
         return this.release(soulprint.id).then(() => ({ skipped: true, reason: 'no-new-user-messages' as const }));
-      const response = await this.llm.complete([
+      const directInterests = this.extractDirectInterests(userMessages);
+      if (directInterests.length) {
+        for (const entry of directInterests)
+          await this.merge.merge(soulprint.id, entry, conversationId);
+        const lastMessage = userMessages.at(-1)!;
+        await this.prisma.soulprint.update({
+          where: { id: soulprint.id },
+          data: {
+            lastAnalyzedMessageId: lastMessage.id,
+            lastExtractedAt: new Date(),
+            promptVersion,
+            extractionRunningAt: null,
+          },
+        });
+        if (this.config.get<boolean>('SOULPRINT_AUTO_SUMMARY_ENABLED', true))
+          await this.summaries.recalculate(soulprint.id);
+        return {
+          skipped: false,
+          extracted: directInterests.length,
+          provider: 'deterministic',
+          model: 'explicit-interest-v1',
+        };
+      }
+      const extractionMessages = [
         {
-          role: 'system',
+          role: 'system' as const,
           content: soulprintExtractionPrompt(soulprint.summary, messages),
         },
         {
-          role: 'user',
+          role: 'user' as const,
           content:
             'Extract durable Soulprint information from the supplied untrusted messages.',
         },
-      ]);
+      ];
+      const response = await this.llm.complete(extractionMessages, {
+        json: true,
+        jsonSchema: SOULPRINT_EXTRACTION_JSON_SCHEMA,
+        maxTokens: 1200,
+        temperature: 0,
+      });
       const parsed = this.parseAndValidate(
         response.content,
         new Set(userMessages.map((message) => message.id)),
@@ -150,6 +162,17 @@ export class SoulprintExtractionService {
           entry.evidenceMessageIds.includes(message.id),
         );
         if (!evidence.length) continue;
+        if (
+          entry.source === SoulprintSource.USER_DECLARED &&
+          !this.isGroundedDeclaration(entry, evidence)
+        ) {
+          this.logger.warn({
+            userId,
+            conversationId,
+            code: 'SOULPRINT_UNGROUNDED_DECLARATION_SKIPPED',
+          });
+          continue;
+        }
         await this.merge.merge(
           soulprint.id,
           entry,
@@ -177,10 +200,7 @@ export class SoulprintExtractionService {
         data: {
           lastAnalyzedMessageId: lastMessage.id,
           lastExtractedAt: new Date(),
-          promptVersion: this.config.get<string>(
-            'SOULPRINT_PROMPT_VERSION',
-            SOULPRINT_EXTRACTION_PROMPT_VERSION,
-          ),
+          promptVersion,
           extractionRunningAt: null,
         },
       });
@@ -205,6 +225,27 @@ export class SoulprintExtractionService {
         })
         .catch(() => undefined);
       if (error instanceof SoulprintException) throw error;
+      if (error instanceof LlmException)
+        throw new SoulprintException(
+          error.code,
+          'The AI provider could not extract Soulprint information',
+          error.getStatus(),
+        );
+      this.logger.error({
+        userId,
+        conversationId,
+        code: 'SOULPRINT_EXTRACTION_FAILED',
+        cause:
+          error instanceof Error
+            ? {
+                name: error.name,
+                code:
+                  'code' in error && typeof error.code === 'string'
+                    ? error.code
+                    : undefined,
+              }
+            : { name: 'UnknownError' },
+      });
       throw new SoulprintException(
         'SOULPRINT_EXTRACTION_FAILED',
         'Soulprint extraction failed',
@@ -214,6 +255,64 @@ export class SoulprintExtractionService {
   }
   private release(soulprintId: string) {
     return this.prisma.soulprint.update({ where: { id: soulprintId }, data: { extractionRunningAt: null } });
+  }
+  isGroundedDeclaration(
+    entry: SoulprintExtractionResult['entries'][number],
+    evidence: { content: string | null }[],
+  ) {
+    const stopWords = new Set([
+      'the', 'user', 'likes', 'like', 'enjoys', 'enjoy', 'prefers', 'prefer',
+      'their', 'they', 'them', 'with', 'from', 'that', 'this', 'and', 'for',
+    ]);
+    const reference = entry.key || entry.normalizedValue || entry.value;
+    const terms = this.merge
+      .normalize(reference)
+      .split(' ')
+      .filter((term) => term.length >= 3 && !stopWords.has(term));
+    if (!terms.length) return false;
+    const source = this.merge.normalize(
+      evidence.map((message) => message.content ?? '').join(' '),
+    );
+    return terms.some((term) => source.includes(term));
+  }
+  extractDirectInterests(
+    messages: { id: string; content: string | null }[],
+  ): SoulprintExtractionResult['entries'] {
+    const entries: SoulprintExtractionResult['entries'] = [];
+    const seen = new Set<string>();
+    for (const message of messages) {
+      const match = message.content?.match(
+        /^\s*i\s+(?:also\s+)?(?:like|love|enjoy)\s+(.+?)(?:\s+too)?[.!]?\s*$/i,
+      );
+      if (!match?.[1] || /\b(?:but|because|if|whether|can|could|how|why|so)\b/i.test(match[1]))
+        continue;
+      const interests = match[1]
+        .split(/\s*(?:,|\band\b)\s*/i)
+        .map((value) => value.replace(/^(?:a|an|the)\s+/i, '').trim())
+        .filter((value) => value.length >= 2 && value.length <= 80)
+        .slice(0, 6);
+      if (!interests.length || interests.join(' and ').length < match[1].length / 2)
+        continue;
+      for (const interest of interests) {
+        const normalized = this.merge.normalize(interest);
+        if (!normalized || seen.has(normalized)) continue;
+        seen.add(normalized);
+        entries.push({
+          category: SoulprintCategory.INTEREST,
+          key: normalized.replaceAll(' ', '-'),
+          value: `The user likes ${interest}.`,
+          normalizedValue: normalized,
+          source: 'USER_DECLARED',
+          confidence: 0.99,
+          importance: 60,
+          sensitivity: SoulprintSensitivity.NORMAL,
+          suggestedVisibility: SoulprintVisibility.GUIDANCE_ONLY,
+          reasoning: 'Explicit first-person interest statement.',
+          evidenceMessageIds: [message.id],
+        });
+      }
+    }
+    return entries;
   }
   parseAndValidate(
     raw: string,

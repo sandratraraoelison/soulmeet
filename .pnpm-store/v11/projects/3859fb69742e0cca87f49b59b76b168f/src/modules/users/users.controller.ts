@@ -18,6 +18,12 @@ export class UsersController {
     return this.users.discover(user.sub);
   }
 
+  @Get('matches')
+  @ApiOperation({ summary: 'Return five Soulprint-based compatibility recommendations' })
+  matches(@CurrentUser() user: JwtPayload) {
+    return this.users.matches(user.sub);
+  }
+
   @Get(':userId/public-profile')
   @ApiOperation({ summary: 'Get a safe public profile' })
   publicProfile(

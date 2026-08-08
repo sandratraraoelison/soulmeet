@@ -22,7 +22,7 @@ Visibility is independent of status:
 
 ## Guidance extraction
 
-After both sides of a Guidance exchange are persisted, a debounced background task is scheduled. The response is never delayed by extraction. The task analyzes only new messages after `lastAnalyzedMessageId`, with a bounded amount of context. Short exchanges are skipped until either the message-count or character threshold is reached.
+After both sides of a Guidance exchange are persisted, a PostgreSQL-backed job is upserted per user. A worker atomically claims due jobs, retries failures with exponential backoff, and recovers stale or unprocessed work after a restart. The Guidance response is never delayed by extraction. The task analyzes only new messages after `lastAnalyzedMessageId`, with a bounded amount of context.
 
 The shared `LlmProvider` selects Ollama, DeepSeek, OpenAI, or another OpenAI-compatible provider by environment. The extraction prompt treats messages as untrusted data, accepts evidence from user-message IDs only, and forbids sensitive inference. Output is strictly validated JSON; one safe substring parse is allowed, without `eval`. Failed extraction releases its lock and does not advance the cursor.
 
@@ -34,17 +34,21 @@ The structured summary uses only active and confirmed entries. Completeness meas
 
 ```env
 SOULPRINT_EXTRACTION_ENABLED=true
-SOULPRINT_EXTRACTION_MIN_USER_MESSAGES=3
+SOULPRINT_EXTRACTION_MIN_USER_MESSAGES=1
 SOULPRINT_EXTRACTION_MIN_CHARACTERS=300
-SOULPRINT_EXTRACTION_DEBOUNCE_SECONDS=30
+SOULPRINT_EXTRACTION_DEBOUNCE_SECONDS=2
 SOULPRINT_EXTRACTION_MAX_MESSAGES=20
 SOULPRINT_EXTRACTION_TIMEOUT_MS=120000
+SOULPRINT_JOB_POLL_INTERVAL_MS=2000
+SOULPRINT_JOB_MAX_ATTEMPTS=5
+SOULPRINT_JOB_BACKOFF_BASE_MS=5000
+SOULPRINT_JOB_STALE_MS=300000
 SOULPRINT_AUTO_CONFIRM_DIRECT_FACTS=true
 SOULPRINT_AUTO_SUMMARY_ENABLED=true
 SOULPRINT_SUMMARY_CHANGE_THRESHOLD=3
 SOULPRINT_MAX_GUIDANCE_ENTRIES=25
 SOULPRINT_HISTORY_ENABLED=true
-SOULPRINT_PROMPT_VERSION=v1
+SOULPRINT_PROMPT_VERSION=v3
 ```
 
 LLM configuration remains the same as Guidance. Local development uses `LLM_PROVIDER=ollama` and `LLM_MODEL=llama3.1:8b`; DeepSeek requires only provider, base URL, model, and API-key environment changes.
@@ -67,6 +71,8 @@ All paths are prefixed by `/api/v1` and derive ownership from the access JWT:
 | PATCH | `/soulprint/entries/:id/visibility` | Change consent |
 | GET | `/soulprint/pending` | Pending confirmations |
 | GET | `/soulprint/history` | Cursor-paginated changes |
+| GET | `/soulprint/extraction-status` | Current user's persistent extraction job status |
+| GET | `/soulprint/extraction-metrics` | Aggregated extraction metrics (admin only) |
 | POST | `/soulprint/recalculate` | Rebuild summary/completeness |
 | POST | `/soulprint/extract` | Manual extraction in development or for admins |
 

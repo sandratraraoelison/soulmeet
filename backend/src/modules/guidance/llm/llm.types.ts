@@ -11,10 +11,20 @@ export interface LlmResponse {
   model: string;
 }
 
+export interface LlmCompletionOptions {
+  json?: boolean;
+  jsonSchema?: Record<string, unknown>;
+  maxTokens?: number;
+  temperature?: number;
+}
+
 export interface LlmProvider {
   readonly name: string;
   readonly model: string;
-  complete(messages: LlmMessage[]): Promise<LlmResponse>;
+  complete(
+    messages: LlmMessage[],
+    options?: LlmCompletionOptions,
+  ): Promise<LlmResponse>;
   stream(messages: LlmMessage[]): AsyncIterable<string>;
 }
 

@@ -148,6 +148,28 @@ enum SoulprintSensitivity {
   HIGHLY_SENSITIVE
 }
 
+enum SoulprintExtractionJobStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum GrowthGoalStatus {
+  SUGGESTED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum GrowthJournalType {
+  NOTE
+  STEP_REFLECTION
+  POST_DATE
+  SAVED_ADVICE
+}
+
 model User {
   id                    String                    @id @default(uuid()) @db.Uuid
   email                 String                    @unique
@@ -161,6 +183,7 @@ model User {
   updatedAt             DateTime                  @updatedAt
   lastLoginAt           DateTime?
   refreshTokens         RefreshToken[]
+  passwordResetToken    PasswordResetToken?
   profile               Profile?
   coach                 Coach?
   conversations         ConversationParticipant[]
@@ -170,8 +193,27 @@ model User {
   guidanceConversations GuidanceConversation[]
   memories              UserMemory[]
   soulprint             Soulprint?
+  soulprintExtractionJob SoulprintExtractionJob?
+  growthGoals           GrowthGoal[]
+  growthExercises       GrowthExercise[]
+  growthCheckIns        GrowthCheckIn[]
+  growthJournalEntries GrowthJournalEntry[]
+  growthEvents         GrowthEvent[]
+  growthPreferences    GrowthPreference?
+  growthPathEnrollments GrowthPathEnrollment[]
 
   @@unique([authProvider, providerId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @db.Uuid
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
 }
 
 model Conversation {
@@ -420,4 +462,146 @@ model SoulprintVersion {
   soulprint   Soulprint @relation(fields: [soulprintId], references: [id], onDelete: Cascade)
 
   @@unique([soulprintId, version])
+}
+
+model SoulprintExtractionJob {
+  id             String                       @id @default(uuid()) @db.Uuid
+  userId         String                       @unique @db.Uuid
+  conversationId String?                      @db.Uuid
+  status         SoulprintExtractionJobStatus @default(PENDING)
+  attempts       Int                          @default(0)
+  runAt          DateTime                     @default(now())
+  lockedAt       DateTime?
+  completedAt    DateTime?
+  lastErrorCode  String?
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+  user           User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, runAt])
+}
+
+model SoulprintExtractionMetric {
+  id              String   @id @default(uuid()) @db.Uuid
+  outcome         String
+  code            String
+  count           Int      @default(0)
+  totalDurationMs BigInt   @default(0)
+  lastOccurredAt  DateTime @default(now())
+
+  @@unique([outcome, code])
+}
+
+model GrowthGoal {
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @db.Uuid
+  title          String
+  description    String?
+  targetSteps    Int              @default(5)
+  completedSteps Int              @default(0)
+  status         GrowthGoalStatus @default(ACTIVE)
+  completedAt    DateTime?
+  targetDate     DateTime?
+  source         String           @default("MANUAL")
+  version        Int              @default(1)
+  pathEnrollmentId String?        @db.Uuid
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises      GrowthExercise[]
+  journalEntries GrowthJournalEntry[]
+  pathEnrollment GrowthPathEnrollment? @relation(fields: [pathEnrollmentId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status, updatedAt])
+}
+
+model GrowthExercise {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  dayKey      String
+  kind        String
+  title       String
+  description String
+  durationMin Int       @default(5)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  goalId      String?   @db.Uuid
+  note        String?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal        GrowthGoal? @relation(fields: [goalId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, dayKey])
+  @@index([userId, createdAt])
+}
+
+model GrowthCheckIn {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  weekKey    String
+  mood       Int
+  reflection String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekKey])
+  @@index([userId, updatedAt])
+}
+
+model GrowthJournalEntry {
+  id        String            @id @default(uuid()) @db.Uuid
+  userId    String            @db.Uuid
+  goalId    String?           @db.Uuid
+  type      GrowthJournalType @default(NOTE)
+  title     String?
+  content   String            @db.Text
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal      GrowthGoal?       @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  @@index([userId, createdAt])
+  @@index([goalId, createdAt])
+}
+
+model GrowthEvent {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  entityType String
+  entityId   String?  @db.Uuid
+  type       String
+  title      String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
+}
+
+model GrowthPreference {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @unique @db.Uuid
+  timezone         String   @default("UTC")
+  remindersEnabled Boolean  @default(false)
+  reminderHour     Int      @default(19)
+  analyticsConsent Boolean  @default(false)
+  gentleStreaks    Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model GrowthPathEnrollment {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  pathKey        String
+  title          String
+  completedUnits Int      @default(0)
+  totalUnits     Int      @default(5)
+  completedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goals          GrowthGoal[]
+  @@unique([userId, pathKey])
+  @@index([userId, updatedAt])
 }

@@ -51,7 +51,7 @@ describe('AuthService', () => {
           JWT_REFRESH_EXPIRES_IN: '30d',
         })[key],
     } as ConfigService;
-    service = new AuthService(prisma, jwt, config);
+    service = new AuthService(prisma, jwt, config, { send: jest.fn() } as any);
   });
 
   it('registers a user and returns tokens', async () => {

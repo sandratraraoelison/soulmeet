@@ -38,6 +38,18 @@ export class RefreshDto {
 export class LogoutDto {
   @ApiProperty() @IsString() refreshToken!: string;
 }
+export class ChangePasswordDto {
+  @ApiProperty({ minLength: 8 }) @IsString() @MinLength(8) currentPassword!: string;
+  @ApiProperty({ minLength: 8 }) @IsString() @MinLength(8) newPassword!: string;
+}
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'jane@example.com' }) @IsEmail() email!: string;
+}
+export class ResetPasswordDto {
+  @ApiProperty({ example: 'jane@example.com' }) @IsEmail() email!: string;
+  @ApiProperty({ minLength: 6, maxLength: 6 }) @IsString() @MinLength(6) @MaxLength(6) code!: string;
+  @ApiProperty({ minLength: 8 }) @IsString() @MinLength(8) newPassword!: string;
+}
 export class ExternalAuthDto {
   @ApiProperty({ description: 'OIDC identity token returned by the provider' })
   @IsString()

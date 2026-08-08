@@ -7,11 +7,12 @@ import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { ConfirmSoulprintEntryDto, CreateSoulprintEntryDto, SoulprintEntriesQueryDto, SoulprintHistoryQueryDto, UpdateSoulprintEntryDto, UpdateSoulprintVisibilityDto } from './dto/soulprint.dto';
 import { SoulprintException } from './soulprint.exception';
 import { SoulprintExtractionService } from './services/soulprint-extraction.service';
+import { SoulprintExtractionQueueService } from './services/soulprint-extraction-queue.service';
 import { SoulprintService } from './services/soulprint.service';
 
 @ApiTags('soulprint') @ApiBearerAuth() @UseGuards(JwtAuthGuard) @Controller('soulprint')
 export class SoulprintController {
-  constructor(private readonly soulprint: SoulprintService, private readonly extraction: SoulprintExtractionService, private readonly config: ConfigService) {}
+  constructor(private readonly soulprint: SoulprintService, private readonly extraction: SoulprintExtractionService, private readonly queue: SoulprintExtractionQueueService, private readonly config: ConfigService) {}
   @Get() get(@CurrentUser() user: JwtPayload) { return this.soulprint.get(user.sub); }
   @Get('summary') summary(@CurrentUser() user: JwtPayload) { return this.soulprint.summary(user.sub); }
   @Get('entries') entries(@CurrentUser() user: JwtPayload, @Query() query: SoulprintEntriesQueryDto) { return this.soulprint.entries(user.sub, query); }
@@ -24,6 +25,11 @@ export class SoulprintController {
   @Patch('entries/:entryId/visibility') visibility(@CurrentUser() user: JwtPayload, @Param('entryId') id: string, @Body() dto: UpdateSoulprintVisibilityDto) { return this.soulprint.visibility(user.sub, id, dto.visibility); }
   @Get('pending') pending(@CurrentUser() user: JwtPayload, @Query() query: SoulprintEntriesQueryDto) { return this.soulprint.pending(user.sub, query); }
   @Get('history') history(@CurrentUser() user: JwtPayload, @Query() query: SoulprintHistoryQueryDto) { return this.soulprint.history(user.sub, query.cursor, query.limit); }
+  @Get('extraction-status') extractionStatus(@CurrentUser() user: JwtPayload) { return this.queue.status(user.sub); }
+  @Get('extraction-metrics') extractionMetrics(@CurrentUser() user: JwtPayload) {
+    if (user.role !== 'ADMIN') throw new SoulprintException('SOULPRINT_ACCESS_DENIED', 'Extraction metrics require an administrator');
+    return this.queue.metrics();
+  }
   @Post('recalculate') recalculate(@CurrentUser() user: JwtPayload) { return this.soulprint.recalculate(user.sub); }
   @Post('extract') extract(@CurrentUser() user: JwtPayload) {
     if (this.config.get('NODE_ENV') === 'production' && user.role !== 'ADMIN') throw new SoulprintException('SOULPRINT_ACCESS_DENIED', 'Manual extraction is not available');

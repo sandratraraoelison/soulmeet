@@ -7,15 +7,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import {
   ExternalAuthDto,
+  ChangePasswordDto,
+  ForgotPasswordDto,
   LoginDto,
   LogoutDto,
   RefreshDto,
   RegisterDto,
+  ResetPasswordDto,
 } from './dto/auth.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -57,9 +61,23 @@ export class AuthController {
   @Post('logout') logout(@Body() dto: LogoutDto) {
     return this.auth.logout(dto.refreshToken);
   }
+  @Post('forgot-password')
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.auth.forgotPassword(dto.email);
+  }
+  @Post('reset-password')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.auth.resetPassword(dto.email, dto.code, dto.newPassword);
+  }
   @Get('me') @UseGuards(JwtAuthGuard) @ApiBearerAuth() me(
     @CurrentUser() user: JwtPayload,
   ) {
     return this.users.findPublicById(user.sub);
+  }
+  @Post('change-password') @UseGuards(JwtAuthGuard) @ApiBearerAuth()
+  changePassword(@CurrentUser() user: JwtPayload, @Body() dto: ChangePasswordDto) {
+    return this.auth.changePassword(user.sub, dto.currentPassword, dto.newPassword);
   }
 }
