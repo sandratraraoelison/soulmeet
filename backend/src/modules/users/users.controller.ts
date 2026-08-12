@@ -19,7 +19,7 @@ export class UsersController {
   }
 
   @Get('matches')
-  @ApiOperation({ summary: 'Return five Soulprint-based compatibility recommendations' })
+  @ApiOperation({ summary: 'Return three reciprocal Soulprint-based compatibility recommendations' })
   matches(@CurrentUser() user: JwtPayload) {
     return this.users.matches(user.sub);
   }

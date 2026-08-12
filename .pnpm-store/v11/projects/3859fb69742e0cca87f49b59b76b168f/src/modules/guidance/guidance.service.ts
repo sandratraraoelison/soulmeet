@@ -17,8 +17,68 @@ export class GuidanceService {
     @Optional() private readonly soulprintExtractionQueue?: SoulprintExtractionQueueService,
   ) {}
 
-  createConversation(userId: string, title?: string) {
-    return this.prisma.guidanceConversation.create({ data: { userId, title } });
+  async createConversation(userId: string, title?: string) {
+    const [coach, profile] = await Promise.all([
+      this.prisma.coach.findUnique({ where: { userId } }),
+      this.prisma.profile.findUnique({ where: { userId } }),
+    ]);
+    return this.prisma.$transaction(async (tx) => {
+      const conversation = await tx.guidanceConversation.create({ data: { userId, title } });
+      if (coach) {
+        const firstName = profile?.firstName?.trim();
+        const greeting = firstName
+          ? `Hi ${firstName}, I’m glad you’re here. We can take this at your pace—what feels most important to talk about today?`
+          : 'I’m glad you’re here. We can take this at your pace—what feels most important to talk about today?';
+        await tx.guidanceMessage.create({
+          data: { conversationId: conversation.id, role: GuidanceMessageRole.ASSISTANT, content: greeting },
+        });
+      }
+      return conversation;
+    });
+  }
+
+  async createDailyCoachMessage(userId: string, checkInId: string, dayKey: string) {
+    let conversation = await this.prisma.guidanceConversation.findFirst({
+      where: { userId, status: GuidanceConversationStatus.ACTIVE },
+      orderBy: [{ lastMessageAt: 'desc' }, { createdAt: 'desc' }],
+    });
+    if (!conversation) {
+      conversation = await this.prisma.guidanceConversation.create({
+        data: { userId, title: 'Daily check-in' },
+      });
+    }
+    const messages = await this.contextMessages(userId, conversation.id);
+    messages.push({
+      role: 'system',
+      content: [
+        `Initiate the coach's daily check-in for ${dayKey}. The user has not sent a message today; you are speaking first.`,
+        'Choose one timely, useful focus from personality, emotional patterns, dating history, relationship goals, communication style, attachment tendencies, or partner preferences.',
+        'Use known context to avoid repetition and favor an important area that is still unclear. Vary the focus from recent coach messages.',
+        'Write 2–4 natural sentences in the configured coach voice. Be warm and specific, offer a brief reflection or reason for checking in, and end with exactly one easy-to-answer question.',
+        'Do not mention scheduling, automation, profile completion, data collection, internal categories, or that this is a generated notification. Do not sound like a survey.',
+      ].join('\n'),
+    });
+    const response = await this.llm.complete(messages, { priority: 'background' });
+    return this.prisma.$transaction(async (tx) => {
+      const message = await tx.guidanceMessage.create({
+        data: {
+          conversationId: conversation.id,
+          role: GuidanceMessageRole.ASSISTANT,
+          content: response.content.trim(),
+          provider: response.provider,
+          model: response.model,
+        },
+      });
+      await tx.guidanceConversation.update({
+        where: { id: conversation.id },
+        data: { lastMessageAt: new Date() },
+      });
+      await tx.coachDailyCheckIn.update({
+        where: { id: checkInId },
+        data: { status: 'SENT', messageId: message.id, sentAt: new Date(), lockedAt: null, lastError: null },
+      });
+      return { conversation, message };
+    });
   }
 
   async listConversations(userId: string, cursor?: string, limit = 20, status: GuidanceConversationStatus = GuidanceConversationStatus.ACTIVE) {
@@ -58,7 +118,7 @@ export class GuidanceService {
   async send(userId: string, conversationId: string, content: string) {
     await this.ownedConversation(userId, conversationId);
     await this.persistUserMessage(conversationId, content);
-    const response = await this.llm.complete(await this.contextMessages(userId, conversationId));
+    const response = await this.llm.complete(await this.contextMessages(userId, conversationId), { priority: 'interactive' });
     const message = await this.persistAssistant(conversationId, response.content, response.provider, response.model);
     void this.soulprintExtractionQueue?.enqueue(userId, conversationId);
     return { message };
@@ -69,7 +129,7 @@ export class GuidanceService {
     const userMessage = await this.persistUserMessage(conversationId, content);
     yield { event: 'message', data: userMessage };
     let answer = '';
-    for await (const token of this.llm.stream(await this.contextMessages(userId, conversationId))) {
+    for await (const token of this.llm.stream(await this.contextMessages(userId, conversationId), { priority: 'interactive' })) {
       answer += token;
       yield { event: 'token', data: token };
     }
@@ -95,7 +155,7 @@ export class GuidanceService {
     const message = await this.ownedMessage(userId, messageId);
     if (message.role !== GuidanceMessageRole.ASSISTANT) throw new GuidanceException('MESSAGE_NOT_REGENERATABLE', 'Only coach responses can be regenerated');
     await this.prisma.guidanceMessage.update({ where: { id: message.id }, data: { content: null, isDeleted: true, deletedAt: new Date() } });
-    const response = await this.llm.complete(await this.contextMessages(userId, message.conversationId));
+    const response = await this.llm.complete(await this.contextMessages(userId, message.conversationId), { priority: 'interactive' });
     return this.persistAssistant(message.conversationId, response.content, response.provider, response.model);
   }
 

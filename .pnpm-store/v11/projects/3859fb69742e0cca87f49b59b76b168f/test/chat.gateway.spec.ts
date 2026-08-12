@@ -36,7 +36,7 @@ describe('ChatGateway', () => {
       in: jest.fn(() => ({ fetchSockets: jest.fn().mockResolvedValue([{}]) })),
       __broadcast: broadcast,
     };
-    gateway = new ChatGateway(chat, auth, realtime);
+    gateway = new ChatGateway(chat, auth, realtime, { send: jest.fn() } as any);
     gateway.server = server;
   });
 

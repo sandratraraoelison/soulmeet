@@ -16,6 +16,7 @@ export interface LlmCompletionOptions {
   jsonSchema?: Record<string, unknown>;
   maxTokens?: number;
   temperature?: number;
+  priority?: 'interactive' | 'background';
 }
 
 export interface LlmProvider {
@@ -25,7 +26,7 @@ export interface LlmProvider {
     messages: LlmMessage[],
     options?: LlmCompletionOptions,
   ): Promise<LlmResponse>;
-  stream(messages: LlmMessage[]): AsyncIterable<string>;
+  stream(messages: LlmMessage[], options?: LlmCompletionOptions): AsyncIterable<string>;
 }
 
 export const LLM_PROVIDER = Symbol('LLM_PROVIDER');

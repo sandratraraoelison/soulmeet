@@ -2,6 +2,7 @@ export const CHAT_EVENTS = {
   JOIN: 'conversation:join',
   LEAVE: 'conversation:leave',
   JOINED: 'conversation:joined',
+  PRESENCE_GET: 'presence:get',
   SEND: 'message:send',
   UPDATE: 'message:update',
   DELETE: 'message:delete',

@@ -10,7 +10,7 @@ import { soulprintExtractionPrompt } from '../src/modules/soulprint/prompts/soul
 const extracted = {
   category: SoulprintCategory.CORE_VALUE, key: 'honesty', value: 'The user values honesty.', normalizedValue: 'honesty',
   source: 'USER_DECLARED' as const, confidence: 0.95, importance: 85, sensitivity: SoulprintSensitivity.NORMAL,
-  suggestedVisibility: SoulprintVisibility.GUIDANCE_ONLY, evidenceMessageIds: ['message-id'],
+  suggestedVisibility: SoulprintVisibility.GUIDANCE_ONLY, reasoning: 'Explicit statement.', evidenceMessageIds: ['message-id'],
 };
 
 describe('SoulprintExtractionService validation', () => {
@@ -78,7 +78,7 @@ describe('SoulprintExtractionService validation', () => {
     const extraction = new SoulprintExtractionService(prisma as never, new ConfigService(), { ensure: jest.fn().mockResolvedValue({ id: 'soulprint-id', lastAnalyzedMessageId: null }) } as never, {} as never, {} as never, llm as never);
     await expect(extraction.extract('user-a', 'conversation-id', true)).resolves.toMatchObject({ skipped: true });
     expect(llm.complete).not.toHaveBeenCalled();
-    expect(prisma.soulprint.update).toHaveBeenCalledWith(expect.objectContaining({ data: { extractionRunningAt: null } }));
+    expect(prisma.soulprint.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ extractionRunningAt: null }) }));
   });
   it('clears the extraction lock and returns a safe error when the provider is unavailable', async () => {
     const prisma = {
@@ -132,6 +132,16 @@ describe('SoulprintMergeService', () => {
     expect(tx.soulprintEntry.update).not.toHaveBeenCalled();
     expect(tx.soulprintEntryChange.create).not.toHaveBeenCalled();
     expect(tx.soulprintEvidence.upsert).not.toHaveBeenCalled();
+  });
+  it('merges a strongly similar value in the same category', async () => {
+    const candidate = { id: 'entry-id', category: SoulprintCategory.INTEREST, value: 'Travel around the world', normalizedValue: 'travel around world', source: SoulprintSource.USER_DECLARED, status: SoulprintEntryStatus.ACTIVE, visibility: SoulprintVisibility.GUIDANCE_ONLY, sensitivity: SoulprintSensitivity.NORMAL, confidence: 0.8, importance: 60, evidence: [] };
+    const tx = {
+      soulprintEntry: { findUnique: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([candidate]), update: jest.fn().mockResolvedValue(candidate) },
+      soulprintEntryChange: { create: jest.fn() }, soulprintEvidence: { upsert: jest.fn() },
+    };
+    const prisma = { $transaction: jest.fn((callback) => callback(tx)) };
+    await new SoulprintMergeService(prisma as never).merge('soulprint-id', { ...extracted, category: SoulprintCategory.INTEREST, key: 'travel-world', value: 'The user loves travel around the world.', normalizedValue: 'travel around world' });
+    expect(tx.soulprintEntry.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'entry-id' } }));
   });
 });
 

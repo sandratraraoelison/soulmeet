@@ -15,7 +15,11 @@ describe('GuidanceService', () => {
   beforeEach(() => {
     const tx = {
       guidanceMessage: { create: jest.fn(async ({ data }) => ({ id: 'created', isDeleted: false, ...data })) },
-      guidanceConversation: { update: jest.fn() },
+      guidanceConversation: {
+        create: jest.fn(async ({ data }) => ({ id: 'created-conversation', ...data })),
+        update: jest.fn(),
+      },
+      coachDailyCheckIn: { update: jest.fn() },
     };
     prisma = {
       guidanceConversation: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn() },
@@ -41,13 +45,41 @@ describe('GuidanceService', () => {
     expect(prisma.guidanceMessage.findMany).not.toHaveBeenCalled();
   });
 
+  it('opens a new conversation with a warm coach-led question', async () => {
+    prisma.profile.findUnique.mockResolvedValue({ firstName: 'Sam' });
+    const created = await service.createConversation('user-a', 'Getting to know me');
+    expect(created).toMatchObject({ id: 'created-conversation', userId: 'user-a' });
+    expect(prisma.__tx.guidanceMessage.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        role: GuidanceMessageRole.ASSISTANT,
+        content: expect.stringContaining('Hi Sam'),
+      }),
+    });
+  });
+
+  it('generates a proactive daily prompt across the relationship discovery areas', async () => {
+    prisma.guidanceConversation.findFirst.mockResolvedValue(conversation);
+    prisma.guidanceMessage.findMany.mockResolvedValue([]);
+    await service.createDailyCoachMessage('user-a', 'check-in-a', '2026-08-10');
+    expect(llm.complete).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({
+        role: 'system',
+        content: expect.stringContaining('personality, emotional patterns, dating history'),
+      }),
+    ]), { priority: 'background' });
+    expect(prisma.__tx.coachDailyCheckIn.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'check-in-a' },
+      data: expect.objectContaining({ status: 'SENT', messageId: 'created' }),
+    }));
+  });
+
   it('persists both sides of a non-streamed exchange', async () => {
     prisma.guidanceConversation.findFirst.mockResolvedValue(conversation);
     prisma.guidanceMessage.findMany.mockResolvedValue([{ role: GuidanceMessageRole.USER, content: 'Help me', isDeleted: false }]);
     await service.send('user-a', conversation.id, 'Help me');
     expect(prisma.__tx.guidanceMessage.create).toHaveBeenNthCalledWith(1, { data: expect.objectContaining({ role: GuidanceMessageRole.USER }) });
     expect(prisma.__tx.guidanceMessage.create).toHaveBeenNthCalledWith(2, { data: expect.objectContaining({ role: GuidanceMessageRole.ASSISTANT, provider: 'ollama' }) });
-    expect(llm.complete).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ role: 'system' })]));
+    expect(llm.complete).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ role: 'system' })]), { priority: 'interactive' });
   });
 
   it('streams tokens and persists the final assistant response', async () => {
@@ -139,5 +171,20 @@ describe('GuidancePromptService', () => {
     });
     expect(prompt).toContain('relaxed, friendly, conversational language');
     expect(prompt).toContain('casual and upbeat');
+  });
+
+  it('guides a natural, progressive relationship discovery instead of an interview', () => {
+    const prompt = new GuidancePromptService().buildSystemPrompt({
+      coach: coach({}),
+      profile: null,
+      soulprint: null,
+      memories: [],
+    });
+    expect(prompt).toContain('personality; recurring emotional patterns; dating and relationship history');
+    expect(prompt).toContain('relationship goals; communication style; non-clinical attachment tendencies');
+    expect(prompt).toContain('Never run through these areas as a checklist or interview');
+    expect(prompt).toContain('Ask one clear question at a time');
+    expect(prompt).toContain('Actively lead like a trusted advisor');
+    expect(prompt).toContain('never a diagnosis or fixed identity');
   });
 });

@@ -6,9 +6,10 @@ import { ChatService } from './chat.service';
 import { ConversationsController } from './conversations.controller';
 import { MessagesController } from './messages.controller';
 import { WsJwtGuard } from './guards/ws-jwt.guard';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, NotificationsModule],
   controllers: [ConversationsController, MessagesController],
   providers: [ChatService, ChatGateway, ChatRealtimeService, WsJwtGuard],
   exports: [ChatService],

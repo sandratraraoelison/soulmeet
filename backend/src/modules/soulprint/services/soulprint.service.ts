@@ -7,9 +7,12 @@ import { SoulprintMergeService } from './soulprint-merge.service';
 import { SoulprintSummaryService } from './soulprint-summary.service';
 
 @Injectable()
+/** User-facing Soulprint lifecycle, authorization and audit orchestration. */
 export class SoulprintService {
   constructor(private readonly prisma: PrismaService, private readonly merge: SoulprintMergeService, private readonly summaries: SoulprintSummaryService) {}
   async ensure(userId: string) {
+    // Idempotent creation keeps callers simple and also imports durable profile
+    // facts the first time an older account opens Soulprint.
     const soulprint = await this.prisma.soulprint.upsert({ where: { userId }, create: { userId }, update: {} });
     await this.initializeFromProfile(userId, soulprint.id);
     return soulprint;
@@ -32,6 +35,7 @@ export class SoulprintService {
   async summary(userId: string) { const soulprint = await this.ensure(userId); return { summary: soulprint.summary, completenessScore: soulprint.completenessScore, version: soulprint.summaryVersion }; }
   async entries(userId: string, query: SoulprintEntriesQueryDto) {
     const soulprint = await this.ensure(userId);
+    // Fetch one extra row to expose an opaque cursor without a count query.
     const rows = await this.prisma.soulprintEntry.findMany({
       where: { soulprintId: soulprint.id, category: query.category, status: query.status ?? { not: SoulprintEntryStatus.DELETED }, source: query.source, visibility: query.visibility, sensitivity: query.sensitivity },
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }], take: query.limit + 1,
@@ -57,6 +61,7 @@ export class SoulprintService {
     const nextKey = dto.key ?? previous.key;
     const nextValue = dto.value ?? previous.value;
     const data = { ...dto, normalizedValue: this.merge.normalize(nextValue), fingerprint: `${nextCategory}:${this.merge.normalize(nextKey || nextValue)}` };
+    // The entry and its audit record must never diverge.
     const updated = await this.prisma.$transaction(async (tx) => {
       const result = await tx.soulprintEntry.update({ where: { id: entryId }, data });
       await tx.soulprintEntryChange.create({ data: { entryId, changeType: 'USER_UPDATED', changedBy: userId, previousValue: previous as unknown as Prisma.InputJsonValue, newValue: result as unknown as Prisma.InputJsonValue } });
@@ -67,6 +72,8 @@ export class SoulprintService {
   async confirm(userId: string, entryId: string, correctedValue?: string) {
     const previous = await this.ownedEntry(userId, entryId);
     if (previous.status === SoulprintEntryStatus.CONFIRMED) throw new SoulprintException('SOULPRINT_ENTRY_ALREADY_CONFIRMED', 'Entry is already confirmed');
+    // Confirmation may include a correction; both actions become one audited
+    // transition so no intermediate incorrect confirmed value is observable.
     const value = correctedValue ?? previous.value;
     const updated = await this.prisma.$transaction(async (tx) => {
       const result = await tx.soulprintEntry.update({ where: { id: entryId }, data: { value, normalizedValue: this.merge.normalize(value), fingerprint: `${previous.category}:${this.merge.normalize(previous.key || value)}`, source: SoulprintSource.USER_CONFIRMED, status: SoulprintEntryStatus.CONFIRMED, confidence: 1, confirmedAt: new Date(), rejectedAt: null } });
@@ -98,6 +105,8 @@ export class SoulprintService {
   }
   async recalculate(userId: string) { const soulprint = await this.ensure(userId); return this.summaries.recalculate(soulprint.id); }
   private async ownedEntry(userId: string, id: string, include = false) {
+    // Ownership is part of the database predicate to avoid existence leaks
+    // between users and accidental cross-account mutations.
     const entry = await this.prisma.soulprintEntry.findFirst({ where: { id, soulprint: { userId } }, ...(include ? { include: { evidence: true, changes: { orderBy: { createdAt: 'desc' } } } } : {}) });
     if (!entry) throw new SoulprintException('SOULPRINT_ENTRY_NOT_FOUND', 'Soulprint entry not found', HttpStatus.NOT_FOUND); return entry;
   }

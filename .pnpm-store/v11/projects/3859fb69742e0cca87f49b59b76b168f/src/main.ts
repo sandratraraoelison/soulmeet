@@ -28,11 +28,45 @@ async function bootstrap(): Promise<void> {
   app.useGlobalFilters(new GlobalExceptionFilter());
   const swagger = new DocumentBuilder()
     .setTitle('Soulmeet API')
-    .setDescription('Soulmeet MVP backend')
-    .setVersion('0.1')
-    .addBearerAuth()
+    .setDescription(`
+API technique de Soulmeet pour l'application mobile Expo.
+
+### Authentification
+Les routes privées utilisent un access token JWT dans \`Authorization: Bearer <token>\`.
+Utilisez **Authorize** après \`POST /api/v1/auth/login\`. Le refresh token sert uniquement aux routes refresh/logout.
+
+### Temps réel et streaming
+- Le chat privé utilise Socket.IO sur le même serveur avec un bearer token lors de la connexion.
+- Guidance expose aussi un flux Server-Sent Events (SSE).
+
+### Confidentialité
+Les entrées Soulprint possèdent séparément un statut, une visibilité et une sensibilité. Les données privées ne sont pas exposées au matching.
+`)
+    .setVersion('1.0.0')
+    .addServer('http://localhost:3000', 'Développement local')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Access token retourné par login, register, Google, Apple ou refresh' })
+    .addTag('system', 'Santé et disponibilité de l’API')
+    .addTag('auth', 'Inscription, connexion, OAuth, sessions et mots de passe')
+    .addTag('profile', 'Profil et onboarding')
+    .addTag('coach', 'Configuration du coach IA')
+    .addTag('guidance', 'Conversations et mémoires du coach IA')
+    .addTag('soulprint', 'Portrait structuré, extraction, confidentialité et historique')
+    .addTag('growth', 'Objectifs, exercices, journal et progression')
+    .addTag('users', 'Découverte, profils publics et compatibilité')
+    .addTag('conversations', 'Conversations privées et historique paginé')
+    .addTag('messages', 'Modification et suppression des messages privés')
+    .addTag('notifications', 'Appareils push et préférences de notifications')
     .build();
-  SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swagger));
+  SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swagger), {
+    customSiteTitle: 'Soulmeet API Documentation',
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
+      tagsSorter: 'alpha',
+      operationsSorter: 'method',
+    },
+  });
   app.enableShutdownHooks();
   await app.listen(config.get<number>('PORT', 3000));
 }

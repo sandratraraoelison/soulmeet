@@ -38,6 +38,11 @@ export class ChatService {
     return participants.map(({ userId }) => userId);
   }
 
+  async displayName(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, include: { profile: true } });
+    return user?.profile?.firstName?.trim() || 'Someone';
+  }
+
   private async assertNotBlocked(userId: string, otherUserId: string) {
     const block = await this.prisma.block.findFirst({
       where: {

@@ -32,6 +32,7 @@ const weights: Partial<Record<SoulprintCategory, number>> = {
   PERSONALITY: 10,
 };
 @Injectable()
+/** Rebuilds the user-facing structured portrait and its coverage score. */
 export class SoulprintSummaryService {
   constructor(private readonly prisma: PrismaService) {}
   async recalculate(soulprintId: string) {
@@ -45,10 +46,7 @@ export class SoulprintSummaryService {
       orderBy: { importance: 'desc' },
     });
     const summary: SoulprintSummary = {
-      overview: entries
-        .slice(0, 5)
-        .map((e) => e.value)
-        .join(' '),
+      overview: '',
       personality: [],
       coreValues: [],
       interests: [],
@@ -65,7 +63,16 @@ export class SoulprintSummaryService {
       if (bucket && !summary[bucket].includes(entry.value))
         summary[bucket].push(entry.value);
     }
+    // Prefer one representative item per key dimension over a simple top-N
+    // concatenation, which could overrepresent a single category.
+    summary.overview = [
+      summary.personality[0],
+      summary.coreValues[0],
+      summary.relationshipGoals[0],
+      summary.communicationStyle[0],
+    ].filter(Boolean).join(' ');
     const categories = new Set(entries.map((entry) => entry.category));
+    // Completeness measures category coverage, never psychological quality.
     const completenessScore = Math.min(
       100,
       [...categories].reduce(

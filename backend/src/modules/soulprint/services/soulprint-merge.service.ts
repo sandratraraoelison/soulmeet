@@ -21,6 +21,7 @@ const priority: Record<SoulprintSource, number> = {
   USER_CONFIRMED: 5,
 };
 @Injectable()
+/** Applies source precedence, deduplication, evidence and audit history atomically. */
 export class SoulprintMergeService {
   constructor(private readonly prisma: PrismaService) {}
   normalize(value: string) {
@@ -39,14 +40,24 @@ export class SoulprintMergeService {
   ) {
     return `${entry.category}:${this.normalize(entry.key || entry.normalizedValue || entry.value)}`;
   }
+  private similarity(left: string, right: string) {
+    // Conservative Jaccard matching catches near-identical wording only. A
+    // high threshold avoids merging genuinely different preferences.
+    const a = new Set(this.normalize(left).split(' ').filter((term) => term.length > 2));
+    const b = new Set(this.normalize(right).split(' ').filter((term) => term.length > 2));
+    if (!a.size || !b.size) return 0;
+    const intersection = [...a].filter((term) => b.has(term)).length;
+    return intersection / new Set([...a, ...b]).size;
+  }
   async merge(
     soulprintId: string,
     entry: MergeableEntry,
     conversationId?: string,
   ) {
     const fingerprint = this.fingerprint(entry);
+    // Entry mutation, evidence and history form one consistency boundary.
     return this.prisma.$transaction(async (tx) => {
-      const existing = await tx.soulprintEntry.findUnique({
+      let existing = await tx.soulprintEntry.findUnique({
         where: { soulprintId_fingerprint: { soulprintId, fingerprint } },
         include: {
           evidence: {
@@ -55,15 +66,39 @@ export class SoulprintMergeService {
           },
         },
       });
+      if (!existing) {
+        const candidates = await tx.soulprintEntry.findMany({
+          where: {
+            soulprintId,
+            category: entry.category,
+            status: { in: [SoulprintEntryStatus.ACTIVE, SoulprintEntryStatus.CONFIRMED, SoulprintEntryStatus.PENDING_CONFIRMATION] },
+          },
+          include: {
+            evidence: {
+              where: { messageId: { in: [...new Set(entry.evidenceMessageIds)] } },
+              select: { messageId: true },
+            },
+          },
+          orderBy: { lastObservedAt: 'desc' },
+          take: 30,
+        });
+        existing = candidates.find((candidate) =>
+          this.similarity(candidate.normalizedValue || String(candidate.value), entry.normalizedValue || entry.value) >= 0.8,
+        ) ?? null;
+      }
       if (existing?.status === SoulprintEntryStatus.REJECTED)
         throw new SoulprintException(
           'SOULPRINT_ENTRY_DUPLICATE',
           'An equivalent entry was previously rejected',
         );
+      // Inference is never silently promoted to fact; only user-controlled
+      // confirmation can move it out of PENDING_CONFIRMATION.
       const status =
         entry.source === SoulprintSource.AI_INFERRED
           ? SoulprintEntryStatus.PENDING_CONFIRMATION
           : SoulprintEntryStatus.ACTIVE;
+      // Extraction may suggest Guidance visibility but can never grant matching
+      // consent on the user's behalf.
       const visibility =
         entry.suggestedVisibility === SoulprintVisibility.MATCHING_ALLOWED
           ? SoulprintVisibility.GUIDANCE_ONLY

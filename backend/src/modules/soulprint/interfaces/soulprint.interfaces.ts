@@ -15,7 +15,7 @@ export interface ExtractedSoulprintEntry {
 }
 export interface SoulprintExtractionResult {
   entries: ExtractedSoulprintEntry[];
-  contradictions: Array<{ existingEntryId?: string; category: SoulprintCategory; newValue: string; explanation: string }>;
+  contradictions: Array<{ existingEntryId: string; category: SoulprintCategory; newValue: string; explanation: string; evidenceMessageIds: string[] }>;
   summaryUpdateNeeded: boolean;
 }
 export interface SoulprintSummary {

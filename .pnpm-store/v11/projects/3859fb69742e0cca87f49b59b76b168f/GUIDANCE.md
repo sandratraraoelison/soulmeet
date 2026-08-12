@@ -22,6 +22,10 @@ DeepSeek:
 LLM_PROVIDER=deepseek
 LLM_BASE_URL=https://api.deepseek.com
 LLM_MODEL=deepseek-chat
+LLM_MAX_CONCURRENCY=12
+LLM_MAX_QUEUE_SIZE=100
+LLM_QUEUE_TIMEOUT_MS=30000
+LLM_INTERACTIVE_BURST=8
 LLM_API_KEY=your-secret-key
 ```
 

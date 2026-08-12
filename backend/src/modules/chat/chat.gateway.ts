@@ -26,6 +26,7 @@ import {
 import { WsJwtGuard } from './guards/ws-jwt.guard';
 import type { AuthenticatedSocket } from './interfaces/authenticated-socket.interface';
 import { ChatException } from './chat.exception';
+import { PushNotificationsService } from '../notifications/push-notifications.service';
 
 type Ack = (response: object) => void;
 
@@ -47,6 +48,7 @@ export class ChatGateway implements OnGatewayConnection {
     private readonly chat: ChatService,
     private readonly auth: WsJwtGuard,
     private readonly realtime: ChatRealtimeService,
+    private readonly notifications: PushNotificationsService,
   ) {}
 
   afterInit(server: Server) {
@@ -100,6 +102,31 @@ export class ChatGateway implements OnGatewayConnection {
     });
   }
 
+  @SubscribeMessage(CHAT_EVENTS.PRESENCE_GET)
+  async presence(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() dto: ConversationDto,
+    ack?: Ack,
+  ) {
+    return this.run(CHAT_EVENTS.PRESENCE_GET, client, ack, async () => {
+      const participants = await this.chat.participantIds(dto.conversationId);
+      if (!participants.includes(client.data.user.id))
+        throw new ChatException(
+          'FORBIDDEN_CONVERSATION',
+          'You are not a participant in this conversation',
+        );
+      const otherUserId = participants.find((id) => id !== client.data.user.id);
+      const sockets = otherUserId
+        ? await this.server.in(userRoom(otherUserId)).fetchSockets()
+        : [];
+      return {
+        conversationId: dto.conversationId,
+        userId: otherUserId,
+        online: sockets.length > 0,
+      };
+    });
+  }
+
   @SubscribeMessage(CHAT_EVENTS.SEND)
   async send(
     @ConnectedSocket() client: AuthenticatedSocket,
@@ -132,6 +159,14 @@ export class ChatGateway implements OnGatewayConnection {
               messageId: result.message.id,
               conversationId: dto.conversationId,
             });
+        }
+        if (!result.duplicate) {
+          const senderName = await this.chat.displayName(client.data.user.id);
+          void this.notifications.send(recipientId, 'newMessages', {
+            title: `New message from ${senderName}`,
+            body: dto.content.slice(0, 140),
+            data: { conversationId: dto.conversationId },
+          });
         }
       }
       return { clientMessageId: dto.clientMessageId, message: result.message };

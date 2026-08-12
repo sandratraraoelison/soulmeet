@@ -22,6 +22,12 @@ import { SoulprintService } from './soulprint.service';
 import { SoulprintSummaryService } from './soulprint-summary.service';
 
 @Injectable()
+/**
+ * Converts new Guidance messages into durable Soulprint entries.
+ *
+ * The service owns the extraction lock and cursor. A cursor is advanced only
+ * after a complete batch has been validated and merged, so retries are safe.
+ */
 export class SoulprintExtractionService {
   private readonly logger = new Logger(SoulprintExtractionService.name);
   constructor(
@@ -39,6 +45,8 @@ export class SoulprintExtractionService {
         'Soulprint extraction is disabled',
       );
     const soulprint = await this.soulprints.ensure(userId);
+    // A timestamp lock avoids concurrent extraction without requiring a
+    // process-local mutex; stale locks can be reclaimed after a crash.
     const staleBefore = new Date(
       Date.now() -
         this.config.get<number>('SOULPRINT_EXTRACTION_TIMEOUT_MS', 120000),
@@ -64,6 +72,8 @@ export class SoulprintExtractionService {
         'SOULPRINT_PROMPT_VERSION',
         SOULPRINT_EXTRACTION_PROMPT_VERSION,
       );
+      // Changing the prompt invalidates the cursor so the upgraded extractor
+      // can reinterpret the bounded conversation history.
       const last = soulprint.promptVersion === promptVersion && soulprint.lastAnalyzedMessageId
         ? await this.prisma.guidanceMessage.findUnique({
             where: { id: soulprint.lastAnalyzedMessageId },
@@ -74,16 +84,16 @@ export class SoulprintExtractionService {
         'SOULPRINT_EXTRACTION_MAX_MESSAGES',
         20,
       );
-      const messages = await this.prisma.guidanceMessage.findMany({
+      const messageBatch = await this.prisma.guidanceMessage.findMany({
         where: {
           conversation: { userId },
           ...(conversationId ? { conversationId } : {}),
           isDeleted: false,
           content: { not: null },
-          ...(last ? { createdAt: { gt: last.createdAt } } : {}),
+          ...(last ? { OR: [{ createdAt: { gt: last.createdAt } }, { createdAt: last.createdAt, id: { gt: soulprint.lastAnalyzedMessageId! } }] } : {}),
         },
-        orderBy: { createdAt: 'asc' },
-        take: max,
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        take: max + 1,
         select: {
           id: true,
           conversationId: true,
@@ -92,6 +102,10 @@ export class SoulprintExtractionService {
           createdAt: true,
         },
       });
+      // Fetching max + 1 is a cheap continuation signal for the persistent
+      // queue. Only the first max messages are sent to the provider.
+      const hasMore = messageBatch.length > max;
+      const messages = messageBatch.slice(0, max);
       const userMessages = messages.filter(
         (message) => message.role === 'USER',
       );
@@ -99,6 +113,8 @@ export class SoulprintExtractionService {
         (sum, message) => sum + (message.content?.length ?? 0),
         0,
       );
+      // Keep short fragments pending so a future message can provide enough
+      // context. We intentionally do not advance the cursor in this branch.
       if (
         !force &&
         userMessages.length <
@@ -110,35 +126,31 @@ export class SoulprintExtractionService {
           this.config.get<number>('SOULPRINT_EXTRACTION_MIN_CHARACTERS', 300)
       )
         return this.release(soulprint.id).then(() => ({ skipped: true, reason: 'threshold' as const }));
-      if (!userMessages.length)
-        return this.release(soulprint.id).then(() => ({ skipped: true, reason: 'no-new-user-messages' as const }));
-      const directInterests = this.extractDirectInterests(userMessages);
-      if (directInterests.length) {
-        for (const entry of directInterests)
-          await this.merge.merge(soulprint.id, entry, conversationId);
-        const lastMessage = userMessages.at(-1)!;
-        await this.prisma.soulprint.update({
-          where: { id: soulprint.id },
-          data: {
-            lastAnalyzedMessageId: lastMessage.id,
-            lastExtractedAt: new Date(),
-            promptVersion,
-            extractionRunningAt: null,
-          },
-        });
-        if (this.config.get<boolean>('SOULPRINT_AUTO_SUMMARY_ENABLED', true))
-          await this.summaries.recalculate(soulprint.id);
-        return {
-          skipped: false,
-          extracted: directInterests.length,
-          provider: 'deterministic',
-          model: 'explicit-interest-v1',
-        };
+      if (!userMessages.length) {
+        const lastMessage = messages.at(-1);
+        await this.prisma.soulprint.update({ where: { id: soulprint.id }, data: { extractionRunningAt: null, ...(lastMessage ? { lastAnalyzedMessageId: lastMessage.id, lastExtractedAt: new Date(), promptVersion } : {}) } });
+        return { skipped: true, reason: 'no-new-user-messages' as const, hasMore };
       }
+      // Deterministic extraction handles obvious declarations cheaply, but it
+      // augments rather than replaces the general LLM pass.
+      const directInterests = this.extractDirectInterests(userMessages);
+      for (const entry of directInterests)
+        await this.merge.merge(soulprint.id, entry, conversationId);
+      // Existing IDs are required for grounded contradiction proposals. The
+      // model may propose one, but application code remains authoritative.
+      const currentEntries = await this.prisma.soulprintEntry.findMany({
+        where: {
+          soulprintId: soulprint.id,
+          status: { in: [SoulprintEntryStatus.ACTIVE, SoulprintEntryStatus.CONFIRMED, SoulprintEntryStatus.PENDING_CONFIRMATION] },
+        },
+        select: { id: true, category: true, value: true, source: true, status: true },
+        orderBy: { importance: 'desc' },
+        take: 100,
+      });
       const extractionMessages = [
         {
           role: 'system' as const,
-          content: soulprintExtractionPrompt(soulprint.summary, messages),
+          content: soulprintExtractionPrompt({ summary: soulprint.summary, entries: currentEntries }, messages),
         },
         {
           role: 'user' as const,
@@ -151,12 +163,13 @@ export class SoulprintExtractionService {
         jsonSchema: SOULPRINT_EXTRACTION_JSON_SCHEMA,
         maxTokens: 1200,
         temperature: 0,
+        priority: 'background',
       });
       const parsed = this.parseAndValidate(
         response.content,
         new Set(userMessages.map((message) => message.id)),
       );
-      let changed = 0;
+      let changed = directInterests.length;
       for (const entry of parsed.entries) {
         const evidence = userMessages.filter((message) =>
           entry.evidenceMessageIds.includes(message.id),
@@ -181,11 +194,19 @@ export class SoulprintExtractionService {
         changed++;
       }
       for (const contradiction of parsed.contradictions) {
-        if (!contradiction.existingEntryId) continue;
+        // Never supersede from a free-form model claim alone. The replacement
+        // must exist in the same response and cite overlapping user evidence.
+        const replacement = parsed.entries.find((entry) =>
+          entry.category === contradiction.category &&
+          this.merge.normalize(entry.value) === this.merge.normalize(contradiction.newValue) &&
+          entry.evidenceMessageIds.some((id) => contradiction.evidenceMessageIds.includes(id)),
+        );
+        if (!replacement) continue;
         const existing = await this.prisma.soulprintEntry.findFirst({
           where: {
             id: contradiction.existingEntryId,
             soulprintId: soulprint.id,
+            category: contradiction.category,
           },
         });
         if (existing && existing.status !== SoulprintEntryStatus.CONFIRMED)
@@ -194,7 +215,7 @@ export class SoulprintExtractionService {
             await tx.soulprintEntryChange.create({ data: { entryId: existing.id, changeType: 'SUPERSEDED_BY_CONTRADICTION', changedBy: 'SYSTEM', reason: contradiction.explanation, previousValue: existing as never, newValue: updated as never } });
           });
       }
-      const lastMessage = userMessages.at(-1)!;
+      const lastMessage = messages.at(-1)!;
       await this.prisma.soulprint.update({
         where: { id: soulprint.id },
         data: {
@@ -216,6 +237,7 @@ export class SoulprintExtractionService {
         extracted: changed,
         provider: response.provider,
         model: response.model,
+        hasMore,
       };
     } catch (error) {
       await this.prisma.soulprint
@@ -260,6 +282,8 @@ export class SoulprintExtractionService {
     entry: SoulprintExtractionResult['entries'][number],
     evidence: { content: string | null }[],
   ) {
+    // This deliberately conservative lexical check catches obvious provider
+    // hallucinations while leaving nuanced statements as tentative inference.
     const stopWords = new Set([
       'the', 'user', 'likes', 'like', 'enjoys', 'enjoy', 'prefers', 'prefer',
       'their', 'they', 'them', 'with', 'from', 'that', 'this', 'and', 'for',
@@ -278,6 +302,8 @@ export class SoulprintExtractionService {
   extractDirectInterests(
     messages: { id: string; content: string | null }[],
   ): SoulprintExtractionResult['entries'] {
+    // Only accept a narrow first-person grammar here. Ambiguous sentences are
+    // left to the context-aware extractor instead of being guessed locally.
     const entries: SoulprintExtractionResult['entries'] = [];
     const seen = new Set<string>();
     for (const message of messages) {
@@ -318,6 +344,8 @@ export class SoulprintExtractionService {
     raw: string,
     allowedMessageIds: Set<string>,
   ): SoulprintExtractionResult {
+    // Provider output is untrusted. One JSON-object repair is tolerated for
+    // providers that wrap JSON in prose; no executable parsing is used.
     let value: unknown;
     try {
       value = JSON.parse(raw);
@@ -379,10 +407,15 @@ export class SoulprintExtractionService {
         ) ||
         typeof entry.value !== 'string' ||
         !entry.value.trim() ||
+        entry.value.length > 2000 ||
+        typeof entry.key !== 'string' || entry.key.length > 100 ||
+        typeof entry.normalizedValue !== 'string' || entry.normalizedValue.length > 2000 ||
+        typeof entry.reasoning !== 'string' || entry.reasoning.length > 1000 ||
         typeof entry.confidence !== 'number' ||
         entry.confidence < 0 ||
         entry.confidence > 1 ||
         typeof entry.importance !== 'number' ||
+        !Number.isInteger(entry.importance) ||
         entry.importance < 0 ||
         entry.importance > 100 ||
         !Array.isArray(ids) ||
@@ -394,10 +427,22 @@ export class SoulprintExtractionService {
         );
       return entry as unknown as SoulprintExtractionResult['entries'][number];
     });
+    const contradictions = object.contradictions.map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item))
+        throw new SoulprintException('SOULPRINT_EXTRACTION_INVALID_RESPONSE', 'Invalid contradiction');
+      const contradiction = item as Record<string, unknown>;
+      const ids = contradiction.evidenceMessageIds;
+      if (typeof contradiction.existingEntryId !== 'string' || !contradiction.existingEntryId ||
+        !Object.values(SoulprintCategory).includes(contradiction.category as SoulprintCategory) ||
+        typeof contradiction.newValue !== 'string' || !contradiction.newValue.trim() || contradiction.newValue.length > 2000 ||
+        typeof contradiction.explanation !== 'string' || !contradiction.explanation.trim() || contradiction.explanation.length > 1000 ||
+        !Array.isArray(ids) || !ids.every((id) => typeof id === 'string' && allowedMessageIds.has(id)))
+        throw new SoulprintException('SOULPRINT_EXTRACTION_INVALID_RESPONSE', 'Invalid contradiction');
+      return contradiction as unknown as SoulprintExtractionResult['contradictions'][number];
+    });
     return {
       entries,
-      contradictions:
-        object.contradictions as SoulprintExtractionResult['contradictions'],
+      contradictions,
       summaryUpdateNeeded: object.summaryUpdateNeeded,
     };
   }

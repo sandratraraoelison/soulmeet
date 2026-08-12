@@ -11,6 +11,7 @@ import { SoulprintExtractionQueueService } from './services/soulprint-extraction
 import { SoulprintService } from './services/soulprint.service';
 
 @ApiTags('soulprint') @ApiBearerAuth() @UseGuards(JwtAuthGuard) @Controller('soulprint')
+/** Authenticated HTTP boundary; ownership always comes from the JWT subject. */
 export class SoulprintController {
   constructor(private readonly soulprint: SoulprintService, private readonly extraction: SoulprintExtractionService, private readonly queue: SoulprintExtractionQueueService, private readonly config: ConfigService) {}
   @Get() get(@CurrentUser() user: JwtPayload) { return this.soulprint.get(user.sub); }
@@ -27,11 +28,15 @@ export class SoulprintController {
   @Get('history') history(@CurrentUser() user: JwtPayload, @Query() query: SoulprintHistoryQueryDto) { return this.soulprint.history(user.sub, query.cursor, query.limit); }
   @Get('extraction-status') extractionStatus(@CurrentUser() user: JwtPayload) { return this.queue.status(user.sub); }
   @Get('extraction-metrics') extractionMetrics(@CurrentUser() user: JwtPayload) {
+    // Aggregate provider/worker telemetry can expose operational details and is
+    // therefore restricted independently of ordinary Soulprint ownership.
     if (user.role !== 'ADMIN') throw new SoulprintException('SOULPRINT_ACCESS_DENIED', 'Extraction metrics require an administrator');
     return this.queue.metrics();
   }
   @Post('recalculate') recalculate(@CurrentUser() user: JwtPayload) { return this.soulprint.recalculate(user.sub); }
   @Post('extract') extract(@CurrentUser() user: JwtPayload) {
+    // Production users rely on the background queue. Manual execution remains
+    // available to administrators for recovery and diagnostics.
     if (this.config.get('NODE_ENV') === 'production' && user.role !== 'ADMIN') throw new SoulprintException('SOULPRINT_ACCESS_DENIED', 'Manual extraction is not available');
     return this.extraction.extract(user.sub, undefined, true);
   }

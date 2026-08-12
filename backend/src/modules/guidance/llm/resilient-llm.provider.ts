@@ -19,8 +19,8 @@ export class ResilientLlmProvider implements LlmProvider {
     }
   }
 
-  stream(messages: LlmMessage[]): AsyncIterable<string> {
-    return this.primary.stream(messages);
+  stream(messages: LlmMessage[], options?: LlmCompletionOptions): AsyncIterable<string> {
+    return this.primary.stream(messages, options);
   }
 
   private async fallbackComplete(messages: LlmMessage[], options?: LlmCompletionOptions): Promise<LlmResponse> {

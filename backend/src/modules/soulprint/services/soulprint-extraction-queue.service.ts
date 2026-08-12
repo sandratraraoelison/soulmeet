@@ -6,10 +6,12 @@ import { SoulprintException } from '../soulprint.exception';
 import { SoulprintExtractionService } from './soulprint-extraction.service';
 
 @Injectable()
+/** Persistent, coalescing worker queue for background Soulprint extraction. */
 export class SoulprintExtractionQueueService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(SoulprintExtractionQueueService.name);
   private timer?: ReturnType<typeof setInterval>;
   private polling = false;
+  private readonly activeJobs = new Set<Promise<void>>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -19,6 +21,7 @@ export class SoulprintExtractionQueueService implements OnModuleInit, OnModuleDe
 
   async onModuleInit() {
     if (!this.config.get<boolean>('SOULPRINT_EXTRACTION_ENABLED', true)) return;
+    // Recover work abandoned by a terminated process before polling begins.
     const staleBefore = new Date(Date.now() - this.config.get<number>('SOULPRINT_JOB_STALE_MS', 300_000));
     await this.prisma.soulprintExtractionJob.updateMany({
       where: { status: SoulprintExtractionJobStatus.RUNNING, lockedAt: { lt: staleBefore } },
@@ -37,10 +40,23 @@ export class SoulprintExtractionQueueService implements OnModuleInit, OnModuleDe
   async enqueue(userId: string, conversationId?: string) {
     if (!this.config.get<boolean>('SOULPRINT_EXTRACTION_ENABLED', true)) return;
     const delay = this.config.get<number>('SOULPRINT_EXTRACTION_DEBOUNCE_SECONDS', 2) * 1_000;
+    // One row per user coalesces bursts of messages. Revisions ensure a message
+    // arriving during RUNNING schedules another pass instead of stealing lock.
     await this.prisma.soulprintExtractionJob.upsert({
       where: { userId },
       create: { userId, conversationId, runAt: new Date(Date.now() + delay) },
-      update: { conversationId, status: SoulprintExtractionJobStatus.PENDING, attempts: 0, runAt: new Date(Date.now() + delay), lockedAt: null, completedAt: null, lastErrorCode: null },
+      update: {
+        conversationId,
+        requestedRevision: { increment: 1 },
+        runAt: new Date(Date.now() + delay),
+        completedAt: null,
+        lastErrorCode: null,
+      },
+    });
+    // A running job keeps its lock. Every other state is made runnable again.
+    await this.prisma.soulprintExtractionJob.updateMany({
+      where: { userId, status: { not: SoulprintExtractionJobStatus.RUNNING } },
+      data: { status: SoulprintExtractionJobStatus.PENDING, attempts: 0, lockedAt: null },
     });
   }
 
@@ -66,23 +82,61 @@ export class SoulprintExtractionQueueService implements OnModuleInit, OnModuleDe
     if (this.polling) return;
     this.polling = true;
     try {
-      const job = await this.prisma.soulprintExtractionJob.findFirst({ where: { status: SoulprintExtractionJobStatus.PENDING, runAt: { lte: new Date() } }, orderBy: { runAt: 'asc' } });
-      if (!job) return;
-      const claimed = await this.prisma.soulprintExtractionJob.updateMany({ where: { id: job.id, status: SoulprintExtractionJobStatus.PENDING }, data: { status: SoulprintExtractionJobStatus.RUNNING, lockedAt: new Date(), attempts: { increment: 1 } } });
-      if (!claimed.count) return;
-      await this.process(job.id, job.userId, job.conversationId ?? undefined, job.attempts + 1);
+      const concurrency = this.config.get<number>('SOULPRINT_JOB_CONCURRENCY', 4);
+      // Claim rows atomically because several application instances may poll
+      // the same PostgreSQL queue concurrently.
+      while (this.activeJobs.size < concurrency) {
+        const job = await this.prisma.soulprintExtractionJob.findFirst({ where: { status: SoulprintExtractionJobStatus.PENDING, runAt: { lte: new Date() } }, orderBy: { runAt: 'asc' } });
+        if (!job) break;
+        const claimed = await this.prisma.soulprintExtractionJob.updateMany({
+          where: { id: job.id, status: SoulprintExtractionJobStatus.PENDING },
+          data: {
+            status: SoulprintExtractionJobStatus.RUNNING,
+            lockedAt: new Date(),
+            attempts: { increment: 1 },
+            processingRevision: job.requestedRevision,
+          },
+        });
+        if (!claimed.count) continue;
+        const running = this.process(job.id, job.userId, job.conversationId ?? undefined, job.attempts + 1, job.requestedRevision)
+          .finally(() => {
+            this.activeJobs.delete(running);
+            void this.poll();
+          });
+        this.activeJobs.add(running);
+      }
     } finally {
       this.polling = false;
     }
   }
 
-  private async process(id: string, userId: string, conversationId: string | undefined, attempt: number) {
+  private async process(id: string, userId: string, conversationId: string | undefined, attempt: number, revision: number) {
     const started = Date.now();
     try {
       // Process every unanalysed Guidance message for the user. The stored
       // conversation id is diagnostic context; coalesced jobs may span chats.
-      await this.extraction.extract(userId);
-      await this.prisma.soulprintExtractionJob.updateMany({ where: { id, status: SoulprintExtractionJobStatus.RUNNING }, data: { status: SoulprintExtractionJobStatus.SUCCEEDED, lockedAt: null, completedAt: new Date(), lastErrorCode: null } });
+      const result = await this.extraction.extract(userId);
+      // A bounded extraction batch can finish successfully while older queued
+      // messages remain; continue immediately without consuming retry budget.
+      if ('hasMore' in result && result.hasMore) {
+        await this.prisma.soulprintExtractionJob.updateMany({
+          where: { id, status: SoulprintExtractionJobStatus.RUNNING },
+          data: { status: SoulprintExtractionJobStatus.PENDING, lockedAt: null, attempts: 0, runAt: new Date() },
+        });
+        await this.recordMetric('success', 'BATCH_CONTINUATION', Date.now() - started);
+        return;
+      }
+      const completed = await this.prisma.soulprintExtractionJob.updateMany({
+        where: { id, status: SoulprintExtractionJobStatus.RUNNING, requestedRevision: revision },
+        data: { status: SoulprintExtractionJobStatus.SUCCEEDED, lockedAt: null, completedAt: new Date(), lastErrorCode: null },
+      });
+      if (!completed.count) {
+        // A message arrived during extraction: run again after its debounce window.
+        await this.prisma.soulprintExtractionJob.updateMany({
+          where: { id, status: SoulprintExtractionJobStatus.RUNNING },
+          data: { status: SoulprintExtractionJobStatus.PENDING, lockedAt: null, attempts: 0 },
+        });
+      }
       await this.recordMetric('success', 'OK', Date.now() - started);
     } catch (error) {
       const code = error instanceof SoulprintException ? error.code : 'SOULPRINT_EXTRACTION_FAILED';
