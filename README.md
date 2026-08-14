@@ -138,6 +138,9 @@ Sur un téléphone physique, `EXPO_PUBLIC_API_URL` doit utiliser l’adresse LAN
 | `EXPO_ACCESS_TOKEN`                               | Facultatif ; requis si la sécurité renforcée Expo Push est activée. |
 | `LLM_PROVIDER`                                    | `ollama`, `openai`, `deepseek` ou `openai-compatible`.              |
 | `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`        | Fournisseur LLM principal.                                          |
+| `OLLAMA_BASE_URL`, `OLLAMA_MODEL`                 | Secours local utilisé automatiquement sans clé distante.             |
+| `LLM_DEFAULT_MAX_TOKENS`                          | Plafond de sortie par appel pour maîtriser les coûts.                |
+| `LLM_CACHE_*`                                     | Cache LRU local : activation, TTL et nombre maximal d'entrées.       |
 | `LLM_FALLBACK_*`                                  | Fournisseur de secours facultatif.                                  |
 | `SOULPRINT_*`                                     | Extraction, file, retries, contexte, résumé et historique.          |
 

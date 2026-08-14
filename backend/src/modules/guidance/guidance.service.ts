@@ -155,7 +155,7 @@ export class GuidanceService {
     const message = await this.ownedMessage(userId, messageId);
     if (message.role !== GuidanceMessageRole.ASSISTANT) throw new GuidanceException('MESSAGE_NOT_REGENERATABLE', 'Only coach responses can be regenerated');
     await this.prisma.guidanceMessage.update({ where: { id: message.id }, data: { content: null, isDeleted: true, deletedAt: new Date() } });
-    const response = await this.llm.complete(await this.contextMessages(userId, message.conversationId), { priority: 'interactive' });
+    const response = await this.llm.complete(await this.contextMessages(userId, message.conversationId), { priority: 'interactive', cache: false });
     return this.persistAssistant(message.conversationId, response.content, response.provider, response.model);
   }
 

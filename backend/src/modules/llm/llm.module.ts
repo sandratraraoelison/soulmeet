@@ -5,6 +5,7 @@ import { OllamaProvider } from '../guidance/llm/ollama.provider';
 import { OpenAiCompatibleProvider } from '../guidance/llm/openai-compatible.provider';
 import { ResilientLlmProvider } from '../guidance/llm/resilient-llm.provider';
 import { ConcurrencyLimitedLlmProvider } from '../guidance/llm/concurrency-limited-llm.provider';
+import { CachedLlmProvider } from '../guidance/llm/cached-llm.provider';
 
 @Global()
 @Module({
@@ -15,8 +16,11 @@ import { ConcurrencyLimitedLlmProvider } from '../guidance/llm/concurrency-limit
       provide: LLM_PROVIDER,
       inject: [ConfigService, OllamaProvider, OpenAiCompatibleProvider],
       useFactory: (config: ConfigService, ollama: OllamaProvider, compatible: OpenAiCompatibleProvider) => {
-        const primary = config.get<string>('LLM_PROVIDER', 'ollama').toLowerCase() === 'ollama' ? ollama : compatible;
-        return new ConcurrencyLimitedLlmProvider(new ResilientLlmProvider(primary, config), config);
+        const wantsRemote = config.get<string>('LLM_PROVIDER', 'deepseek').toLowerCase() !== 'ollama';
+        const primary = wantsRemote && config.get<string>('LLM_API_KEY', '').trim() ? compatible : ollama;
+        const resilient = new ResilientLlmProvider(primary, config);
+        const limited = new ConcurrencyLimitedLlmProvider(resilient, config);
+        return new CachedLlmProvider(limited, config);
       },
     },
   ],

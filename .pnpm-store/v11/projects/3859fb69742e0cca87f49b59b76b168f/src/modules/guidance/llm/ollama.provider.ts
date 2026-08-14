@@ -17,8 +17,8 @@ export class OllamaProvider implements LlmProvider {
   private readonly timeoutMs: number;
 
   constructor(config: ConfigService) {
-    this.baseUrl = config.get<string>('LLM_BASE_URL', 'http://localhost:11434').replace(/\/$/, '');
-    this.model = config.get<string>('LLM_MODEL', 'llama3.1:8b');
+    this.baseUrl = config.get<string>('OLLAMA_BASE_URL', 'http://localhost:11434').replace(/\/$/, '');
+    this.model = config.get<string>('OLLAMA_MODEL', 'llama3.1:8b');
     this.timeoutMs = config.get<number>('LLM_TIMEOUT_MS', 60_000);
   }
 

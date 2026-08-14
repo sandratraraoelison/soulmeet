@@ -12,6 +12,8 @@ export interface LlmResponse {
 }
 
 export interface LlmCompletionOptions {
+  /** Disable response reuse for calls that intentionally need a fresh generation. */
+  cache?: boolean;
   json?: boolean;
   jsonSchema?: Record<string, unknown>;
   maxTokens?: number;
