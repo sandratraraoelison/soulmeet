@@ -5,10 +5,4 @@ allowBuilds:
   argon2: true
   prisma: true
   unrs-resolver: true
-onlyBuiltDependencies:
-  - '@prisma/client'
-  - '@prisma/engines'
-  - argon2
-  - prisma
-  - unrs-resolver
 nodeLinker: hoisted
