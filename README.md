@@ -237,7 +237,7 @@ corepack pnpm test
 corepack pnpm format:check
 ```
 
-État vérifié lors de la dernière mise à jour : 61 tests backend et 33 tests frontend réussis.
+État vérifié lors de la dernière mise à jour : 109 tests backend et 33 tests frontend réussis. Une CI GitHub Actions exécute lint, typecheck et tests pour le frontend, le backend et le dashboard.
 
 ## Production
 

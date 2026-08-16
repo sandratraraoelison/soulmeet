@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --color-canvas: 15 17 23;
+    --color-surface: 29 30 36;
+    --color-surface-raised: 37 38 46;
+    --color-ink: 241 241 247;
+    --color-muted: 148 148 163;
+    --color-border: 52 54 64;
+  }
+}
