@@ -3,6 +3,9 @@ import { Test } from '@nestjs/testing';
 import { randomUUID } from 'crypto';
 import type { AddressInfo } from 'net';
 import { GlobalExceptionFilter } from '../src/common/filters/http-exception.filter';
+import { PrismaService } from '../src/database/prisma.service';
+import { DailyCoachCheckInService } from '../src/modules/guidance/daily-coach-check-in.service';
+import { SoulprintExtractionQueueService } from '../src/modules/soulprint/services/soulprint-extraction-queue.service';
 import { AppModule } from '../src/app.module';
 
 /**
@@ -18,7 +21,16 @@ describe('App (e2e)', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      // The health route never touches the database, so replace Prisma with a
+      // stub and disable the background workers to keep the e2e hermetic.
+      .overrideProvider(PrismaService)
+      .useValue({})
+      .overrideProvider(SoulprintExtractionQueueService)
+      .useValue({})
+      .overrideProvider(DailyCoachCheckInService)
+      .useValue({})
+      .compile();
     app = moduleRef.createNestApplication();
     app.setGlobalPrefix('api/v1');
     app.use(
