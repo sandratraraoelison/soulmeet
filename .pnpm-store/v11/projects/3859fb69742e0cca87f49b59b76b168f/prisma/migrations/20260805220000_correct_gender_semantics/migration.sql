@@ -1,4 +1,0 @@
-ALTER TYPE "Gender" ADD VALUE IF NOT EXISTS 'NON_GENDERED';
-CREATE TYPE "InterestGender" AS ENUM ('MALE', 'FEMALE', 'NON_GENDERED');
-ALTER TABLE "Profile" ADD COLUMN "interestedInGender" "InterestGender";
-ALTER TABLE "Coach" ALTER COLUMN "gender" DROP NOT NULL;
