@@ -264,6 +264,10 @@ model Match {
   viewedAt        DateTime?
   respondedAt     DateTime?
   response        String?
+  semanticScore   Int?
+  semanticConfidence Float?
+  semanticModel   String?
+  semanticAnalysis Json?
   user            User     @relation("MatchUser", fields: [userId], references: [id], onDelete: Cascade)
   matchedUser     User     @relation("MatchMatchedUser", fields: [matchedUserId], references: [id], onDelete: Cascade)
 
@@ -613,6 +617,11 @@ model SoulprintEntry {
   deletedAt       DateTime?
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
+  semanticData          Json?
+  semanticModel         String?
+  semanticPromptVersion String?
+  semanticSourceHash    String?
+  semanticAnalyzedAt    DateTime?
   soulprint       Soulprint              @relation(fields: [soulprintId], references: [id], onDelete: Cascade)
   evidence        SoulprintEvidence[]
   changes         SoulprintEntryChange[]

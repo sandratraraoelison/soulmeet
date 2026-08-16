@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { ChatGateway } from './chat.gateway';
+import { ChatRateLimiter } from './chat-rate-limiter.service';
 import { ChatRealtimeService } from './chat-realtime.service';
 import { ChatService } from './chat.service';
 import { ConversationsController } from './conversations.controller';
@@ -11,7 +12,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 @Module({
   imports: [AuthModule, NotificationsModule],
   controllers: [ConversationsController, MessagesController],
-  providers: [ChatService, ChatGateway, ChatRealtimeService, WsJwtGuard],
+  providers: [ChatService, ChatGateway, ChatRateLimiter, ChatRealtimeService, WsJwtGuard],
   exports: [ChatService],
 })
 export class ChatModule {}

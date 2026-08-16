@@ -1,8 +1,10 @@
 import { ConflictException } from '@nestjs/common';
 import { GrowthGoalStatus } from '@prisma/client';
 import { GrowthService } from '../src/modules/growth/growth.service';
+import { GrowthGoalsService } from '../src/modules/growth/growth-goals.service';
+import { GrowthReflectionService } from '../src/modules/growth/growth-reflection.service';
 
-describe('GrowthService', () => {
+describe('GrowthGoalsService', () => {
   it('creates a user-scoped goal and activity event', async () => {
     const goal = { id: 'goal-id', title: 'Build confidence' };
     const tx = {
@@ -13,7 +15,7 @@ describe('GrowthService', () => {
       growthGoal: { count: jest.fn().mockResolvedValue(0) },
       $transaction: jest.fn((callback) => callback(tx)),
     };
-    await new GrowthService(prisma as never).createGoal('user-a', {
+    await new GrowthGoalsService(prisma as never).createGoal('user-a', {
       title: goal.title,
       targetSteps: 5,
     });
@@ -26,7 +28,7 @@ describe('GrowthService', () => {
   it('limits users to three active goals', async () => {
     const prisma = { growthGoal: { count: jest.fn().mockResolvedValue(3) } };
     await expect(
-      new GrowthService(prisma as never).createGoal('user-a', {
+      new GrowthGoalsService(prisma as never).createGoal('user-a', {
         title: 'Another goal',
         targetSteps: 5,
       }),
@@ -60,7 +62,7 @@ describe('GrowthService', () => {
       $transaction: jest.fn((callback) => callback(tx)),
     };
     await expect(
-      new GrowthService(prisma as never).updateProgress(
+      new GrowthGoalsService(prisma as never).updateProgress(
         'user-a',
         goal.id,
         3,
@@ -73,6 +75,16 @@ describe('GrowthService', () => {
       }),
     );
   });
+});
+
+describe('GrowthService', () => {
+  function buildService(prisma: any) {
+    return new GrowthService(
+      prisma,
+      new GrowthGoalsService(prisma),
+      new GrowthReflectionService(prisma),
+    );
+  }
 
   it('does not rewrite an exercise already completed', async () => {
     const exercise = {
@@ -84,10 +96,7 @@ describe('GrowthService', () => {
       growthExercise: { findFirst: jest.fn().mockResolvedValue(exercise) },
     };
     await expect(
-      new GrowthService(prisma as never).completeExercise(
-        'user-a',
-        exercise.id,
-      ),
+      buildService(prisma).completeExercise('user-a', exercise.id),
     ).resolves.toBe(exercise);
   });
 });

@@ -9,13 +9,13 @@ import {
 } from '@nestjs/websockets';
 import type { Server } from 'socket.io';
 import { ChatService } from './chat.service';
+import { ChatRateLimiter } from './chat-rate-limiter.service';
 import { ChatRealtimeService } from './chat-realtime.service';
 import {
   CHAT_EVENTS,
   conversationRoom,
   userRoom,
 } from './constants/chat-events.constants';
-import { CHAT_CONFIG } from './constants/chat-config.constants';
 import {
   ConversationDto,
   DeleteMessageDto,
@@ -41,14 +41,13 @@ type Ack = (response: object) => void;
 export class ChatGateway implements OnGatewayConnection {
   @WebSocketServer() server!: Server;
   private readonly logger = new Logger(ChatGateway.name);
-  private readonly typingActivity = new Map<string, number>();
-  private readonly sendActivity = new Map<string, number[]>();
 
   constructor(
     private readonly chat: ChatService,
     private readonly auth: WsJwtGuard,
     private readonly realtime: ChatRealtimeService,
     private readonly notifications: PushNotificationsService,
+    private readonly rateLimiter: ChatRateLimiter,
   ) {}
 
   afterInit(server: Server) {
@@ -134,7 +133,7 @@ export class ChatGateway implements OnGatewayConnection {
     ack?: Ack,
   ) {
     return this.run(CHAT_EVENTS.SEND, client, ack, async () => {
-      this.assertSendRate(client.data.user.id);
+      this.rateLimiter.assertSendAllowed(client.data.user.id);
       const result = await this.chat.send(
         client.data.user.id,
         dto.conversationId,
@@ -256,13 +255,7 @@ export class ChatGateway implements OnGatewayConnection {
         dto.conversationId,
         client.data.user.id,
       );
-      const key = `${client.data.user.id}:${dto.conversationId}:${event}`;
-      const now = Date.now();
-      if (
-        now - (this.typingActivity.get(key) ?? 0) >=
-        CHAT_CONFIG.typingThrottleMs
-      ) {
-        this.typingActivity.set(key, now);
+      if (this.rateLimiter.shouldEmitTyping(client.data.user.id, dto.conversationId, event)) {
         client.to(conversationRoom(dto.conversationId)).emit(outgoingEvent, {
           conversationId: dto.conversationId,
           userId: client.data.user.id,
@@ -270,20 +263,6 @@ export class ChatGateway implements OnGatewayConnection {
       }
       return { conversationId: dto.conversationId };
     });
-  }
-
-  private assertSendRate(userId: string) {
-    const cutoff = Date.now() - CHAT_CONFIG.sendRateWindowMs;
-    const recent = (this.sendActivity.get(userId) ?? []).filter(
-      (timestamp) => timestamp > cutoff,
-    );
-    if (recent.length >= CHAT_CONFIG.sendRateLimit)
-      throw new ChatException(
-        'RATE_LIMITED',
-        'Too many messages. Please slow down.',
-      );
-    recent.push(Date.now());
-    this.sendActivity.set(userId, recent);
   }
 
   private async run(

@@ -139,6 +139,10 @@ Sur un téléphone physique, `EXPO_PUBLIC_API_URL` doit utiliser l’adresse LAN
 | `LLM_PROVIDER`                                    | `ollama`, `openai`, `deepseek` ou `openai-compatible`.              |
 | `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`        | Fournisseur LLM principal.                                          |
 | `OLLAMA_BASE_URL`, `OLLAMA_MODEL`                 | Secours local utilisé automatiquement sans clé distante.             |
+| `SEMANTIC_MATCHING_ENABLED`                       | Active la normalisation et le reranking sémantiques DeepSeek.        |
+| `SEMANTIC_MATCHING_PROMPT_VERSION`                | Version du prompt stockée avec chaque analyse pour la traçabilité.   |
+| `SEMANTIC_MATCHING_CANDIDATE_LIMIT`               | Nombre de candidats envoyés dans un appel DeepSeek groupé.           |
+| `SEMANTIC_MATCHING_WEIGHT`                        | Poids du score DeepSeek dans le score final (0 à 1).                 |
 | `LLM_DEFAULT_MAX_TOKENS`                          | Plafond de sortie par appel pour maîtriser les coûts.                |
 | `LLM_CACHE_*`                                     | Cache LRU local : activation, TTL et nombre maximal d'entrées.       |
 | `LLM_FALLBACK_*`                                  | Fournisseur de secours facultatif.                                  |

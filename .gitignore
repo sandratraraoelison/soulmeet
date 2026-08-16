@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# pnpm store (never versioned)
+.pnpm-store/
+
+# Build artifacts
+dist/
+build/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+pnpm-debug.*
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Coverage
+coverage/
+
+# Expo (frontend is its own repo, but keep this for safety)
+.expo/
+web-build/

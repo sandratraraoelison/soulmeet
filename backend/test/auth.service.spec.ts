@@ -4,6 +4,11 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthProvider, Gender, Role } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { AuthService } from '../src/modules/auth/auth.service';
+import { OAuthService } from '../src/modules/auth/oauth.service';
+import { PasswordService } from '../src/modules/auth/password.service';
+import { SessionEventsService } from '../src/modules/auth/session-events.service';
+import { SessionService } from '../src/modules/auth/session.service';
+import { TwoFactorService } from '../src/modules/auth/two-factor.service';
 
 describe('AuthService', () => {
   const registration = {
@@ -51,7 +56,17 @@ describe('AuthService', () => {
           JWT_REFRESH_EXPIRES_IN: '30d',
         })[key],
     } as ConfigService;
-    service = new AuthService(prisma, jwt, config, { send: jest.fn() } as any);
+    const events = new SessionEventsService();
+    const session = new SessionService(prisma, jwt, config, events);
+    const oauth = new OAuthService(prisma, config, session);
+    const twoFactor = new TwoFactorService(prisma, jwt, config, session);
+    const password = new PasswordService(
+      prisma,
+      config,
+      { send: jest.fn() } as any,
+      events,
+    );
+    service = new AuthService(prisma, session, oauth, twoFactor, password);
   });
 
   it('registers a user and returns tokens', async () => {

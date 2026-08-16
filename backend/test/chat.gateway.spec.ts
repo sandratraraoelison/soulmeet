@@ -1,4 +1,5 @@
 import { ChatGateway } from '../src/modules/chat/chat.gateway';
+import { ChatRateLimiter } from '../src/modules/chat/chat-rate-limiter.service';
 import { CHAT_EVENTS } from '../src/modules/chat/constants/chat-events.constants';
 
 const client = () =>
@@ -36,7 +37,7 @@ describe('ChatGateway', () => {
       in: jest.fn(() => ({ fetchSockets: jest.fn().mockResolvedValue([{}]) })),
       __broadcast: broadcast,
     };
-    gateway = new ChatGateway(chat, auth, realtime, { send: jest.fn() } as any);
+    gateway = new ChatGateway(chat, auth, realtime, { send: jest.fn() } as any, new ChatRateLimiter());
     gateway.server = server;
   });
 

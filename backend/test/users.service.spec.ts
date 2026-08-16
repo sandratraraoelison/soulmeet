@@ -1,4 +1,6 @@
 import { UsersService } from '../src/modules/users/users.service';
+import { MatchCandidatesService } from '../src/modules/users/match-candidates.service';
+import { MatchPersistenceService } from '../src/modules/users/match-persistence.service';
 
 describe('UsersService matchmaking', () => {
   const profile = (firstName: string) => ({
@@ -34,7 +36,8 @@ describe('UsersService matchmaking', () => {
         findMany: jest.fn().mockResolvedValue(candidates),
       },
     };
-    const result = await new UsersService(prisma as any).matches('me');
+    const service = buildService(prisma);
+    const result = await service.matches('me');
     expect(result).toHaveLength(3);
     expect(result[0]).toMatchObject({
       job: 'Architect',
@@ -66,7 +69,7 @@ describe('UsersService matchmaking', () => {
         findMany: jest.fn().mockResolvedValue(candidates),
       },
     };
-    const result = await new UsersService(prisma as any).matches('me');
+    const result = await buildService(prisma).matches('me');
     expect(result.map((match) => match.userId)).toEqual(['mutual']);
   });
 
@@ -80,6 +83,14 @@ describe('UsersService matchmaking', () => {
         findMany: jest.fn().mockResolvedValue([{ id: 'candidate', profile: profile('Julia'), soulprint: { entries } }]),
       },
     };
-    await expect(new UsersService(prisma as any).matches('me')).resolves.toEqual([]);
+    await expect(buildService(prisma).matches('me')).resolves.toEqual([]);
   });
+
+  function buildService(prisma: any) {
+    return new UsersService(
+      prisma,
+      new MatchCandidatesService(prisma),
+      new MatchPersistenceService(prisma),
+    );
+  }
 });

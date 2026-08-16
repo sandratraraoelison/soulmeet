@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { CreateGuidanceConversationDto, GuidancePageQueryDto, SendGuidanceMessageDto, UpdateGuidanceConversationDto, UpdateGuidanceMessageDto, UpsertMemoryDto } from './dto/guidance.dto';
 import { GuidanceService } from './guidance.service';
+import { writeSseError, writeSseEvent } from './sse.util';
 
 @ApiTags('guidance')
 @ApiBearerAuth()
@@ -75,11 +76,10 @@ export class GuidanceController {
     response.flushHeaders();
     try {
       for await (const item of this.guidance.stream(user.sub, id, dto.content)) {
-        response.write(`event: ${item.event}\ndata: ${JSON.stringify(item.data)}\n\n`);
+        writeSseEvent(response, item);
       }
     } catch (error) {
-      const payload = error instanceof Error ? { code: 'GUIDANCE_STREAM_ERROR', message: error.message } : { code: 'GUIDANCE_STREAM_ERROR', message: 'Streaming failed' };
-      response.write(`event: error\ndata: ${JSON.stringify(payload)}\n\n`);
+      writeSseError(response, error);
     } finally {
       response.end();
     }
