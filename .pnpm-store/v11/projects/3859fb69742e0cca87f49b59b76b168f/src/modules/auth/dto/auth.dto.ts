@@ -56,3 +56,13 @@ export class ExternalAuthDto {
   @IsNotEmpty()
   identityToken!: string;
 }
+export class TwoFactorLoginDto {
+  @ApiProperty({ description: 'Short-lived token returned by /auth/login when 2FA is enabled' })
+  @IsString() @IsNotEmpty() twoFactorToken!: string;
+  @ApiProperty({ description: 'Six-digit TOTP code or one of the recovery codes' })
+  @IsString() @IsNotEmpty() @MinLength(6) @MaxLength(20) code!: string;
+}
+export class TwoFactorCodeDto {
+  @ApiProperty({ description: 'Six-digit TOTP code' })
+  @IsString() @IsNotEmpty() @MinLength(6) @MaxLength(6) code!: string;
+}

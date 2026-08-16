@@ -58,7 +58,7 @@ export class GuidanceService {
         'Do not mention scheduling, automation, profile completion, data collection, internal categories, or that this is a generated notification. Do not sound like a survey.',
       ].join('\n'),
     });
-    const response = await this.llm.complete(messages, { priority: 'background' });
+    const response = await this.llm.complete(messages, { priority: 'background', feature: 'coach_check_in', userId });
     return this.prisma.$transaction(async (tx) => {
       const message = await tx.guidanceMessage.create({
         data: {
@@ -118,7 +118,7 @@ export class GuidanceService {
   async send(userId: string, conversationId: string, content: string) {
     await this.ownedConversation(userId, conversationId);
     await this.persistUserMessage(conversationId, content);
-    const response = await this.llm.complete(await this.contextMessages(userId, conversationId), { priority: 'interactive' });
+    const response = await this.llm.complete(await this.contextMessages(userId, conversationId), { priority: 'interactive', feature: 'guidance', userId });
     const message = await this.persistAssistant(conversationId, response.content, response.provider, response.model);
     void this.soulprintExtractionQueue?.enqueue(userId, conversationId);
     return { message };
@@ -129,7 +129,7 @@ export class GuidanceService {
     const userMessage = await this.persistUserMessage(conversationId, content);
     yield { event: 'message', data: userMessage };
     let answer = '';
-    for await (const token of this.llm.stream(await this.contextMessages(userId, conversationId), { priority: 'interactive' })) {
+    for await (const token of this.llm.stream(await this.contextMessages(userId, conversationId), { priority: 'interactive', feature: 'guidance', userId })) {
       answer += token;
       yield { event: 'token', data: token };
     }
@@ -155,7 +155,7 @@ export class GuidanceService {
     const message = await this.ownedMessage(userId, messageId);
     if (message.role !== GuidanceMessageRole.ASSISTANT) throw new GuidanceException('MESSAGE_NOT_REGENERATABLE', 'Only coach responses can be regenerated');
     await this.prisma.guidanceMessage.update({ where: { id: message.id }, data: { content: null, isDeleted: true, deletedAt: new Date() } });
-    const response = await this.llm.complete(await this.contextMessages(userId, message.conversationId), { priority: 'interactive', cache: false });
+    const response = await this.llm.complete(await this.contextMessages(userId, message.conversationId), { priority: 'interactive', cache: false, feature: 'guidance', userId });
     return this.persistAssistant(message.conversationId, response.content, response.provider, response.model);
   }
 

@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -10,6 +11,11 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1');
   const config = app.get(ConfigService);
+  // Correlation id for proxy propagation and support diagnostics.
+  app.use((req: { id?: string }, res: { setHeader: (name: string, value: string) => void }, next: () => void) => {
+    res.setHeader('x-request-id', req.id ?? randomUUID());
+    next();
+  });
   app.use(helmet());
   app.enableCors({
     origin: config

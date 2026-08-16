@@ -164,6 +164,8 @@ export class SoulprintExtractionService {
         maxTokens: 1200,
         temperature: 0,
         priority: 'background',
+        feature: 'soulprint',
+        userId,
       });
       const parsed = this.parseAndValidate(
         response.content,

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { semanticSimilarity } from './semantic-similarity.util';
 
 const publicUserSelect = {
   id: true,
@@ -11,6 +12,7 @@ const publicUserSelect = {
   createdAt: true,
   updatedAt: true,
   lastLoginAt: true,
+  twoFactorEnabled: true,
 } as const;
 
 @Injectable()
@@ -63,7 +65,7 @@ export class UsersService {
       select: { id: true, profile: true, soulprint: { select: { entries: { where: { visibility: 'MATCHING_ALLOWED', status: { in: ['ACTIVE', 'CONFIRMED'] }, deletedAt: null }, select: { category: true, key: true, normalizedValue: true, value: true, matchingWeight: true } } } } },
       take: 50,
     });
-    return candidates
+    const results = candidates
       .filter((candidate) => candidate.profile && this.genderCompatible(me.profile!, candidate.profile))
       .map((candidate) => {
         const forward = this.compatibility(me.profile!, me.soulprint?.entries ?? [], candidate as never);
@@ -74,6 +76,46 @@ export class UsersService {
       })
       .sort((a, b) => b.score - a.score)
       .slice(0, 3);
+    // Persist recommendations so the admin dashboard can surface match history.
+    await this.persistMatches(currentUserId, results);
+    return results;
+  }
+
+  private async persistMatches(
+    userId: string,
+    results: {
+      userId: string;
+      score: number;
+      reciprocalScore: number;
+      reasons: string[];
+    }[],
+  ) {
+    try {
+      for (const result of results) {
+        await this.prisma.match.upsert({
+          where: {
+            userId_matchedUserId: {
+              userId,
+              matchedUserId: result.userId,
+            },
+          },
+          create: {
+            userId,
+            matchedUserId: result.userId,
+            score: result.score,
+            reciprocalScore: result.reciprocalScore,
+            reasons: result.reasons as unknown as never,
+          },
+          update: {
+            score: result.score,
+            reciprocalScore: result.reciprocalScore,
+            reasons: result.reasons as unknown as never,
+          },
+        });
+      }
+    } catch {
+      // Persistence is best-effort; matching must not fail because of storage.
+    }
   }
 
   async findPublicProfile(currentUserId: string, userId: string) {
@@ -118,26 +160,34 @@ export class UsersService {
 
   private compatibility(me: { city: string; country: string; birthDate: Date }, mine: { category: string; key: string | null; normalizedValue: string | null; value: string; matchingWeight: number }[], candidate: { id: string; profile: { firstName: string; city: string; country: string; birthDate: Date }; soulprint: { entries: { category: string; key: string | null; normalizedValue: string | null; value: string; matchingWeight: number }[] } }) {
     const weights: Record<string, number> = { CORE_VALUE: 1.5, RELATIONSHIP_GOAL: 1.5, COMMUNICATION_STYLE: 1.3, EMOTIONAL_NEED: 1.25, INTEREST: 1, LIFESTYLE: 1, LOVE_LANGUAGE: 1.2 };
-    const tokens = (value: string) => new Set(value.toLowerCase().split(/[^a-z0-9]+/).filter((token) => token.length > 2));
     const reasons: string[] = [];
     const matchedCategories = new Set<string>();
-    let earned = 0; let possible = 0;
+    let earned = 0; let possible = 0; let contradictions = 0;
     for (const left of mine) {
       const categoryWeight = weights[left.category] ?? 0.65;
       const rightEntries = candidate.soulprint.entries.filter((entry) => entry.category === left.category);
       possible += categoryWeight;
-      const leftTokens = tokens(left.normalizedValue ?? left.value);
-      const match = rightEntries.find((right) => [...tokens(right.normalizedValue ?? right.value)].some((token) => leftTokens.has(token)));
-      if (match) { earned += categoryWeight * ((left.matchingWeight + match.matchingWeight) / 200); matchedCategories.add(left.category); if (reasons.length < 3) reasons.push(this.reason(left.category, match.value)); }
+      const comparisons = rightEntries.map((right) => ({ right, ...semanticSimilarity(left.normalizedValue ?? left.value, right.normalizedValue ?? right.value) }));
+      const best = comparisons.sort((a, b) => b.score - a.score)[0];
+      if (comparisons.some((comparison) => comparison.contradiction)) contradictions++;
+      if (best && best.score >= 0.3) {
+        earned += categoryWeight * ((left.matchingWeight + best.right.matchingWeight) / 200) * best.score;
+        matchedCategories.add(left.category);
+        if (reasons.length < 3) reasons.push(this.reason(left.category, best.right.value));
+      }
     }
-    const soulScore = possible ? earned / possible : 0.35;
+    const dealBreakers = mine.filter((entry) => entry.category === 'DEAL_BREAKER');
+    for (const dealBreaker of dealBreakers) {
+      if (candidate.soulprint.entries.some((entry) => entry.category !== 'DEAL_BREAKER' && semanticSimilarity(dealBreaker.normalizedValue ?? dealBreaker.value, entry.normalizedValue ?? entry.value).score >= 0.55)) contradictions += 2;
+    }
+    const soulScore = possible ? Math.max(0, earned / possible - Math.min(0.45, contradictions * 0.12)) : 0.35;
     const sameCity = me.city.toLowerCase() === candidate.profile.city.toLowerCase();
     const sameCountry = me.country.toLowerCase() === candidate.profile.country.toLowerCase();
     const score = Math.min(96, Math.max(48, Math.round(52 + soulScore * 38 + (sameCity ? 6 : sameCountry ? 3 : 0))));
     const age = Math.floor((Date.now() - candidate.profile.birthDate.getTime()) / 31_557_600_000);
     const compatibilityType = this.compatibilityType(matchedCategories, score);
     const evidence = Math.min(mine.length, candidate.soulprint.entries.length, 8);
-    const uncertainty = evidence >= 6 ? 5 : evidence >= 3 ? 9 : 14;
+    const uncertainty = (evidence >= 6 ? 5 : evidence >= 3 ? 9 : 14) + (contradictions ? 2 : 0);
     const personalityDescription = this.persona(candidate.soulprint.entries);
     return {
       userId: candidate.id,

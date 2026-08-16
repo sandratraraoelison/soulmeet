@@ -11,3 +11,4 @@ onlyBuiltDependencies:
   - argon2
   - prisma
   - unrs-resolver
+nodeLinker: hoisted

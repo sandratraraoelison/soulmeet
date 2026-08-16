@@ -210,6 +210,13 @@ Documentation du chat : [backend/CHAT.md](backend/CHAT.md) et [frontend/CHAT.md]
 - Tokens mobiles dans SecureStore et verrou biométrique local.
 - Visibilité/sensibilité distinctes pour les entrées Soulprint.
 - Aucune clé serveur dans le frontend.
+- Dashboard : double authentification TOTP pour les comptes admin, verrouillage anti brute-force du login (IP + email), refresh silencieux de session, en-têtes de sécurité (CSP, X-Frame-Options…), timeout du proxy et audit des connexions admin dans `AuditLog`.
+
+## Observabilité et modération
+
+- Chaque appel LLM est enregistré dans `LlmUsage` (fournisseur, modèle, latence, tokens estimés, feature) par un wrapper instrumenté.
+- Les recommandations Soul sont persistées dans `Match` et consultables via `/admin/matches`.
+- Le contenu des conversations n'est lisible que pendant une fenêtre de 10 minutes accordée après justification et auditée (`AuditLog`).
 
 ## Qualité
 

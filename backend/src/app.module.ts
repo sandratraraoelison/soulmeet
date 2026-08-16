@@ -15,6 +15,8 @@ import { LlmModule } from './modules/llm/llm.module';
 import { SoulprintModule } from './modules/soulprint/soulprint.module';
 import { GrowthModule } from './modules/growth/growth.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -35,6 +37,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     SoulprintModule,
     GrowthModule,
     NotificationsModule,
+    AdminModule,
+    ReportsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

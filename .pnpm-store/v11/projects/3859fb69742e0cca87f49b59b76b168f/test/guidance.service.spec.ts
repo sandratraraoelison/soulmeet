@@ -66,7 +66,7 @@ describe('GuidanceService', () => {
         role: 'system',
         content: expect.stringContaining('personality, emotional patterns, dating history'),
       }),
-    ]), { priority: 'background' });
+    ]), expect.objectContaining({ priority: 'background', feature: 'coach_check_in', userId: 'user-a' }));
     expect(prisma.__tx.coachDailyCheckIn.update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: 'check-in-a' },
       data: expect.objectContaining({ status: 'SENT', messageId: 'created' }),
@@ -79,7 +79,7 @@ describe('GuidanceService', () => {
     await service.send('user-a', conversation.id, 'Help me');
     expect(prisma.__tx.guidanceMessage.create).toHaveBeenNthCalledWith(1, { data: expect.objectContaining({ role: GuidanceMessageRole.USER }) });
     expect(prisma.__tx.guidanceMessage.create).toHaveBeenNthCalledWith(2, { data: expect.objectContaining({ role: GuidanceMessageRole.ASSISTANT, provider: 'ollama' }) });
-    expect(llm.complete).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ role: 'system' })]), { priority: 'interactive' });
+    expect(llm.complete).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ role: 'system' })]), expect.objectContaining({ priority: 'interactive', feature: 'guidance', userId: 'user-a' }));
   });
 
   it('streams tokens and persists the final assistant response', async () => {

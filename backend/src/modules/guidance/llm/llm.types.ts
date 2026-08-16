@@ -19,6 +19,10 @@ export interface LlmCompletionOptions {
   maxTokens?: number;
   temperature?: number;
   priority?: 'interactive' | 'background';
+  /** Usage bucket used by the LlmUsage telemetry (e.g. guidance, soulprint). */
+  feature?: string;
+  /** Account id recorded with the LlmUsage telemetry, if known. */
+  userId?: string;
 }
 
 export interface LlmProvider {
