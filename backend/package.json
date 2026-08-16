@@ -9,6 +9,7 @@
     "start:dev": "node ./node_modules/@nestjs/cli/bin/nest.js start --watch",
     "start:prod": "node dist/main.js",
     "lint": "node ./node_modules/eslint/bin/eslint.js \"{src,test}/**/*.ts\"",
+    "typecheck": "node ./node_modules/typescript/bin/tsc --noEmit -p tsconfig.json",
     "format": "node ./node_modules/prettier/bin/prettier.cjs --write \"{src,test}/**/*.ts\" && node ./node_modules/prisma/build/index.js format",
     "test": "node ./node_modules/jest/bin/jest.js --runInBand",
     "test:watch": "node ./node_modules/jest/bin/jest.js --watch",
