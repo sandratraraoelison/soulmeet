@@ -91,7 +91,7 @@ function MatchCard({ match, coachName, rank }: { match: SoulMatch; coachName: st
             <Text className="mt-1 text-sm font-semibold text-ink">{match.job}</Text>
             <Text className="mt-0.5 text-xs text-muted">{match.city}, {match.country}</Text>
           </View>
-          <View className="items-end"><Text className="text-xl font-bold text-secondary">{match.scoreMin}%–{match.scoreMax}%</Text><Text className="text-[9px] font-bold uppercase tracking-wider text-muted">Potential</Text></View>
+          <View className="items-end"><Text className="text-xl font-bold text-secondary">{match.scoreMin}%–{match.scoreMax}%</Text><Text className="max-w-20 text-right text-[8px] font-bold uppercase leading-3 tracking-wider text-muted">Compatibility estimate</Text></View>
         </View>
 
         <View className={`mt-5 self-start rounded-full border px-3 py-2 ${colors}`}>
