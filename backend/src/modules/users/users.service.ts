@@ -268,12 +268,15 @@ export class UsersService {
       userId: candidate.id,
       name: candidate.profile.firstName,
       age,
-      job: this.sharedDetail(candidate.soulprint.entries, [
-        'job',
-        'occupation',
-        'profession',
-        'career',
-      ]) ?? 'Profession not shared yet',
+      job:
+        candidate.profile.occupation?.trim() ||
+        this.sharedDetail(candidate.soulprint.entries, [
+          'job',
+          'occupation',
+          'profession',
+          'career',
+        ]) ||
+        'Occupation not shared yet',
       city: candidate.profile.city,
       country: candidate.profile.country,
       score,

@@ -23,7 +23,14 @@ export default function SoulScreen() {
   const matches = useSoulMatches();
   const coachName = coach.data?.name ?? 'Your coach';
   const peerVoice = coach.data?.traits.includes('BRO_VIBE') || coach.data?.traits.includes('SISTER_VIBE');
-  const count = matches.data?.length ?? 3;
+  const count = matches.data?.length ?? 0;
+  const matchHeadline = matches.isLoading
+    ? 'Your recommendations are taking shape…'
+    : peerVoice
+      ? count === 1
+        ? 'Okay… this person is genuinely interesting for you.'
+        : `Okay… these ${count} people are genuinely interesting for you.`
+      : `I found ${count} ${count === 1 ? 'person' : 'people'} who ${count === 1 ? 'is' : 'are'} genuinely interesting for you.`;
 
   return (
     <Screen>
@@ -49,7 +56,7 @@ export default function SoulScreen() {
               <Text className="text-[9px] font-bold uppercase tracking-[2px] text-secondary">{coachName} found something</Text>
             </View>
             <Text className="mt-4 font-headline text-2xl font-bold leading-8 text-ink">
-              {peerVoice ? 'Okay… these people are genuinely interesting for you.' : `I found ${count} people who are genuinely interesting for you.`}
+              {matchHeadline}
             </Text>
             <Text className="mt-3 text-sm leading-6 text-muted">
               Not random profiles. These are reciprocal recommendations shaped by both Soulprints and the details each person chose to share for matching.
@@ -65,7 +72,7 @@ export default function SoulScreen() {
           {matches.isLoading ? <View className="items-center rounded-3xl border border-border bg-surface py-12"><ActivityIndicator color="#D4AF37" /><Text className="mt-3 text-sm text-muted">Your coach is comparing emotional compatibility…</Text></View> : null}
           {matches.error ? <ErrorMessage message="Unable to calculate your suggestions right now." /> : null}
           {matches.data?.map((match, index) => <MatchCard key={match.userId} match={match} coachName={coachName} rank={index + 1} />)}
-          {!matches.isLoading && !matches.error && !matches.data?.length ? <View className="rounded-3xl border border-dashed border-border p-7"><Text className="text-center font-bold text-ink">Your three suggestions are still taking shape</Text><Text className="mt-2 text-center text-sm leading-6 text-muted">Keep talking with your coach and allow selected Soulprint details for matching. Recommendations appear when there is enough meaningful context.</Text></View> : null}
+          {!matches.isLoading && !matches.error && !matches.data?.length ? <View className="rounded-3xl border border-dashed border-border p-7"><Text className="text-center font-bold text-ink">Your suggestions are still taking shape</Text><Text className="mt-2 text-center text-sm leading-6 text-muted">Keep talking with your coach and allow selected Soulprint details for matching. Recommendations appear when there is enough meaningful context.</Text></View> : null}
         </View>
       </View>
     </Screen>

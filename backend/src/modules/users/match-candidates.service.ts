@@ -17,6 +17,7 @@ export interface MatchingProfile {
   firstName: string;
   city: string;
   country: string;
+  occupation: string | null;
   birthDate: Date;
   gender: string;
   interestedInGender: string | null;
