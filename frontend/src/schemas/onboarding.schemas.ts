@@ -26,6 +26,7 @@ export const profileSchema = z.object({
   ]),
   country: z.string().trim().min(1, 'Country is required.'),
   city: z.string().trim().min(1, 'City is required.'),
+  occupation: z.string().trim().max(100, 'Occupation is too long.').optional(),
 });
 export const coachSchema = z.object({
   name: z.string().trim().min(1, 'Choose a name for your coach.'),

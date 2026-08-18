@@ -484,6 +484,7 @@ model Profile {
   interestedInGender  InterestGender?
   country             String
   city                String
+  occupation          String?
   onboardingCompleted Boolean           @default(false)
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt

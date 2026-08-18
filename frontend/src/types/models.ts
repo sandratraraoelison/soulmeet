@@ -49,6 +49,7 @@ export interface Profile {
   interestedInGender?: InterestGender | null;
   country: string;
   city: string;
+  occupation?: string | null;
   onboardingCompleted: boolean;
 }
 export interface Coach {
@@ -74,6 +75,7 @@ export interface ProfileInput {
   sexualOrientation: SexualOrientation;
   country: string;
   city: string;
+  occupation?: string;
   interestedInGender?: InterestGender;
 }
 export interface CoachInput {

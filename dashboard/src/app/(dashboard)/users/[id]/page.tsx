@@ -27,6 +27,7 @@ type UserDetail = {
     gender: string;
     city: string;
     country: string;
+    occupation?: string | null;
     onboardingCompleted: boolean;
   } | null;
   coach?: {
@@ -204,6 +205,8 @@ export default function UserDetailPage() {
                 <dd>
                   {user.profile.city}, {user.profile.country}
                 </dd>
+                <dt>Occupation</dt>
+                <dd>{user.profile.occupation || "Not provided"}</dd>
                 <dt>Onboarding</dt>
                 <dd>
                   {user.profile.onboardingCompleted ? "Complete" : "Incomplete"}

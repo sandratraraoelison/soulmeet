@@ -56,6 +56,7 @@ export default function ProfileOnboardingScreen() {
           sexualOrientation: existing.data.sexualOrientation,
           country: existing.data.country,
           city: existing.data.city,
+          occupation: existing.data.occupation ?? '',
         }
       : {
           firstName: '',
@@ -64,6 +65,7 @@ export default function ProfileOnboardingScreen() {
           sexualOrientation: 'PREFER_NOT_TO_SAY',
           country: '',
           city: '',
+          occupation: '',
         },
   });
   const save = useMutation({
@@ -231,6 +233,20 @@ export default function ProfileOnboardingScreen() {
                 value={field.value}
                 onChangeText={field.onChange}
                 error={errors.city?.message}
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="occupation"
+            render={({ field }) => (
+              <Input
+                dark
+                label="Occupation (optional)"
+                value={field.value ?? ''}
+                onChangeText={field.onChange}
+                maxLength={100}
+                error={errors.occupation?.message}
               />
             )}
           />

@@ -12,7 +12,7 @@ import type { User } from '@/types/models';
 const genderLabels: Record<string, string> = {
   MALE: 'Man',
   FEMALE: 'Woman',
-  NON_BINARY: 'Non-binaire',
+  NON_BINARY: 'Non-binary',
   NON_GENDERED: 'Non-binary',
   OTHER: 'Other',
   PREFER_NOT_TO_SAY: 'Not specified',
@@ -76,6 +76,7 @@ export default function PersonProfileScreen() {
           </Text>
           <ProfileRow label="First name" value={profile.firstName} />
           <ProfileRow label="Location" value={`${profile.city}, ${profile.country}`} />
+          {profile.occupation ? <ProfileRow label="Occupation" value={profile.occupation} /> : null}
           <ProfileRow label="Gender" value={genderLabels[profile.gender] ?? 'Not specified'} />
         </View>
 

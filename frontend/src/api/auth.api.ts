@@ -8,6 +8,7 @@ export interface RegisterInput {
   gender: Gender;
   country: string;
   location: string;
+  occupation?: string;
 }
 export interface LoginInput {
   email: string;

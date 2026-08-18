@@ -174,6 +174,7 @@ export class UsersService {
             city: true,
             country: true,
             gender: true,
+            occupation: true,
           },
         },
       },

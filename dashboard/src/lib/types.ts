@@ -17,6 +17,7 @@ export type User = SessionUser & {
     firstName: string;
     country: string;
     city: string;
+    occupation?: string | null;
     onboardingCompleted: boolean;
   } | null;
 };

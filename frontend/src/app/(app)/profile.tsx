@@ -29,6 +29,7 @@ export default function ProfileScreen() {
   const [gender, setGender] = useState<Gender>('NON_GENDERED');
   const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
+  const [occupation, setOccupation] = useState('');
 
   useEffect(() => {
     if (!data) return;
@@ -37,11 +38,12 @@ export default function ProfileScreen() {
     setGender(data.gender);
     setCountry(data.country);
     setCity(data.city);
+    setOccupation(data.occupation ?? '');
   }, [data]);
 
   const save = useMutation({
     mutationFn: () =>
-      profileApi.save({ firstName, birthDate, gender, country, city }),
+      profileApi.save({ firstName, birthDate, gender, country, city, occupation }),
     onSuccess: (profile) => {
       queryClient.setQueryData(['profile'], profile);
       router.back();
@@ -90,6 +92,7 @@ export default function ProfileScreen() {
         </View>
         <Input label="Country" value={country} onChangeText={setCountry} />
         <Input label="City" value={city} onChangeText={setCity} />
+        <Input label="Occupation (optional)" value={occupation} onChangeText={setOccupation} maxLength={100} />
         <ErrorMessage message={save.error ? getErrorMessage(save.error) : null} />
         <Button label="Save changes" disabled={!valid} loading={save.isPending} onPress={() => save.mutate()} />
         <Button label="Cancel" variant="ghost" onPress={() => router.back()} />

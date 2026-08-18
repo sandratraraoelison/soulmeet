@@ -21,6 +21,11 @@ export class CreateProfileDto {
   sexualOrientation!: SexualOrientation;
   @ApiProperty() @IsString() @IsNotEmpty() @MaxLength(100) country!: string;
   @ApiProperty() @IsString() @IsNotEmpty() @MaxLength(100) city!: string;
+  @ApiProperty({ required: false, example: 'Software engineer' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  occupation?: string;
   @ApiProperty({ enum: InterestGender, required: false })
   @IsOptional()
   @IsEnum(InterestGender)

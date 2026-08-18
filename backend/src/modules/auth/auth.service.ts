@@ -61,6 +61,7 @@ export class AuthService {
           sexualOrientation: SexualOrientation.PREFER_NOT_TO_SAY,
           country: dto.country.trim(),
           city: dto.location.trim(),
+          occupation: dto.occupation?.trim() || null,
         },
       });
       return createdUser;

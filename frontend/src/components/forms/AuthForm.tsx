@@ -59,6 +59,7 @@ export function AuthForm({
             gender: 'NON_GENDERED',
             country: '',
             location: '',
+            occupation: '',
           }
         : {}),
     },
@@ -73,6 +74,7 @@ export function AuthForm({
         gender: values.gender,
         country: values.country,
         location: values.location,
+        occupation: values.occupation || undefined,
       });
       return;
     }
@@ -224,6 +226,20 @@ export function AuthForm({
                 error={
                   'location' in errors ? errors.location?.message : undefined
                 }
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="occupation"
+            render={({ field }) => (
+              <Input
+                dark={dark}
+                label="Occupation (optional)"
+                value={(field.value as string | undefined) ?? ''}
+                onChangeText={field.onChange}
+                maxLength={100}
+                error={'occupation' in errors ? errors.occupation?.message : undefined}
               />
             )}
           />

@@ -32,6 +32,7 @@ export const registerSchema = loginSchema
     gender: z.enum(['MALE', 'FEMALE', 'NON_GENDERED']),
     country: z.string().trim().min(1, 'Country is required.'),
     location: z.string().trim().min(1, 'Location is required.'),
+    occupation: z.string().trim().max(100, 'Occupation is too long.').optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ['confirmPassword'],

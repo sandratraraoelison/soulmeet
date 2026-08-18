@@ -22,6 +22,9 @@ export class ProfilesService {
   ) {
     const data = {
       ...dto,
+      ...(dto.occupation !== undefined
+        ? { occupation: dto.occupation.trim() || null }
+        : {}),
       ...(dto.birthDate ? { birthDate: new Date(dto.birthDate) } : {}),
     };
     const existing = await this.prisma.profile.findUnique({

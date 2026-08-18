@@ -23,6 +23,11 @@ export class RegisterDto {
   gender!: Gender;
   @ApiProperty() @IsString() @IsNotEmpty() @MaxLength(100) country!: string;
   @ApiProperty() @IsString() @IsNotEmpty() @MaxLength(100) location!: string;
+  @ApiProperty({ required: false, example: 'Software engineer' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  occupation?: string;
 }
 export class LoginDto {
   @ApiProperty({ example: 'jane@example.com' }) @IsEmail() email!: string;

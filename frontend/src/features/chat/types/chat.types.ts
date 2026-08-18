@@ -56,6 +56,7 @@ export type PublicProfile = {
     firstName: string;
     city: string;
     country: string;
+    occupation?: string | null;
     gender: 'MALE' | 'FEMALE' | 'NON_BINARY' | 'NON_GENDERED' | 'OTHER' | 'PREFER_NOT_TO_SAY';
   };
 };
