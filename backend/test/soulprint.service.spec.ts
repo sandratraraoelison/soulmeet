@@ -64,6 +64,21 @@ describe('SoulprintExtractionService validation', () => {
       expect.objectContaining({ category: SoulprintCategory.INTEREST, normalizedValue: 'video games', source: 'USER_DECLARED' }),
     ]);
   });
+  it('rejects a question accidentally placed after an interest verb', () => {
+    const merge = new SoulprintMergeService({} as never);
+    const extraction = new SoulprintExtractionService({} as never, new ConfigService(), {} as never, merge, {} as never, {} as never);
+    expect(extraction.extractDirectInterests([{
+      id: 'message-id',
+      content: 'I like can I start a conversation with it?',
+    }])).toEqual([]);
+    expect(extraction.isDurableEntry({
+      ...extracted,
+      category: SoulprintCategory.INTEREST,
+      key: 'can-i-start-a-conversation-with-it',
+      normalizedValue: 'can i start a conversation with it',
+      value: 'The user likes can I start a conversation with it.',
+    })).toBe(false);
+  });
   it('extracts travel from a declaration followed by a coaching request', () => {
     const merge = new SoulprintMergeService({} as never);
     const extraction = new SoulprintExtractionService({} as never, new ConfigService(), {} as never, merge, {} as never, {} as never);

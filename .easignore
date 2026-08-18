@@ -1,0 +1,43 @@
+# This EAS project builds only the Expo application.
+backend/
+dashboard/
+
+# Dependencies are restored by EAS from the frontend lockfile.
+**/node_modules/
+.pnpm-store/
+frontend/.pnpm-store/
+
+# Expo caches and generated output.
+frontend/.expo/
+frontend/.expo-export-oauth-check/
+frontend/dist/
+frontend/web-build/
+frontend/android/
+frontend/ios/
+
+# Test and coverage files are not needed for the Android archive.
+frontend/coverage/
+frontend/**/__tests__/
+frontend/**/*.spec.ts
+frontend/**/*.spec.tsx
+frontend/**/*.test.ts
+frontend/**/*.test.tsx
+
+# Local tooling, caches, and logs.
+.git/
+frontend/.vscode/
+frontend/.claude/
+**/*.tsbuildinfo
+**/.metro-health-check*
+**/*.log
+**/.DS_Store
+
+# Never upload local environment or signing secrets.
+frontend/.env
+frontend/.env*.local
+**/*.jks
+**/*.p8
+**/*.p12
+**/*.key
+**/*.pem
+**/*.mobileprovision

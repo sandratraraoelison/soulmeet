@@ -1,0 +1,45 @@
+# Dependencies are installed by EAS from package.json and pnpm-lock.yaml.
+node_modules/
+.pnpm-store/
+
+# Expo and generated build output.
+.expo/
+.expo-export-oauth-check/
+dist/
+web-build/
+android/
+ios/
+
+# Test and coverage output are not required for a release build.
+coverage/
+**/__tests__/
+**/*.spec.ts
+**/*.spec.tsx
+**/*.test.ts
+**/*.test.tsx
+
+# Local tooling and caches.
+.vscode/
+.claude/
+*.tsbuildinfo
+.metro-health-check*
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+
+# Local environment and signing secrets must never be uploaded.
+.env
+.env*.local
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+
+# Miscellaneous local/generated files.
+*.orig.*
+.kotlin/
+app-example/

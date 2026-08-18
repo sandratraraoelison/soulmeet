@@ -1,6 +1,6 @@
 import { SoulprintCategory } from '@prisma/client';
 
-export const SOULPRINT_EXTRACTION_PROMPT_VERSION = 'v3';
+export const SOULPRINT_EXTRACTION_PROMPT_VERSION = 'v4';
 export const SOULPRINT_EXTRACTION_JSON_SCHEMA: Record<string, unknown> = {
   type: 'object', additionalProperties: false, required: ['entries', 'contradictions', 'summaryUpdateNeeded'],
   properties: {
@@ -22,6 +22,7 @@ Rules:
 - Never store an invention by the coach. Distinguish explicit USER_DECLARED facts from cautious AI_INFERRED insights.
 - Extract explicit facts the user states about themselves even when they appear inside a question, a comparison, or uncertainty about another person. For example, "I don't know if she likes football and video games like me" explicitly means the user likes football and video games; store those user interests, but do not infer anything about her.
 - Create a separate INTEREST entry for each distinct durable interest. Do not combine football, video games, and new technology into one entry.
+- An INTEREST must name a topic, activity, hobby, genre, subject, place, food, sport, or other enduring preference. Never turn a question, request, instruction, intended action, or conversation starter into an INTEREST. For example, "Can I start a conversation with it?" and the words after "I like" in "I like, can I start a conversation with it?" contain no interest and must produce no entry.
 - Never attribute another person's possible traits or interests to the user. In "I like coffee but I don't know if she likes tea", coffee is a user interest; tea is unknown information about her and must not be stored.
 - A repeated reaction or behavioral pattern can support a cautious AI_INFERRED suggestion even when the user does not name the underlying need or trait. Do not treat words such as "usually", "often", "repeatedly", or "when someone... I..." as merely temporary.
 - Ignore trivia, temporary emotions, general questions, and isolated events presented as permanent traits.

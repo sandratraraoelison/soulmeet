@@ -182,6 +182,15 @@ export class SoulprintExtractionService {
           entry.evidenceMessageIds.includes(message.id),
         );
         if (!evidence.length) continue;
+        if (!this.isDurableEntry(entry)) {
+          this.logger.warn({
+            userId,
+            conversationId,
+            code: 'SOULPRINT_TRANSIENT_ENTRY_SKIPPED',
+            category: entry.category,
+          });
+          continue;
+        }
         if (
           entry.source === SoulprintSource.USER_DECLARED &&
           !this.isGroundedDeclaration(entry, evidence)
@@ -306,6 +315,29 @@ export class SoulprintExtractionService {
     );
     return terms.some((term) => source.includes(term));
   }
+  isDurableEntry(entry: SoulprintExtractionResult['entries'][number]) {
+    if (entry.category !== SoulprintCategory.INTEREST) return true;
+    const candidate = this.merge.normalize(
+      entry.normalizedValue || entry.key || entry.value,
+    );
+    if (!candidate) return false;
+    // Questions, requests and conversational actions describe what the user
+    // wants to do now; they are not durable interests. Keep this check local
+    // so malformed provider output cannot bypass the prompt instruction.
+    if (
+      /^(?:can|could|would|will|should|may|might|do|does|did|is|are|am|how|what|where|when|why|who)\b/.test(
+        candidate,
+      ) ||
+      /\b(?:can|could|would|will|should|may|might)\s+(?:i|we|you)\b/.test(
+        candidate,
+      ) ||
+      /\b(?:start|open|continue|have)\s+(?:a\s+)?conversation\b/.test(
+        candidate,
+      )
+    )
+      return false;
+    return true;
+  }
   extractDirectInterests(
     messages: { id: string; content: string | null }[],
   ): SoulprintExtractionResult['entries'] {
@@ -337,20 +369,22 @@ export class SoulprintExtractionService {
       for (const interest of interests) {
         const normalized = this.merge.normalize(interest);
         if (!normalized || seen.has(normalized)) continue;
-        seen.add(normalized);
-        entries.push({
+        const candidate = {
           category: SoulprintCategory.INTEREST,
           key: normalized.replaceAll(' ', '-'),
           value: `The user likes ${interest}.`,
           normalizedValue: normalized,
-          source: 'USER_DECLARED',
+          source: SoulprintSource.USER_DECLARED,
           confidence: 0.99,
           importance: 60,
           sensitivity: SoulprintSensitivity.NORMAL,
           suggestedVisibility: SoulprintVisibility.GUIDANCE_ONLY,
           reasoning: 'Explicit first-person interest statement.',
           evidenceMessageIds: [message.id],
-        });
+        };
+        if (!this.isDurableEntry(candidate)) continue;
+        seen.add(normalized);
+        entries.push(candidate);
       }
     }
     return entries;
