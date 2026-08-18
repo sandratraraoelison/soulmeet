@@ -1,4 +1,13 @@
-import { PrismaClient, Gender, SexualOrientation, SoulprintCategory } from '@prisma/client';
+import {
+  CoachGender,
+  CoachPersonality,
+  Gender,
+  InterestGender,
+  PrismaClient,
+  SexualOrientation,
+  SoulprintCategory,
+} from '@prisma/client';
+import * as argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 const people = [
@@ -13,16 +22,93 @@ const people = [
 ] as const;
 
 async function main() {
+  const password = process.env.SOUL_DEMO_PASSWORD ?? 'SoulmeetDemo2026!';
+  const passwordHash = await argon2.hash(password);
+  const occupations = [
+    'Product designer',
+    'Data analyst',
+    'Architect',
+    'Travel photographer',
+    'Software engineer',
+    'Physiotherapist',
+    'Product manager',
+    'Music producer',
+  ];
   for (const person of people) {
-    const user = await prisma.user.upsert({ where: { email: person.email }, create: { email: person.email, emailVerified: true }, update: { isActive: true } });
-    await prisma.profile.upsert({ where: { userId: user.id }, create: { userId: user.id, firstName: person.firstName, birthDate: new Date(person.birthDate), gender: person.gender, sexualOrientation: SexualOrientation.HETEROSEXUAL, country: 'Canada', city: person.city, onboardingCompleted: true }, update: { firstName: person.firstName, birthDate: new Date(person.birthDate), gender: person.gender, country: 'Canada', city: person.city, onboardingCompleted: true } });
+    const index = people.indexOf(person);
+    const interestedInGender = person.gender === Gender.MALE
+      ? InterestGender.FEMALE
+      : InterestGender.MALE;
+    const occupation = occupations[index]!;
+    const user = await prisma.user.upsert({
+      where: { email: person.email },
+      create: { email: person.email, passwordHash, emailVerified: true },
+      update: { passwordHash, emailVerified: true, isActive: true, accountStatus: 'ACTIVE' },
+    });
+    await prisma.profile.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        firstName: person.firstName,
+        birthDate: new Date(person.birthDate),
+        gender: person.gender,
+        sexualOrientation: SexualOrientation.HETEROSEXUAL,
+        interestedInGender,
+        country: 'Canada',
+        city: person.city,
+        occupation,
+        onboardingCompleted: true,
+      },
+      update: {
+        firstName: person.firstName,
+        birthDate: new Date(person.birthDate),
+        gender: person.gender,
+        sexualOrientation: SexualOrientation.HETEROSEXUAL,
+        interestedInGender,
+        country: 'Canada',
+        city: person.city,
+        occupation,
+        onboardingCompleted: true,
+      },
+    });
+    await prisma.coach.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        name: person.gender === Gender.MALE ? 'Nova' : 'Lumina',
+        gender: CoachGender.FEMALE,
+        personality: CoachPersonality.FRIENDLY,
+        traits: [CoachPersonality.FRIENDLY, CoachPersonality.EMPATHETIC, CoachPersonality.DATING_EXPERT],
+        speakingStyle: 'Warm, clear, and encouraging',
+        adviceStyle: 'Practical and reflective',
+        empathyLevel: 82,
+        directnessLevel: 62,
+        humorLevel: 55,
+        energyLevel: 68,
+      },
+      update: {
+        name: person.gender === Gender.MALE ? 'Nova' : 'Lumina',
+        gender: CoachGender.FEMALE,
+        personality: CoachPersonality.FRIENDLY,
+        traits: [CoachPersonality.FRIENDLY, CoachPersonality.EMPATHETIC, CoachPersonality.DATING_EXPERT],
+        speakingStyle: 'Warm, clear, and encouraging',
+        adviceStyle: 'Practical and reflective',
+      },
+    });
     const soulprint = await prisma.soulprint.upsert({ where: { userId: user.id }, create: { userId: user.id, completenessScore: 72 }, update: { completenessScore: 72 } });
     for (const [category, normalizedValue, value] of person.traits) {
       const fingerprint = `demo:${category}:${normalizedValue}`;
       await prisma.soulprintEntry.upsert({ where: { soulprintId_fingerprint: { soulprintId: soulprint.id, fingerprint } }, create: { soulprintId: soulprint.id, category: category as SoulprintCategory, key: normalizedValue, value, normalizedValue, fingerprint, source: 'USER_CONFIRMED', status: 'CONFIRMED', visibility: 'MATCHING_ALLOWED', sensitivity: 'NORMAL', confidence: 1, importance: 75, matchingWeight: 85, confirmedAt: new Date() }, update: { value, normalizedValue, status: 'CONFIRMED', visibility: 'MATCHING_ALLOWED', matchingWeight: 85 } });
     }
   }
-  console.log(`Seeded ${people.length} Soul demo profiles.`);
+  console.log(`Seeded ${people.length} complete Soul demo accounts.`);
+  console.log(`Password for every demo account: ${password}`);
+  console.log(people.map((person) => person.email).join('\n'));
 }
 
-main().finally(() => prisma.$disconnect());
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(() => prisma.$disconnect());
