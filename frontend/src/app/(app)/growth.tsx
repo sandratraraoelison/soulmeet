@@ -118,17 +118,22 @@ export default function GrowthScreen() {
             {data.suggestedGoals.length ? (
               <View className="mt-4">
                 <Text className="mb-3 font-label text-xl font-bold text-ink">Suggested for you</Text>
-                {data.suggestedGoals.map((goal) => (
+                {data.suggestedGoals.map((goal) => {
+                  const accepting = acceptGoal.isPending && acceptGoal.variables === goal.id;
+                  const dismissing = archive.isPending && archive.variables === goal.id;
+                  const reviewing = accepting || dismissing;
+                  return (
                   <View key={goal.id} className="mb-3 rounded-3xl border border-secondary/30 bg-surface p-5">
                     <Text className="font-label text-lg font-bold text-ink">{goal.title}</Text>
                     <Text className="mt-2 text-sm leading-5 text-muted">{goal.description}</Text>
                     <Text className="mt-3 text-xs text-muted">Based on a confirmed Soulprint insight. You stay in control.</Text>
                     <View className="mt-4 flex-row gap-3">
-                      <Pressable className="flex-1 items-center rounded-xl border border-border py-3" onPress={() => archive.mutate(goal.id, { onError: fail })}><Text className="font-bold text-muted">Not now</Text></Pressable>
-                      <Pressable className="flex-1 items-center rounded-xl bg-secondary py-3" onPress={() => acceptGoal.mutate(goal.id, { onError: fail })}><Text className="font-bold text-canvas">Accept</Text></Pressable>
+                      <Pressable disabled={reviewing} className={`flex-1 items-center rounded-xl border border-border py-3 ${reviewing ? 'opacity-50' : ''}`} onPress={() => archive.mutate(goal.id, { onError: fail })}>{dismissing ? <ActivityIndicator color={colors.muted} /> : <Text className="font-bold text-muted">Not now</Text>}</Pressable>
+                      <Pressable disabled={reviewing} className={`flex-1 items-center rounded-xl bg-secondary py-3 ${reviewing ? 'opacity-50' : ''}`} onPress={() => acceptGoal.mutate(goal.id, { onError: fail })}>{accepting ? <ActivityIndicator color={colors.canvas} /> : <Text className="font-bold text-canvas">Accept</Text>}</Pressable>
                     </View>
                   </View>
-                ))}
+                  );
+                })}
               </View>
             ) : null}
             <View className="mt-4">

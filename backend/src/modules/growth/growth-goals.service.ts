@@ -159,13 +159,19 @@ export class GrowthGoalsService {
       orderBy: { importance: 'desc' },
     });
     if (!insight) return;
+    const description = `Suggested from a confirmed Soulprint insight: ${insight.value}`;
+    const alreadyReviewed = await this.prisma.growthGoal.findFirst({
+      where: { userId, source: 'SOULPRINT', description },
+      select: { id: true },
+    });
+    if (alreadyReviewed) return;
     await this.prisma.growthGoal.create({
       data: {
         userId,
         title: `Work gently on ${
           insight.key || insight.category.toLowerCase().replaceAll('_', ' ')
         }`,
-        description: `Suggested from a confirmed Soulprint insight: ${insight.value}`,
+        description,
         status: GrowthGoalStatus.SUGGESTED,
         source: 'SOULPRINT',
         targetSteps: 5,
