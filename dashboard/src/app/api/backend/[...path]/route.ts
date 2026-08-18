@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-const base = process.env.API_URL ?? 'http://localhost:3000/api/v1';
+const base = process.env.API_URL ?? 'https://soulmeet-backend.onrender.com/api/v1';
 const cookieOptions = { httpOnly: true, sameSite: 'lax' as const, secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 15 * 60 };
 
 // AbortSignal instances are single-use. A module-level timeout becomes

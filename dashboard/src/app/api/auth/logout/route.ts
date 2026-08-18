@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-const base = process.env.API_URL ?? 'http://localhost:3000/api/v1';
+const base = process.env.API_URL ?? 'https://soulmeet-backend.onrender.com/api/v1';
 export async function POST(request: NextRequest) {
   const refreshToken = request.cookies.get('sm_refresh')?.value;
   if (refreshToken) await fetch(`${base}/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken }) }).catch(() => undefined);

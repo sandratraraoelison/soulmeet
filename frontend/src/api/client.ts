@@ -8,7 +8,9 @@ import { tokenStorage } from '@/services/token-storage.service';
 import { useAuthStore } from '@/store/auth.store';
 import type { Tokens } from '@/types/models';
 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
+export const API_URL =
+  process.env.EXPO_PUBLIC_API_URL ??
+  'https://soulmeet-backend.onrender.com/api/v1';
 export const apiClient = create({ baseURL: API_URL, timeout: 12_000 });
 const refreshClient = create({ baseURL: API_URL, timeout: 12_000 });
 let refreshPromise: Promise<string> | null = null;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const base = process.env.API_URL ?? 'http://localhost:3000/api/v1';
+const base = process.env.API_URL ?? 'https://soulmeet-backend.onrender.com/api/v1';
 const adminRoles = ['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'SUPPORT'];
 
 export async function POST(request: NextRequest) {
