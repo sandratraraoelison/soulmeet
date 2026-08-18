@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import type { Message } from '../types/chat.types';
 
 const statusLabel = {
-  PENDING: 'Envoi…',
+  PENDING: 'Sending…',
   SENT: '✓',
   DELIVERED: '✓✓',
   READ: '✓✓',

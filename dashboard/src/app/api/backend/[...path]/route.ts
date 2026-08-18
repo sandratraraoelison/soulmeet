@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminDevice, persistAdminDevice } from '@/lib/admin-device';
 const base = process.env.API_URL ?? 'https://soulmeet-backend.onrender.com/api/v1';
 const cookieOptions = { httpOnly: true, sameSite: 'lax' as const, secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 15 * 60 };
 
@@ -23,7 +24,8 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
   let session: { accessToken: string; refreshToken: string } | undefined;
   const refreshToken = request.cookies.get('sm_refresh')?.value;
   if (response.status === 401 && refreshToken) {
-    const refreshed = await fetch(`${base}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken }), cache: 'no-store', signal: requestTimeout() });
+    const device = adminDevice(request);
+    const refreshed = await fetch(`${base}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken, deviceInfo: device.info }), cache: 'no-store', signal: requestTimeout() });
     if (refreshed.ok) {
       session = await refreshed.json() as { accessToken: string; refreshToken: string };
       response = await callBackend(request, path, session.accessToken);
@@ -35,8 +37,10 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
   if (requestId) headers['x-request-id'] = requestId;
   const result = new NextResponse(body, { status: response.status, headers });
   if (session) {
+    const device = adminDevice(request);
     result.cookies.set('sm_access', session.accessToken, cookieOptions);
     result.cookies.set('sm_refresh', session.refreshToken, { ...cookieOptions, sameSite: 'strict', path: '/api', maxAge: 30 * 86400 });
+    persistAdminDevice(result, device.id);
   } else if (response.status === 401) {
     result.cookies.set('sm_access', '', { path: '/', maxAge: 0 });
     result.cookies.set('sm_refresh', '', { path: '/api', maxAge: 0 });

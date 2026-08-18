@@ -54,9 +54,10 @@ export class AuthController {
   login(
     @Body() dto: LoginDto,
     @Headers('user-agent') device?: string,
+    @Headers('x-device-info') dashboardDevice?: string,
     @Req() req?: Request,
   ) {
-    return this.auth.login(dto, device, req?.ip ?? req?.socket?.remoteAddress);
+    return this.auth.login(dto, dashboardDevice ?? device, req?.ip ?? req?.socket?.remoteAddress);
   }
   @Post('login/2fa')
   @ApiOperation({ summary: 'Valider la double authentification et ouvrir la session' })
@@ -65,9 +66,10 @@ export class AuthController {
   completeTwoFactor(
     @Body() dto: TwoFactorLoginDto,
     @Headers('user-agent') device?: string,
+    @Headers('x-device-info') dashboardDevice?: string,
     @Req() req?: Request,
   ) {
-    return this.auth.completeTwoFactorLogin(dto.twoFactorToken, dto.code, device, req?.ip ?? req?.socket?.remoteAddress);
+    return this.auth.completeTwoFactorLogin(dto.twoFactorToken, dto.code, dashboardDevice ?? device, req?.ip ?? req?.socket?.remoteAddress);
   }
   @Post('2fa/setup') @UseGuards(JwtAuthGuard, RolesGuard) @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MODERATOR, Role.SUPPORT) @ApiBearerAuth()
   @ApiOperation({ summary: 'Générer un secret TOTP pour un compte administrateur' })

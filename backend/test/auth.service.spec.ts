@@ -42,6 +42,7 @@ describe('AuthService', () => {
         create: jest.fn(),
         findUnique: jest.fn(),
         update: jest.fn(),
+        updateMany: jest.fn(),
       },
       profile: { create: jest.fn() },
       $transaction: jest.fn(async (callback) => callback(prisma)),
@@ -93,6 +94,19 @@ describe('AuthService', () => {
     await expect(
       service.login({ email: user.email, password: 'password123' }),
     ).resolves.toHaveProperty('refreshToken');
+  });
+  it('replaces an administrator session from the same dashboard device', async () => {
+    const admin = { ...user, role: Role.ADMIN };
+    prisma.user.findUnique.mockResolvedValue(admin);
+    await service.login(
+      { email: admin.email, password: 'password123' },
+      'Dashboard | device-1 | Chrome',
+    );
+    expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: admin.id, revokedAt: null }),
+      }),
+    );
   });
   it('rejects an incorrect password', async () => {
     prisma.user.findUnique.mockResolvedValue(user);

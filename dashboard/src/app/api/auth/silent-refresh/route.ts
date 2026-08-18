@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminDevice, persistAdminDevice } from '@/lib/admin-device';
 
 const base = process.env.API_URL ?? 'https://soulmeet-backend.onrender.com/api/v1';
 const adminRoles = ['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'SUPPORT'];
@@ -6,10 +7,11 @@ const adminRoles = ['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'SUPPORT'];
 export async function POST(request: NextRequest) {
   const refreshToken = request.cookies.get('sm_refresh')?.value;
   if (!refreshToken) return NextResponse.json({ ok: false }, { status: 401 });
+  const device = adminDevice(request);
   const response = await fetch(`${base}/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
+    body: JSON.stringify({ refreshToken, deviceInfo: device.info }),
     cache: 'no-store',
   });
   if (!response.ok) {
@@ -30,5 +32,6 @@ export async function POST(request: NextRequest) {
   const result = NextResponse.json({ ok: true, role: me.role, email: me.email });
   result.cookies.set('sm_access', data.accessToken, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 15 * 60 });
   result.cookies.set('sm_refresh', data.refreshToken, { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', path: '/api', maxAge: 30 * 86400 });
+  persistAdminDevice(result, device.id);
   return result;
 }

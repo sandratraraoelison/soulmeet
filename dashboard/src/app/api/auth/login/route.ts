@@ -4,6 +4,7 @@ import {
   isLoginBlocked,
   recordLoginFailure,
 } from "@/lib/login-rate-limit";
+import { adminDevice, persistAdminDevice } from "@/lib/admin-device";
 
 const base = process.env.API_URL ?? "https://soulmeet-backend.onrender.com/api/v1";
 const adminRoles = ["SUPER_ADMIN", "ADMIN", "MODERATOR", "SUPPORT"];
@@ -20,6 +21,7 @@ function clientIp(request: NextRequest): string {
 async function sessionFrom(
   data: { accessToken: string; refreshToken: string },
   ip: string,
+  deviceId: string,
   emailHint?: string,
 ): Promise<NextResponse> {
   const meResponse = await fetch(`${base}/auth/me`, {
@@ -58,11 +60,13 @@ async function sessionFrom(
     path: "/api",
     maxAge: 30 * 86400,
   });
+  persistAdminDevice(result, deviceId);
   return result;
 }
 
 export async function POST(request: NextRequest) {
   const ip = clientIp(request);
+  const device = adminDevice(request);
   const body = (await request.json().catch(() => null)) as {
     email?: string;
     password?: string;
@@ -83,7 +87,7 @@ export async function POST(request: NextRequest) {
   if (body?.twoFactorToken) {
     const second = await fetch(`${base}/auth/login/2fa`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Forwarded-For": ip },
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": ip, "X-Device-Info": device.info },
       body: JSON.stringify({
         twoFactorToken: body.twoFactorToken,
         code: body.code ?? "",
@@ -101,13 +105,14 @@ export async function POST(request: NextRequest) {
     return sessionFrom(
       secondData as { accessToken: string; refreshToken: string },
       ip,
+      device.id,
       email,
     );
   }
 
   const response = await fetch(`${base}/auth/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-Forwarded-For": ip },
+    headers: { "Content-Type": "application/json", "X-Forwarded-For": ip, "X-Device-Info": device.info },
     body: JSON.stringify({ email, password: body?.password ?? "" }),
     cache: "no-store",
   });
@@ -155,6 +160,7 @@ export async function POST(request: NextRequest) {
   return sessionFrom(
     tokens as { accessToken: string; refreshToken: string },
     ip,
+    device.id,
     email,
   );
 }

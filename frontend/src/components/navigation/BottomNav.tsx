@@ -3,6 +3,9 @@ import { Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MotionPressable } from '@/components/motion/MotionPressable';
+import { useConversations } from '@/features/chat/hooks/use-chat';
+import { useGrowth } from '@/features/growth/hooks/use-growth';
+import { useSoulprint } from '@/features/insights/hooks/use-soulprint';
 import { motionFadeIn } from '@/lib/motion';
 
 const items = [
@@ -38,6 +41,17 @@ const items = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const insights = useSoulprint();
+  const growth = useGrowth();
+  const conversations = useConversations();
+  const notificationCounts: Partial<Record<(typeof items)[number]['label'], number>> = {
+    Insights: insights.data?.pendingConfirmationCount ?? 0,
+    Growth: growth.data?.suggestedGoals.length ?? 0,
+    Soul: conversations.data?.reduce(
+      (total, conversation) => total + conversation.unreadCount,
+      0,
+    ) ?? 0,
+  };
 
   return (
     <SafeAreaView
@@ -46,6 +60,7 @@ export function BottomNav() {
     >
       <View className="mx-2 mb-2 mt-3 flex-row rounded-[22px] bg-surface px-1 py-2">
         {items.map((item) => {
+          const notificationCount = notificationCounts[item.label] ?? 0;
           const active =
             pathname === item.route ||
             (item.label === 'Insights' && pathname.startsWith('/insights/')) ||
@@ -58,7 +73,7 @@ export function BottomNav() {
             <MotionPressable
               key={item.label}
               accessibilityRole="tab"
-              accessibilityLabel={item.label}
+              accessibilityLabel={`${item.label}${notificationCount ? `, ${notificationCount} new notification${notificationCount === 1 ? '' : 's'}` : ''}`}
               accessibilityState={{ selected: active }}
               onPress={() => router.replace(item.href as Href)}
               className="min-h-16 flex-1 items-center justify-center rounded-2xl active:bg-white/5"
@@ -70,6 +85,13 @@ export function BottomNav() {
                 >
                   {item.icon}
                 </Text>
+                {notificationCount > 0 ? (
+                  <View className="absolute -right-3 -top-2 min-w-5 items-center justify-center rounded-full border-2 border-surface bg-danger px-1">
+                    <Text className="font-label text-[10px] font-bold leading-4 text-white">
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
               <Text
                 className={`mt-1 font-label text-xs font-bold tracking-wide ${active ? 'text-secondary' : 'text-muted'}`}

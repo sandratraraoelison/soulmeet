@@ -115,6 +115,19 @@ export class SessionService {
       expiresIn: this.config.getOrThrow('JWT_REFRESH_EXPIRES_IN'),
     });
     const decoded = this.jwt.decode(refreshToken) as { exp: number };
+    if (deviceInfo && user.role !== Role.USER) {
+      const legacyDashboardSessions = deviceInfo.startsWith('Dashboard | ')
+        ? [{ deviceInfo: null }, { deviceInfo: 'node' }]
+        : [];
+      await db.refreshToken.updateMany({
+        where: {
+          userId: user.id,
+          revokedAt: null,
+          OR: [{ deviceInfo }, ...legacyDashboardSessions],
+        },
+        data: { revokedAt: new Date() },
+      });
+    }
     await db.refreshToken.create({
       data: {
         id: tokenId,
