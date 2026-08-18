@@ -36,7 +36,8 @@ describe('GuidanceService', () => {
       complete: jest.fn().mockResolvedValue({ content: 'Coach reply', provider: 'ollama', model: 'llama3.1:8b' }),
       stream: jest.fn().mockImplementation(async function* () { yield 'Coach '; yield 'reply'; }),
     };
-    service = new GuidanceService(prisma, new GuidancePromptService(), llm);
+    const config = { get: jest.fn((_key: string, fallback: unknown) => fallback) } as any;
+    service = new GuidanceService(prisma, new GuidancePromptService(), config, llm);
   });
 
   it('scopes conversation history to its owner', async () => {
@@ -55,6 +56,19 @@ describe('GuidanceService', () => {
         content: expect.stringContaining('Hi Sam'),
       }),
     });
+  });
+
+  it('lists active conversations with abandoned drafts after real exchanges', async () => {
+    prisma.guidanceConversation.findMany.mockResolvedValue([]);
+    await service.listConversations('user-a');
+    expect(prisma.guidanceConversation.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [
+          { lastMessageAt: { sort: 'desc', nulls: 'last' } },
+          { id: 'desc' },
+        ],
+      }),
+    );
   });
 
   it('generates a proactive daily prompt across the relationship discovery areas', async () => {

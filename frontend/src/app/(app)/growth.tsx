@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import Animated from 'react-native-reanimated';
 import { getErrorMessage } from '@/api/client';
-import { themeColors, useThemeStore } from '@/store/theme.store';
+import { useThemePalette } from '@/store/theme.store';
 import { Button } from '@/components/common/Button';
 import { AccountButton } from '@/components/navigation/AccountButton';
 import { motionPanelEntering } from '@/lib/motion';
@@ -35,7 +35,7 @@ import {
 } from '@/features/growth/hooks/use-growth';
 
 export default function GrowthScreen() {
-  const themeMode = useThemeStore((state) => state.mode);
+  const { colors } = useThemePalette();
   const query = useGrowth();
   const createGoal = useCreateGrowthGoal();
   const progress = useUpdateGrowthProgress();
@@ -210,7 +210,7 @@ export default function GrowthScreen() {
               onChangeText={setTitle}
               placeholder="For example: Feel calmer before dates"
               placeholderTextColor="#9494A3"
-              style={{ color: themeColors[themeMode].ink }}
+              style={{ color: colors.ink }}
               className="mt-5 min-h-14 rounded-2xl border border-border bg-surface-raised px-4 text-base"
             />
             <TextInput
@@ -219,7 +219,7 @@ export default function GrowthScreen() {
               multiline
               placeholder="Why does this matter to you? (optional)"
               placeholderTextColor="#9494A3"
-              style={{ color: themeColors[themeMode].ink }}
+              style={{ color: colors.ink }}
               textAlignVertical="top"
               className="mt-3 min-h-24 rounded-2xl border border-border bg-surface-raised p-4 text-base"
             />
@@ -295,7 +295,7 @@ export default function GrowthScreen() {
               multiline
               placeholder="What helped or felt difficult?"
               placeholderTextColor="#9494A3"
-              style={{ color: themeColors[themeMode].ink }}
+              style={{ color: colors.ink }}
               textAlignVertical="top"
               className="min-h-24 rounded-2xl border border-border bg-surface-raised p-4 text-base"
             />

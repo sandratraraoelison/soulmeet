@@ -95,6 +95,15 @@ describe('MessageBubble', () => {
     expect(onLongPress).toHaveBeenCalledTimes(1);
   });
 
+  it('allows actions on a received active message so it can be copied', async () => {
+    const onLongPress = jest.fn();
+    const view = await render(
+      <MessageBubble message={makeMessage()} mine={false} onLongPress={onLongPress} />,
+    );
+    fireEvent(view.getByText('Bonjour'), 'longPress');
+    expect(onLongPress).toHaveBeenCalledTimes(1);
+  });
+
   it('allows retrying a failed message', async () => {
     const onRetry = jest.fn();
     const view = await render(

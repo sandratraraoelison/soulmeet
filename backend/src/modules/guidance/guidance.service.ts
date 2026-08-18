@@ -1,5 +1,6 @@
 import { HttpStatus, Inject, Injectable, Optional } from '@nestjs/common';
-import { GuidanceConversationStatus, GuidanceMessageRole } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
+import { GuidanceConversationStatus, GuidanceMessageRole, type UserMemory } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { GuidanceException } from './guidance.exception';
 import { GuidancePromptService } from './guidance-prompt.service';
@@ -12,6 +13,7 @@ export class GuidanceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly prompts: GuidancePromptService,
+    private readonly config: ConfigService,
     @Inject(LLM_PROVIDER) private readonly llm: LlmProvider,
     @Optional() private readonly soulprintContext?: SoulprintContextService,
     @Optional() private readonly soulprintExtractionQueue?: SoulprintExtractionQueueService,
@@ -58,7 +60,7 @@ export class GuidanceService {
         'Do not mention scheduling, automation, profile completion, data collection, internal categories, or that this is a generated notification. Do not sound like a survey.',
       ].join('\n'),
     });
-    const response = await this.llm.complete(messages, { priority: 'background', feature: 'coach_check_in', userId });
+    const response = await this.llm.complete(messages, { priority: 'background', feature: 'coach_check_in', userId, maxTokens: this.maxResponseTokens() });
     return this.prisma.$transaction(async (tx) => {
       const message = await tx.guidanceMessage.create({
         data: {
@@ -83,7 +85,12 @@ export class GuidanceService {
 
   async listConversations(userId: string, cursor?: string, limit = 20, status: GuidanceConversationStatus = GuidanceConversationStatus.ACTIVE) {
     const rows = await this.prisma.guidanceConversation.findMany({
-      where: { userId, status }, orderBy: [{ lastMessageAt: 'desc' }, { id: 'desc' }], take: limit + 1,
+      where: { userId, status },
+      orderBy: [
+        { lastMessageAt: { sort: 'desc', nulls: 'last' } },
+        { id: 'desc' },
+      ],
+      take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { messages: { where: { isDeleted: false }, orderBy: { createdAt: 'desc' }, take: 1 } },
     });
@@ -118,7 +125,7 @@ export class GuidanceService {
   async send(userId: string, conversationId: string, content: string) {
     await this.ownedConversation(userId, conversationId);
     await this.persistUserMessage(conversationId, content);
-    const response = await this.llm.complete(await this.contextMessages(userId, conversationId), { priority: 'interactive', feature: 'guidance', userId });
+    const response = await this.llm.complete(await this.contextMessages(userId, conversationId), { priority: 'interactive', feature: 'guidance', userId, maxTokens: this.maxResponseTokens() });
     const message = await this.persistAssistant(conversationId, response.content, response.provider, response.model);
     void this.soulprintExtractionQueue?.enqueue(userId, conversationId);
     return { message };
@@ -129,7 +136,7 @@ export class GuidanceService {
     const userMessage = await this.persistUserMessage(conversationId, content);
     yield { event: 'message', data: userMessage };
     let answer = '';
-    for await (const token of this.llm.stream(await this.contextMessages(userId, conversationId), { priority: 'interactive', feature: 'guidance', userId })) {
+    for await (const token of this.llm.stream(await this.contextMessages(userId, conversationId), { priority: 'interactive', feature: 'guidance', userId, maxTokens: this.maxResponseTokens() })) {
       answer += token;
       yield { event: 'token', data: token };
     }
@@ -155,7 +162,7 @@ export class GuidanceService {
     const message = await this.ownedMessage(userId, messageId);
     if (message.role !== GuidanceMessageRole.ASSISTANT) throw new GuidanceException('MESSAGE_NOT_REGENERATABLE', 'Only coach responses can be regenerated');
     await this.prisma.guidanceMessage.update({ where: { id: message.id }, data: { content: null, isDeleted: true, deletedAt: new Date() } });
-    const response = await this.llm.complete(await this.contextMessages(userId, message.conversationId), { priority: 'interactive', cache: false, feature: 'guidance', userId });
+    const response = await this.llm.complete(await this.contextMessages(userId, message.conversationId), { priority: 'interactive', cache: false, feature: 'guidance', userId, maxTokens: this.maxResponseTokens() });
     return this.persistAssistant(message.conversationId, response.content, response.provider, response.model);
   }
 
@@ -167,15 +174,32 @@ export class GuidanceService {
   }
   async deleteMemory(userId: string, id: string) { await this.ownedMemory(userId, id); return this.prisma.userMemory.delete({ where: { id } }); }
   private async contextMessages(userId: string, conversationId: string) {
-    const [coach, profile, soulprint, memories, history] = await Promise.all([
+    const recentLimit = this.config.get<number>('GUIDANCE_RECENT_MESSAGES', 12);
+    const memoryCandidateLimit = this.config.get<number>('GUIDANCE_MEMORY_CANDIDATE_LIMIT', 50);
+    const [coach, profile, memoryCandidates, newestFirst] = await Promise.all([
       this.prisma.coach.findUnique({ where: { userId } }), this.prisma.profile.findUnique({ where: { userId } }),
-      this.soulprintContext?.forGuidance(userId) ?? Promise.resolve({ confirmedFacts: [], declaredFacts: [], tentativeInsights: [] }),
-      this.prisma.userMemory.findMany({ where: { userId }, orderBy: { updatedAt: 'desc' }, take: 20 }),
-      this.prisma.guidanceMessage.findMany({ where: { conversationId }, orderBy: { createdAt: 'asc' }, take: 40 }),
+      this.prisma.userMemory.findMany({ where: { userId }, orderBy: { updatedAt: 'desc' }, take: memoryCandidateLimit }),
+      this.prisma.guidanceMessage.findMany({ where: { conversationId, isDeleted: false }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: recentLimit }),
     ]);
     if (!coach) throw new GuidanceException('COACH_REQUIRED', 'Create your coach before using Guidance', HttpStatus.CONFLICT);
+    const history = newestFirst.reverse();
+    const query = history.filter((item) => item.role === GuidanceMessageRole.USER && item.content).slice(-3).map((item) => item.content).join(' ');
+    const soulprint = await (this.soulprintContext?.forGuidance(userId, query) ?? Promise.resolve({ confirmedFacts: [], declaredFacts: [], tentativeInsights: [] }));
+    const memories = this.relevantMemories(memoryCandidates, query);
     return this.prompts.messages(this.prompts.buildSystemPrompt({ coach, profile, soulprint, memories }), history);
   }
+
+  private relevantMemories(memories: UserMemory[], query: string): UserMemory[] {
+    const limit = this.config.get<number>('GUIDANCE_RELEVANT_MEMORIES', 5);
+    if (!limit) return [];
+    const terms = this.terms(query);
+    return memories.map((memory, index) => ({ memory, score: this.overlap(terms, this.terms(`${memory.category ?? ''} ${memory.content}`)) * 100 - index }))
+      .sort((left, right) => right.score - left.score).slice(0, limit).map(({ memory }) => memory);
+  }
+
+  private terms(value: string): Set<string> { return new Set(value.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').match(/[a-z0-9]{3,}/g) ?? []); }
+  private overlap(left: Set<string>, right: Set<string>): number { let score = 0; for (const term of left) if (right.has(term)) score++; return score; }
+  private maxResponseTokens() { return this.config.get<number>('GUIDANCE_MAX_RESPONSE_TOKENS', 500); }
 
   private persistUserMessage(conversationId: string, content: string) {
     return this.prisma.$transaction(async (tx) => {

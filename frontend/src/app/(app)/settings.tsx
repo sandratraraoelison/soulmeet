@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Switch, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, Switch, Text, View } from 'react-native';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { Button } from '@/components/common/Button';
@@ -8,7 +8,7 @@ import { Screen } from '@/components/common/Screen';
 import { BackButton } from '@/components/navigation/BackButton';
 import { defaultNotificationPreferences, notificationService, notificationsSupported, type NotificationPreferences } from '@/services/notification.service';
 import { biometricService } from '@/services/biometric.service';
-import { useThemeStore, type ThemeMode } from '@/store/theme.store';
+import { useThemePalette, useThemeStore, visualStyleOptions, type ThemeMode } from '@/store/theme.store';
 export default function SettingsScreen() {
   const version = Constants.expoConfig?.version ?? '1.0.0';
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -20,6 +20,9 @@ export default function SettingsScreen() {
   const [biometricBusy, setBiometricBusy] = useState(true);
   const theme = useThemeStore((state) => state.mode);
   const setTheme = useThemeStore((state) => state.setMode);
+  const visualStyle = useThemeStore((state) => state.visualStyle);
+  const setVisualStyle = useThemeStore((state) => state.setVisualStyle);
+  const { colors } = useThemePalette();
   useEffect(() => {
     void Promise.all([notificationService.status(), notificationService.preferences()])
       .then(([status, preferences]) => { setNotificationsEnabled(status.enabled); setNotificationPreferences(preferences); })
@@ -80,11 +83,33 @@ export default function SettingsScreen() {
           <Text className="font-label font-bold text-ink">Appearance</Text>
           <Text className="mt-1 text-sm text-muted">Choose how Soulmeet looks on this device.</Text>
           <View className="mt-4 flex-row gap-3">{(['dark', 'light'] as ThemeMode[]).map((item) => <Button key={item} label={item === 'dark' ? 'Dark' : 'Light'} variant={theme === item ? 'primary' : 'secondary'} onPress={() => void setTheme(item)} />)}</View>
+          <Text className="mt-6 border-t border-border pt-5 font-label font-bold text-ink">Visual style</Text>
+          <Text className="mt-1 text-sm leading-5 text-muted">Choose an atmosphere, independent of gender.</Text>
+          <View className="mt-4 gap-3">
+            {visualStyleOptions.map((option) => {
+              const selected = visualStyle === option.id;
+              return (
+                <Pressable
+                  key={option.id}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected }}
+                  onPress={() => void setVisualStyle(option.id)}
+                  className={`flex-row items-center rounded-2xl border p-4 ${selected ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}
+                >
+                  <View className="mr-4 flex-row">
+                    {option.swatches.map((color, index) => <View key={color} style={{ backgroundColor: color, marginLeft: index ? -5 : 0 }} className="h-8 w-8 rounded-full border-2 border-surface" />)}
+                  </View>
+                  <View className="flex-1"><Text className="font-headline font-bold text-ink">{option.label}</Text><Text className="mt-1 font-body text-xs text-muted">{option.description}</Text></View>
+                  <View className={`h-5 w-5 rounded-full border-2 ${selected ? 'border-primary bg-primary' : 'border-muted'}`} />
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
         <View className="rounded-2xl border border-border bg-surface-raised p-4">
           <View className="flex-row items-center justify-between">
             <View className="mr-4 flex-1"><Text className="font-label font-bold text-ink">Notifications</Text><Text className="mt-1 text-sm leading-5 text-muted">{notificationsSupported ? 'Choose what Soulmeet may notify you about.' : 'Requires a development build on Android; unavailable in Expo Go.'}</Text></View>
-            <Switch accessibilityLabel="Notifications" disabled={notificationBusy || !notificationsSupported} value={notificationsEnabled} onValueChange={(value) => void toggleNotifications(value)} trackColor={{ false: '#353640', true: '#6366F1' }} thumbColor={notificationsEnabled ? '#FFFFFF' : '#9494A3'} />
+            <Switch accessibilityLabel="Notifications" disabled={notificationBusy || !notificationsSupported} value={notificationsEnabled} onValueChange={(value) => void toggleNotifications(value)} trackColor={{ false: colors.border, true: colors.primary }} thumbColor={notificationsEnabled ? '#FFFFFF' : colors.muted} />
           </View>
           <View className={`mt-4 border-t border-border ${!notificationsEnabled ? 'opacity-50' : ''}`}>
             {([
@@ -95,13 +120,13 @@ export default function SettingsScreen() {
             ] as const).map(([key, label, description]) => (
               <View key={key} className="flex-row items-center justify-between border-b border-border py-4">
                 <View className="mr-4 flex-1"><Text className="font-label font-semibold text-ink">{label}</Text><Text className="mt-1 text-xs leading-5 text-muted">{description}</Text></View>
-                <Switch accessibilityLabel={label} disabled={!notificationsEnabled || notificationBusy} value={notificationPreferences[key]} onValueChange={(value) => void updateNotificationPreference(key, value)} trackColor={{ false: '#353640', true: '#6366F1' }} thumbColor={notificationPreferences[key] ? '#FFFFFF' : '#9494A3'} />
+                <Switch accessibilityLabel={label} disabled={!notificationsEnabled || notificationBusy} value={notificationPreferences[key]} onValueChange={(value) => void updateNotificationPreference(key, value)} trackColor={{ false: colors.border, true: colors.primary }} thumbColor={notificationPreferences[key] ? '#FFFFFF' : colors.muted} />
               </View>
             ))}
             <View className="pt-4">
               <View className="flex-row items-center justify-between">
                 <View className="mr-4 flex-1"><Text className="font-label font-semibold text-ink">Quiet hours</Text><Text className="mt-1 text-xs leading-5 text-muted">Pause all notifications during your rest time.</Text></View>
-                <Switch accessibilityLabel="Quiet hours" disabled={!notificationsEnabled || notificationBusy} value={notificationPreferences.quietHoursEnabled} onValueChange={(value) => void updateNotificationPreference('quietHoursEnabled', value)} trackColor={{ false: '#353640', true: '#6366F1' }} thumbColor={notificationPreferences.quietHoursEnabled ? '#FFFFFF' : '#9494A3'} />
+                <Switch accessibilityLabel="Quiet hours" disabled={!notificationsEnabled || notificationBusy} value={notificationPreferences.quietHoursEnabled} onValueChange={(value) => void updateNotificationPreference('quietHoursEnabled', value)} trackColor={{ false: colors.border, true: colors.primary }} thumbColor={notificationPreferences.quietHoursEnabled ? '#FFFFFF' : colors.muted} />
               </View>
               {notificationPreferences.quietHoursEnabled ? (
                 <View className="mt-4 flex-row gap-3">
@@ -122,7 +147,7 @@ export default function SettingsScreen() {
                 {!biometricAvailable ? 'Biometric authentication is unavailable on this device.' : !biometricEnrolled ? 'Set up biometrics in your device settings first.' : 'Require Face ID or fingerprint when reopening Soulmeet.'}
               </Text>
             </View>
-            <Switch accessibilityLabel="Biometric lock" disabled={biometricBusy || !biometricAvailable || !biometricEnrolled} value={biometricEnabled} onValueChange={(value) => void toggleBiometrics(value)} trackColor={{ false: '#353640', true: '#6366F1' }} thumbColor={biometricEnabled ? '#FFFFFF' : '#9494A3'} />
+            <Switch accessibilityLabel="Biometric lock" disabled={biometricBusy || !biometricAvailable || !biometricEnrolled} value={biometricEnabled} onValueChange={(value) => void toggleBiometrics(value)} trackColor={{ false: colors.border, true: colors.primary }} thumbColor={biometricEnabled ? '#FFFFFF' : colors.muted} />
           </View>
           <View className="mt-4"><Button label="Change password" variant="secondary" onPress={() => router.push('/(app)/change-password')} /></View>
         </View>

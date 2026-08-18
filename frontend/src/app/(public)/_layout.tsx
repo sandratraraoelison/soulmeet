@@ -1,15 +1,15 @@
 import { Stack } from 'expo-router';
 import { MOTION } from '@/lib/motion';
-import { themeColors, useThemeStore } from '@/store/theme.store';
+import { useThemePalette } from '@/store/theme.store';
 export default function PublicLayout() {
-  const mode = useThemeStore((state) => state.mode);
+  const { colors } = useThemePalette();
   return (
     <Stack
       screenOptions={{
         headerShown: false,
         animation: 'fade',
         animationDuration: MOTION.fast,
-        contentStyle: { backgroundColor: themeColors[mode].canvas },
+        contentStyle: { backgroundColor: colors.canvas },
       }}
     />
   );

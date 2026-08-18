@@ -21,7 +21,7 @@ import { useThemePalette, useThemeStore } from '@/store/theme.store';
 
 function Navigation() {
   const { isAuthenticated, isRestoring } = useAuthStore();
-  const { mode, themeColors } = useThemePalette();
+  const { colors } = useThemePalette();
   useChatSocketLifecycle(isAuthenticated);
   useNotifications(isAuthenticated);
   useSessionRestore();
@@ -46,7 +46,7 @@ function Navigation() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: themeColors[mode].canvas },
+        contentStyle: { backgroundColor: colors.canvas },
       }}
     >
       <Stack.Protected guard={!isAuthenticated}>

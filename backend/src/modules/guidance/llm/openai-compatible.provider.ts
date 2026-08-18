@@ -34,7 +34,13 @@ export class OpenAiCompatibleProvider implements LlmProvider {
           model: this.model,
           messages,
           stream,
-          ...(options?.jsonSchema ? { response_format: { type: 'json_schema', json_schema: { name: 'soulprint_extraction', strict: true, schema: options.jsonSchema } } } : options?.json ? { response_format: { type: 'json_object' } } : {}),
+          ...(options?.jsonSchema
+            ? this.name === 'deepseek'
+              ? { response_format: { type: 'json_object' } }
+              : { response_format: { type: 'json_schema', json_schema: { name: 'soulprint_extraction', strict: true, schema: options.jsonSchema } } }
+            : options?.json
+              ? { response_format: { type: 'json_object' } }
+              : {}),
           max_tokens: options?.maxTokens ?? this.defaultMaxTokens,
           ...(this.name === 'deepseek' ? { thinking: { type: this.thinkingEnabled ? 'enabled' : 'disabled' } } : {}),
           ...(options?.temperature !== undefined ? { temperature: options.temperature } : {}),
@@ -50,10 +56,24 @@ export class OpenAiCompatibleProvider implements LlmProvider {
   }
 
   async complete(messages: LlmMessage[], options?: LlmCompletionOptions): Promise<LlmResponse> {
-    const data = (await (await this.request(messages, false, options)).json()) as { choices?: { message?: { content?: string } }[] };
+    const data = (await (await this.request(messages, false, options)).json()) as {
+      choices?: { message?: { content?: string } }[];
+      usage?: {
+        prompt_tokens?: number;
+        completion_tokens?: number;
+        prompt_cache_hit_tokens?: number;
+      };
+    };
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) throw new LlmException('LLM_INVALID_RESPONSE', 'The AI provider returned an empty response');
-    return { content, provider: this.name, model: this.model };
+    const usage = data.usage?.prompt_tokens !== undefined && data.usage.completion_tokens !== undefined
+      ? {
+          inputTokens: data.usage.prompt_tokens,
+          outputTokens: data.usage.completion_tokens,
+          cachedTokens: data.usage.prompt_cache_hit_tokens ?? 0,
+        }
+      : undefined;
+    return { content, provider: this.name, model: this.model, usage };
   }
 
   async *stream(messages: LlmMessage[], options?: LlmCompletionOptions): AsyncIterable<string> {

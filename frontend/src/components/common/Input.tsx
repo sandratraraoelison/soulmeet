@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { Text, TextInput, View, type TextInputProps } from 'react-native';
-import { themeColors, useThemeStore } from '@/store/theme.store';
+import { useThemePalette } from '@/store/theme.store';
 interface Props extends TextInputProps {
   label: string;
   error?: string;
@@ -8,7 +8,7 @@ interface Props extends TextInputProps {
 }
 export const Input = forwardRef<TextInput, Props>(
   ({ label, error, dark = false, ...props }, ref) => {
-    const mode = useThemeStore((state) => state.mode);
+    const { colors } = useThemePalette();
     return (
     <View className="gap-2">
       <Text
@@ -18,7 +18,7 @@ export const Input = forwardRef<TextInput, Props>(
       </Text>
       <TextInput
         ref={ref}
-        placeholderTextColor={themeColors[mode].muted}
+        placeholderTextColor={colors.muted}
         className={`min-h-14 rounded-2xl border border-border bg-surface-raised px-4 font-body text-base text-ink ${error ? 'border-danger' : ''}`}
         {...props}
       />

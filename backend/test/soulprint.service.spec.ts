@@ -64,6 +64,60 @@ describe('SoulprintExtractionService validation', () => {
       expect.objectContaining({ category: SoulprintCategory.INTEREST, normalizedValue: 'video games', source: 'USER_DECLARED' }),
     ]);
   });
+  it('extracts travel from a declaration followed by a coaching request', () => {
+    const merge = new SoulprintMergeService({} as never);
+    const extraction = new SoulprintExtractionService({} as never, new ConfigService(), {} as never, merge, {} as never, {} as never);
+    const entries = extraction.extractDirectInterests([{
+      id: 'message-id',
+      content: 'I like more a trip, a voyage, can you give me a scenario for a first message with travel',
+    }]);
+    expect(entries).toEqual([
+      expect.objectContaining({
+        category: SoulprintCategory.INTEREST,
+        normalizedValue: 'travel',
+        value: 'The user likes travel.',
+        source: 'USER_DECLARED',
+      }),
+    ]);
+  });
+  it('persists direct interests below the LLM batching threshold without calling the provider', async () => {
+    const message = {
+      id: 'message-id', conversationId: 'conversation-id', role: 'USER',
+      content: 'I love travel, can you help me write a first message?', createdAt: new Date(),
+    };
+    const prisma = {
+      soulprint: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), update: jest.fn().mockResolvedValue({}) },
+      guidanceMessage: { findMany: jest.fn().mockResolvedValue([message]) },
+    };
+    const config = new ConfigService({
+      SOULPRINT_EXTRACTION_MIN_USER_MESSAGES: 3,
+      SOULPRINT_EXTRACTION_MIN_CHARACTERS: 600,
+    });
+    const merge = {
+      merge: jest.fn().mockResolvedValue({}),
+      normalize: jest.fn((value: string) => value.toLowerCase().trim()),
+    };
+    const llm = { complete: jest.fn() };
+    const extraction = new SoulprintExtractionService(
+      prisma as never,
+      config,
+      { ensure: jest.fn().mockResolvedValue({ id: 'soulprint-id', lastAnalyzedMessageId: null }) } as never,
+      merge as never,
+      {} as never,
+      llm as never,
+    );
+    await expect(extraction.extract('user-id', 'conversation-id')).resolves.toMatchObject({
+      skipped: true,
+      reason: 'threshold',
+      extracted: 1,
+    });
+    expect(merge.merge).toHaveBeenCalledWith(
+      'soulprint-id',
+      expect.objectContaining({ normalizedValue: 'travel' }),
+      'conversation-id',
+    );
+    expect(llm.complete).not.toHaveBeenCalled();
+  });
   it('leaves ambiguous interest sentences to the LLM', () => {
     const merge = new SoulprintMergeService({} as never);
     const extraction = new SoulprintExtractionService({} as never, new ConfigService(), {} as never, merge, {} as never, {} as never);

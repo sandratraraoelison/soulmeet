@@ -5,11 +5,16 @@
 @layer base {
   :root {
     color-scheme: dark;
-    --color-canvas: 15 17 23;
-    --color-surface: 29 30 36;
-    --color-surface-raised: 37 38 46;
-    --color-ink: 241 241 247;
-    --color-muted: 148 148 163;
-    --color-border: 52 54 64;
+    --color-primary: 109 91 208;
+    --color-primary-dark: 89 72 184;
+    --color-secondary: 201 134 158;
+    --color-tertiary: 79 156 150;
+    --color-danger: 243 154 170;
+    --color-canvas: 18 17 23;
+    --color-surface: 33 30 38;
+    --color-surface-raised: 43 39 49;
+    --color-ink: 245 241 246;
+    --color-muted: 170 161 173;
+    --color-border: 64 58 71;
   }
 }

@@ -4,7 +4,6 @@ import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { ThemedStatusBar } from '@/components/common/ThemedStatusBar';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { BackButton } from '@/components/navigation/BackButton';
+import { CopySelectionModal } from '@/components/common/CopySelectionModal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authApi } from '@/api/auth.api';
 import { MessageBubble } from '@/features/chat/components/MessageBubble';
@@ -49,7 +49,10 @@ export default function ConversationScreen() {
   const deleteMessage = useDeleteMessage(conversationId);
   const [selected, setSelected] = useState<Message | null>(null);
   const [editing, setEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editContent, setEditContent] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [copyText, setCopyText] = useState<string | null>(null);
 
   useConversationSocket(conversationId, me.data?.id);
   const messages = useMemo(
@@ -75,27 +78,28 @@ export default function ConversationScreen() {
     );
   }, [conversationId, messages, queryClient, senderId]);
 
+  useEffect(() => {
+    if (!copied) return;
+    const timeout = setTimeout(() => setCopied(false), 1800);
+    return () => clearTimeout(timeout);
+  }, [copied]);
+
   const openActions = (message: Message) => {
     setSelected(message);
+    setEditing(false);
+    setConfirmingDelete(false);
     setEditContent(message.content ?? '');
   };
   const confirmDelete = () => {
     if (!selected) return;
-    Alert.alert(
-      'Delete this message?',
-      'This message will be deleted for both participants.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            deleteMessage.mutate(selected.id);
-            setSelected(null);
-          },
-        },
-      ],
-    );
+    deleteMessage.mutate(selected.id);
+    setConfirmingDelete(false);
+    setSelected(null);
+  };
+  const selectTextToCopy = () => {
+    if (!selected?.content) return;
+    setCopyText(selected.content);
+    setSelected(null);
   };
 
   if (conversation.isLoading || history.isLoading || me.isLoading)
@@ -171,6 +175,7 @@ export default function ConversationScreen() {
           <Text accessibilityRole="alert" className="px-5 pb-2 font-body text-xs text-danger">{sendMessage.error}</Text>
         ) : null}
         <MessageComposer conversationId={conversationId} onSend={(content) => void sendMessage.send(content)} />
+        {copied ? <View className="absolute bottom-24 self-center rounded-full bg-ink px-5 py-3"><Text className="font-label text-sm font-bold text-canvas">Message copied</Text></View> : null}
       </KeyboardAvoidingView>
 
       <Modal transparent visible={Boolean(selected)} animationType="fade" onRequestClose={() => setSelected(null)}>
@@ -185,7 +190,16 @@ export default function ConversationScreen() {
                 className="rounded-t-[28px] border-t border-border bg-surface px-5 pb-14 pt-5"
                 onPress={(event) => event.stopPropagation()}
               >
-            {editing ? (
+            {confirmingDelete ? (
+              <View className="gap-4 pb-2">
+                <Text className="font-headline text-lg font-bold text-ink">Delete this message?</Text>
+                <Text className="font-body text-sm leading-5 text-muted">This message will be deleted for both participants.</Text>
+                <View className="flex-row gap-3">
+                  <SheetButton label="Cancel" grow onPress={() => setConfirmingDelete(false)} />
+                  <SheetButton label="Delete" grow destructive onPress={confirmDelete} />
+                </View>
+              </View>
+            ) : editing ? (
               <View className="gap-4 pb-2">
                 <Text className="font-headline text-lg font-bold text-ink">Edit message</Text>
                 <TextInput
@@ -211,8 +225,9 @@ export default function ConversationScreen() {
             ) : (
               <View className="gap-3 pb-3">
                 <Text className="mb-2 font-headline text-lg font-bold text-ink">Message actions</Text>
-                <SheetButton label="Edit" onPress={() => setEditing(true)} />
-                <SheetButton label="Delete" destructive onPress={confirmDelete} />
+                <SheetButton label="Copy message" onPress={selectTextToCopy} />
+                {selected?.senderId === senderId ? <SheetButton label="Edit" onPress={() => setEditing(true)} /> : null}
+                {selected?.senderId === senderId ? <SheetButton label="Delete" destructive onPress={() => setConfirmingDelete(true)} /> : null}
                 <SheetButton label="Cancel" onPress={() => setSelected(null)} />
               </View>
             )}
@@ -221,6 +236,7 @@ export default function ConversationScreen() {
           </Pressable>
         </KeyboardAvoidingView>
       </Modal>
+      <CopySelectionModal text={copyText} onClose={() => setCopyText(null)} onCopied={() => setCopied(true)} />
     </SafeAreaView>
   );
 }

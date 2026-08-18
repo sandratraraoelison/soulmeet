@@ -32,13 +32,19 @@ export class InstrumentedLlmProvider implements LlmProvider {
     );
     try {
       const response = await this.provider.complete(messages, options);
+      const usage = response.usage ?? {
+        inputTokens,
+        outputTokens: estimateTokens(response.content),
+        cachedTokens: 0,
+      };
       await this.usage.record({
         userId,
         feature,
         provider: response.provider,
         model: response.model,
-        inputTokens,
-        outputTokens: estimateTokens(response.content),
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        cachedTokens: usage.cachedTokens,
         latencyMs: Date.now() - started,
         success: true,
       });

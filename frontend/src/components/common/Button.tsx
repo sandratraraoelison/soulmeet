@@ -4,6 +4,7 @@ import {
   type PressableProps,
 } from 'react-native';
 import { MotionPressable } from '@/components/motion/MotionPressable';
+import { useThemePalette } from '@/store/theme.store';
 interface Props extends PressableProps {
   label: string;
   loading?: boolean;
@@ -16,6 +17,7 @@ export function Button({
   variant = 'primary',
   ...props
 }: Props) {
+  const { colors: palette } = useThemePalette();
   const colors =
     variant === 'primary'
       ? 'bg-primary'
@@ -46,7 +48,7 @@ export function Button({
               ? '#fff'
               : variant === 'light'
                 ? '#FFFFFF'
-                : '#6366F1'
+                : palette.primary
           }
         />
       ) : (

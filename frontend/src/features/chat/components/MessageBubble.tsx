@@ -31,7 +31,7 @@ export const MessageBubble = memo(function MessageBubble({
     <Pressable
       accessibilityRole="text"
       accessibilityLabel={label}
-      onLongPress={!deleted && mine ? onLongPress : undefined}
+      onLongPress={!deleted ? onLongPress : undefined}
       onPress={message.status === 'FAILED' ? onRetry : undefined}
       className={`mb-2 max-w-[82%] rounded-2xl border px-4 py-3 ${mine ? 'ml-auto rounded-br-sm border-primary bg-primary' : 'mr-auto rounded-bl-sm border-border bg-surface'} ${deleted ? 'opacity-60' : ''}`}
     >

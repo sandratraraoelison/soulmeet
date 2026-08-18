@@ -5,17 +5,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#6366F1',
-        'primary-dark': '#4F46E5',
-        secondary: '#D4AF37',
-        tertiary: '#A855F7',
+        primary: 'rgb(var(--color-primary) / <alpha-value>)',
+        'primary-dark': 'rgb(var(--color-primary-dark) / <alpha-value>)',
+        secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
+        tertiary: 'rgb(var(--color-tertiary) / <alpha-value>)',
         canvas: 'rgb(var(--color-canvas) / <alpha-value>)',
         surface: 'rgb(var(--color-surface) / <alpha-value>)',
         'surface-raised': 'rgb(var(--color-surface-raised) / <alpha-value>)',
         ink: 'rgb(var(--color-ink) / <alpha-value>)',
         muted: 'rgb(var(--color-muted) / <alpha-value>)',
         border: 'rgb(var(--color-border) / <alpha-value>)',
-        danger: '#FCA5A5',
+        danger: 'rgb(var(--color-danger) / <alpha-value>)',
       },
       fontFamily: {
         headline: ['Manrope', 'System'],

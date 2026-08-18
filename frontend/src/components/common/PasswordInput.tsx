@@ -6,7 +6,7 @@ import {
   View,
   type TextInputProps,
 } from 'react-native';
-import { themeColors, useThemeStore } from '@/store/theme.store';
+import { useThemePalette } from '@/store/theme.store';
 interface Props extends TextInputProps {
   label: string;
   error?: string;
@@ -14,7 +14,7 @@ interface Props extends TextInputProps {
 }
 export function PasswordInput({ label, error, dark = false, ...props }: Props) {
   const [visible, setVisible] = useState(false);
-  const mode = useThemeStore((state) => state.mode);
+  const { colors } = useThemePalette();
   return (
     <View className="gap-2">
       <Text
@@ -27,7 +27,7 @@ export function PasswordInput({ label, error, dark = false, ...props }: Props) {
       >
         <TextInput
           secureTextEntry={!visible}
-          placeholderTextColor={themeColors[mode].muted}
+          placeholderTextColor={colors.muted}
           className="flex-1 px-4 font-body text-base text-ink"
           {...props}
         />

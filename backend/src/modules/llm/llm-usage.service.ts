@@ -15,6 +15,25 @@ export interface LlmUsageRecord {
   errorCode?: string;
 }
 
+const DEEPSEEK_V4_FLASH_USD_PER_MILLION = {
+  inputCacheMiss: 0.14,
+  inputCacheHit: 0.0028,
+  output: 0.28,
+} as const;
+
+export function estimateLlmCostUsd(record: Pick<LlmUsageRecord, 'provider' | 'model' | 'inputTokens' | 'outputTokens' | 'cachedTokens'>): number | undefined {
+  const provider = record.provider.toLowerCase();
+  const model = record.model.toLowerCase();
+  if (provider !== 'deepseek' || (model !== 'deepseek-v4-flash' && model !== 'deepseek-chat')) return undefined;
+  const cachedTokens = Math.min(Math.max(record.cachedTokens ?? 0, 0), record.inputTokens);
+  const uncachedTokens = Math.max(record.inputTokens - cachedTokens, 0);
+  return (
+    uncachedTokens * DEEPSEEK_V4_FLASH_USD_PER_MILLION.inputCacheMiss +
+    cachedTokens * DEEPSEEK_V4_FLASH_USD_PER_MILLION.inputCacheHit +
+    record.outputTokens * DEEPSEEK_V4_FLASH_USD_PER_MILLION.output
+  ) / 1_000_000;
+}
+
 /** Approximates tokens from characters; providers do not always expose usage. */
 export function estimateTokens(text: string): number {
   return text ? Math.max(1, Math.round(text.length / 4)) : 0;
@@ -35,6 +54,7 @@ export class LlmUsageService {
         inputTokens: record.inputTokens,
         outputTokens: record.outputTokens,
         cachedTokens: record.cachedTokens ?? 0,
+        estimatedCost: estimateLlmCostUsd(record),
         latencyMs: record.latencyMs,
         success: record.success,
         errorCode: record.errorCode,

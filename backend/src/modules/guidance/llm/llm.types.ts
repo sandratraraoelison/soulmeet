@@ -9,6 +9,11 @@ export interface LlmResponse {
   content: string;
   provider: string;
   model: string;
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    cachedTokens: number;
+  };
 }
 
 export interface LlmCompletionOptions {

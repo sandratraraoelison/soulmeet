@@ -113,6 +113,12 @@ export class SoulprintExtractionService {
         (sum, message) => sum + (message.content?.length ?? 0),
         0,
       );
+      // Persist cheap, explicit declarations before applying the LLM batching
+      // threshold. This keeps obvious facts responsive without an API call;
+      // the cursor remains pending so a later batch can still analyse nuance.
+      const directInterests = this.extractDirectInterests(userMessages);
+      for (const entry of directInterests)
+        await this.merge.merge(soulprint.id, entry, conversationId);
       // Keep short fragments pending so a future message can provide enough
       // context. We intentionally do not advance the cursor in this branch.
       if (
@@ -125,17 +131,16 @@ export class SoulprintExtractionService {
         chars <
           this.config.get<number>('SOULPRINT_EXTRACTION_MIN_CHARACTERS', 300)
       )
-        return this.release(soulprint.id).then(() => ({ skipped: true, reason: 'threshold' as const }));
+        return this.release(soulprint.id).then(() => ({
+          skipped: true,
+          reason: 'threshold' as const,
+          extracted: directInterests.length,
+        }));
       if (!userMessages.length) {
         const lastMessage = messages.at(-1);
         await this.prisma.soulprint.update({ where: { id: soulprint.id }, data: { extractionRunningAt: null, ...(lastMessage ? { lastAnalyzedMessageId: lastMessage.id, lastExtractedAt: new Date(), promptVersion } : {}) } });
         return { skipped: true, reason: 'no-new-user-messages' as const, hasMore };
       }
-      // Deterministic extraction handles obvious declarations cheaply, but it
-      // augments rather than replaces the general LLM pass.
-      const directInterests = this.extractDirectInterests(userMessages);
-      for (const entry of directInterests)
-        await this.merge.merge(soulprint.id, entry, conversationId);
       // Existing IDs are required for grounded contradiction proposals. The
       // model may propose one, but application code remains authoritative.
       const currentEntries = await this.prisma.soulprintEntry.findMany({
@@ -310,16 +315,24 @@ export class SoulprintExtractionService {
     const seen = new Set<string>();
     for (const message of messages) {
       const match = message.content?.match(
-        /^\s*i\s+(?:also\s+)?(?:like|love|enjoy)\s+(.+?)(?:\s+too)?[.!]?\s*$/i,
+        /^\s*i\s+(?:also\s+)?(?:like|love|enjoy)\s+(.+?)\s*$/i,
       );
-      if (!match?.[1] || /\b(?:but|because|if|whether|can|could|how|why|so)\b/i.test(match[1]))
+      if (!match?.[1]) continue;
+      const requestStart = match[1].search(
+        /(?:,|[.!?])\s*(?=(?:(?:can|could|would|will)\s+you|(?:how|what|where|when|why)\s+))/i,
+      );
+      const declaration = (requestStart >= 0 ? match[1].slice(0, requestStart) : match[1])
+        .replace(/(?:\s+too)?[.!]?\s*$/, '')
+        .trim();
+      if (!declaration || /\b(?:but|because|if|whether|so)\b/i.test(declaration))
         continue;
-      const interests = match[1]
+      const interests = declaration
         .split(/\s*(?:,|\band\b)\s*/i)
-        .map((value) => value.replace(/^(?:a|an|the)\s+/i, '').trim())
+        .map((value) => value.replace(/^(?:more\s+)?(?:a|an|the)?\s*/i, '').trim())
+        .map((value) => /^(?:trips?|voyages?|travels?|travell?ing)$/i.test(value) ? 'travel' : value)
         .filter((value) => value.length >= 2 && value.length <= 80)
         .slice(0, 6);
-      if (!interests.length || interests.join(' and ').length < match[1].length / 2)
+      if (!interests.length || interests.join(' and ').length < declaration.length / 2)
         continue;
       for (const interest of interests) {
         const normalized = this.merge.normalize(interest);
