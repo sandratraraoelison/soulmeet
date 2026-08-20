@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -20,6 +21,19 @@ export class ProfilesService {
     userId: string,
     dto: CreateProfileDto | UpdateProfileDto,
   ) {
+    if (dto.birthDate) {
+      const birthDate = new Date(dto.birthDate);
+      const today = new Date();
+      const minimumAgeCutoff = new Date(
+        Date.UTC(
+          today.getUTCFullYear() - 19,
+          today.getUTCMonth(),
+          today.getUTCDate(),
+        ),
+      );
+      if (Number.isNaN(birthDate.getTime()) || birthDate > minimumAgeCutoff)
+        throw new BadRequestException('You must be at least 19 years old');
+    }
     const data = {
       ...dto,
       ...(dto.occupation !== undefined

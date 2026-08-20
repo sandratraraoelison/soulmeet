@@ -4,6 +4,9 @@ import type { GuidanceApi, GuidanceConversation, GuidanceConversationListRespons
 const generationControllers = new Map<string, AbortController>();
 
 export const guidanceApi: GuidanceApi = {
+  async getHomeSuggestion() {
+    return (await apiClient.get<{ message: string }>('/guidance/suggestion')).data;
+  },
   async createConversation(input = {}) {
     return (await apiClient.post<GuidanceConversation>('/guidance/conversations', { title: input.title })).data;
   },

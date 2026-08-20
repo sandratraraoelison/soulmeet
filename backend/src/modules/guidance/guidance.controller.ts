@@ -22,6 +22,12 @@ export class GuidanceController {
     return this.guidance.createConversation(user.sub, dto.title);
   }
 
+  @Get('suggestion')
+  @ApiOperation({ summary: 'Get a conversation starter based on recent coach conversations' })
+  suggestion(@CurrentUser() user: JwtPayload) {
+    return this.guidance.getHomeSuggestion(user.sub);
+  }
+
   @Get('conversations')
   listConversations(@CurrentUser() user: JwtPayload, @Query() query: GuidancePageQueryDto) {
     return this.guidance.listConversations(user.sub, query.cursor, query.limit, query.status);

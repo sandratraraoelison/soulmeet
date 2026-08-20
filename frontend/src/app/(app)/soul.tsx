@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { coachApi } from '@/api/coach.api';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
@@ -7,7 +7,7 @@ import { Screen } from '@/components/common/Screen';
 import { MotionPressable } from '@/components/motion/MotionPressable';
 import { AccountButton } from '@/components/navigation/AccountButton';
 import { ConversationList } from '@/features/chat/components/ConversationList';
-import { useSoulMatches } from '@/features/soul/hooks/use-soul';
+import { useMatchHistory, useRespondSoulMatch, useSoulMatches } from '@/features/soul/hooks/use-soul';
 import type { CompatibilityType, SoulMatch } from '@/features/soul/types/soul.types';
 
 const compatibilityColors: Record<CompatibilityType, string> = {
@@ -21,6 +21,8 @@ const compatibilityColors: Record<CompatibilityType, string> = {
 export default function SoulScreen() {
   const coach = useQuery({ queryKey: ['coach'], queryFn: coachApi.get });
   const matches = useSoulMatches();
+  const respond = useRespondSoulMatch();
+  const history = useMatchHistory();
   const coachName = coach.data?.name ?? 'Your coach';
   const peerVoice = coach.data?.traits.includes('BRO_VIBE') || coach.data?.traits.includes('SISTER_VIBE');
   const count = matches.data?.length ?? 0;
@@ -49,6 +51,21 @@ export default function SoulScreen() {
         </View>
         <ConversationList />
 
+        <View className="mt-7 rounded-[24px] border border-border bg-surface p-4">
+          <Text className="font-headline text-lg font-bold text-ink">Match decisions</Text>
+          <Text className="mt-1 text-sm text-muted">Profiles you accepted or passed on.</Text>
+          <View className="mt-4 flex-row gap-3">
+            <MotionPressable onPress={() => router.push('/(app)/matches-history?tab=accepted' as Href)} className="min-h-20 flex-1 justify-center rounded-2xl bg-secondary/10 px-4">
+              <Text className="text-2xl font-bold text-secondary">{history.data?.filter((item) => item.response === 'ACCEPTED').length ?? 0}</Text>
+              <Text className="mt-1 text-sm font-bold text-ink">Accepted</Text>
+            </MotionPressable>
+            <MotionPressable onPress={() => router.push('/(app)/matches-history?tab=rejected' as Href)} className="min-h-20 flex-1 justify-center rounded-2xl bg-surface-raised px-4">
+              <Text className="text-2xl font-bold text-muted">{history.data?.filter((item) => item.response === 'REJECTED').length ?? 0}</Text>
+              <Text className="mt-1 text-sm font-bold text-ink">Not now</Text>
+            </MotionPressable>
+          </View>
+        </View>
+
         <View className="mb-5 mt-9 overflow-hidden rounded-[28px] border border-secondary/30 bg-surface">
           <View className="h-1 bg-secondary" />
           <View className="p-6">
@@ -59,11 +76,11 @@ export default function SoulScreen() {
               {matchHeadline}
             </Text>
             <Text className="mt-3 text-sm leading-6 text-muted">
-              Not random profiles. These are reciprocal recommendations shaped by both Soulprints and the details each person chose to share for matching.
+              These profiles were chosen using what both people shared.
             </Text>
             <View className="mt-4 flex-row items-center">
               <View className="mr-2 h-2 w-2 rounded-full bg-secondary" />
-              <Text className="text-xs font-bold text-ink">No one-sided swiping. Compatibility is evaluated both ways.</Text>
+              <Text className="text-xs font-bold text-ink">Both profiles were checked.</Text>
             </View>
           </View>
         </View>
@@ -71,7 +88,7 @@ export default function SoulScreen() {
         <View className="gap-5">
           {matches.isLoading ? <View className="items-center rounded-3xl border border-border bg-surface py-12"><ActivityIndicator color="#D4AF37" /><Text className="mt-3 text-sm text-muted">Your coach is comparing emotional compatibility…</Text></View> : null}
           {matches.error ? <ErrorMessage message="Unable to calculate your suggestions right now." /> : null}
-          {matches.data?.map((match, index) => <MatchCard key={match.userId} match={match} coachName={coachName} rank={index + 1} />)}
+          {matches.data?.map((match, index) => <MatchCard key={match.userId} match={match} coachName={coachName} rank={index + 1} respond={respond} />)}
           {!matches.isLoading && !matches.error && !matches.data?.length ? <View className="rounded-3xl border border-dashed border-border p-7"><Text className="text-center font-bold text-ink">Your suggestions are still taking shape</Text><Text className="mt-2 text-center text-sm leading-6 text-muted">Keep talking with your coach and allow selected Soulprint details for matching. Recommendations appear when there is enough meaningful context.</Text></View> : null}
         </View>
       </View>
@@ -79,8 +96,11 @@ export default function SoulScreen() {
   );
 }
 
-function MatchCard({ match, coachName, rank }: { match: SoulMatch; coachName: string; rank: number }) {
+function MatchCard({ match, coachName, rank, respond }: { match: SoulMatch; coachName: string; rank: number; respond: ReturnType<typeof useRespondSoulMatch> }) {
   const colors = compatibilityColors[match.compatibilityType];
+  const pending = respond.isPending && respond.variables?.userId === match.userId;
+  const accepting = pending && respond.variables?.response === 'ACCEPTED';
+  const rejecting = pending && respond.variables?.response === 'REJECTED';
   return (
     <View className="overflow-hidden rounded-[28px] border border-border bg-surface">
       <View className="p-5">
@@ -105,13 +125,33 @@ function MatchCard({ match, coachName, rank }: { match: SoulMatch; coachName: st
 
         <View className="mt-5 rounded-2xl border border-secondary/20 bg-secondary/5 p-4">
           <Text className="text-[10px] font-bold uppercase tracking-[1.5px] text-secondary">{`${coachName}'s take`}</Text>
-          <Text className="mt-2 text-sm italic leading-6 text-ink">“{match.coachInsight}”</Text>
+          <Text className="mt-2 text-sm leading-6 text-ink">{match.coachInsight}</Text>
         </View>
 
         <View className="mt-4 flex-row items-center rounded-2xl bg-surface-raised px-4 py-3">
           <View className="mr-3 h-7 w-7 items-center justify-center rounded-full bg-primary/15"><Text className="font-bold text-primary">↔</Text></View>
-          <View className="flex-1"><Text className="text-xs font-bold text-ink">Reciprocal compatibility</Text><Text className="mt-0.5 text-[11px] text-muted">This recommendation was evaluated from both sides.</Text></View>
+          <View className="flex-1"><Text className="text-xs font-bold text-ink">Match checked both ways</Text><Text className="mt-0.5 text-[11px] text-muted">This person can also be interested in your profile.</Text></View>
         </View>
+      </View>
+      <View className="flex-row gap-3 border-t border-border p-4">
+        <MotionPressable
+          accessibilityRole="button"
+          accessibilityLabel={`Reject suggestion for ${match.name}`}
+          disabled={pending}
+          onPress={() => respond.mutate({ userId: match.userId, response: 'REJECTED' })}
+          className={`min-h-14 flex-1 items-center justify-center rounded-2xl border border-border bg-surface-raised ${pending ? 'opacity-50' : ''}`}
+        >
+          {rejecting ? <ActivityIndicator color="#9494A3" /> : <Text className="font-bold text-muted">Not now</Text>}
+        </MotionPressable>
+        <MotionPressable
+          accessibilityRole="button"
+          accessibilityLabel={`Accept suggestion for ${match.name}`}
+          disabled={pending}
+          onPress={() => respond.mutate({ userId: match.userId, response: 'ACCEPTED' })}
+          className={`min-h-14 flex-1 items-center justify-center rounded-2xl bg-secondary ${pending ? 'opacity-50' : ''}`}
+        >
+          {accepting ? <ActivityIndicator color="#25262E" /> : <Text className="font-bold text-[#25262E]">Accept</Text>}
+        </MotionPressable>
       </View>
       <MotionPressable accessibilityRole="button" accessibilityLabel={`Explore connection with ${match.name}`} onPress={() => router.push(`/(app)/person/${match.userId}`)} className="min-h-14 items-center justify-center border-t border-border bg-secondary"><Text className="font-bold text-[#25262E]">Explore this connection →</Text></MotionPressable>
     </View>

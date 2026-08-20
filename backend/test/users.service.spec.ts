@@ -49,6 +49,26 @@ describe('UsersService matchmaking', () => {
     expect(result[0].scoreMin).toBeLessThanOrEqual(result[0].score);
     expect(result[0].scoreMax).toBeGreaterThanOrEqual(result[0].score);
     expect(result[0].reciprocalScore).toEqual(expect.any(Number));
+    expect(new Set(result.map((match) => match.coachInsight)).size).toBe(3);
+  });
+
+  it('does not show cloned profiles more than once', async () => {
+    const clonedProfile = profile('Same person');
+    const prisma = {
+      block: { findMany: jest.fn().mockResolvedValue([]) },
+      user: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'me',
+          profile: { ...profile('Me'), gender: 'MALE', interestedInGender: 'FEMALE' },
+          soulprint: { entries },
+        }),
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'clone-one', profile: clonedProfile, soulprint: { entries } },
+          { id: 'clone-two', profile: clonedProfile, soulprint: { entries } },
+        ]),
+      },
+    };
+    await expect(buildService(prisma).matches('me')).resolves.toHaveLength(1);
   });
 
   it('keeps only candidates whose gender preferences match in both directions', async () => {
@@ -87,6 +107,12 @@ describe('UsersService matchmaking', () => {
   });
 
   function buildService(prisma: any) {
+    prisma.match ??= {
+      findMany: jest.fn().mockResolvedValue([]),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      upsert: jest.fn(),
+    };
     return new UsersService(
       prisma,
       new MatchCandidatesService(prisma),

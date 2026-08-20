@@ -28,6 +28,10 @@ export class ChatRealtimeService implements OnModuleInit, OnModuleDestroy {
     this.server?.to(conversationRoom(conversationId)).emit(event, payload);
   }
 
+  emitToConversationAndUser(conversationId: string, userId: string, event: string, payload: object) {
+    this.server?.to(conversationRoom(conversationId)).to(userRoom(userId)).emit(event, payload);
+  }
+
   async disconnectUserSockets(userId: string): Promise<void> {
     if (!this.server) return;
     const sockets = await this.server.in(userRoom(userId)).fetchSockets();

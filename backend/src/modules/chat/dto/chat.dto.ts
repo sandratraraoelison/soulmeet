@@ -4,6 +4,7 @@ import {
   ArrayNotEmpty,
   IsArray,
   IsInt,
+  IsIn,
   IsOptional,
   IsString,
   IsUUID,
@@ -30,6 +31,31 @@ export class SendMessageDto extends ConversationDto {
   content!: string;
 
   @ApiProperty({ format: 'uuid' }) @IsUUID() clientMessageId!: string;
+}
+export class SendMessageBodyDto {
+  @ApiProperty({ maxLength: CHAT_CONFIG.maxMessageLength })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MinLength(1)
+  @MaxLength(CHAT_CONFIG.maxMessageLength)
+  content!: string;
+
+  @ApiProperty({ format: 'uuid' }) @IsUUID() clientMessageId!: string;
+}
+export class SendAttachmentDto {
+  @ApiProperty({ enum: ['IMAGE', 'AUDIO'] })
+  @IsIn(['IMAGE', 'AUDIO'])
+  type!: 'IMAGE' | 'AUDIO';
+
+  @ApiProperty({ format: 'uuid' }) @IsUUID() clientMessageId!: string;
+
+  @ApiPropertyOptional({ minimum: 0, maximum: 300000 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(300000)
+  durationMs?: number;
 }
 export class UpdateMessageDto {
   @ApiProperty({ format: 'uuid' }) @IsUUID() messageId!: string;

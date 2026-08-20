@@ -1,4 +1,5 @@
 import { apiClient } from '@/api/client';
+import * as Crypto from 'expo-crypto';
 import type {
   Conversation,
   ConversationParticipant,
@@ -51,6 +52,19 @@ export const chatApi = {
         params: { cursor, limit },
       })
     ).data,
+  uploadAttachment: async (
+    conversationId: string,
+    input: { uri: string; name: string; mimeType: string; type: 'IMAGE' | 'AUDIO'; durationMs?: number; clientMessageId?: string },
+  ) => {
+    const form = new FormData();
+    form.append('type', input.type);
+    form.append('clientMessageId', input.clientMessageId ?? Crypto.randomUUID());
+    if (input.durationMs !== undefined) form.append('durationMs', String(input.durationMs));
+    form.append('file', { uri: input.uri, name: input.name, type: input.mimeType } as unknown as Blob);
+    return (await apiClient.post<Message>(`/conversations/${conversationId}/attachments`, form, {
+      timeout: 60_000,
+    })).data;
+  },
   updateMessage: async (messageId: string, content: string) =>
     (await apiClient.patch<Message>(`/messages/${messageId}`, { content })).data,
   deleteMessage: async (messageId: string) =>

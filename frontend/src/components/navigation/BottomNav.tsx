@@ -1,7 +1,7 @@
 import { router, usePathname, type Href } from 'expo-router';
 import { Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotionPressable } from '@/components/motion/MotionPressable';
 import { useConversations } from '@/features/chat/hooks/use-chat';
 import { useGrowth } from '@/features/growth/hooks/use-growth';
@@ -41,6 +41,7 @@ const items = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
   const insights = useSoulprint();
   const growth = useGrowth();
   const conversations = useConversations();
@@ -55,10 +56,11 @@ export function BottomNav() {
 
   return (
     <SafeAreaView
-      edges={['bottom', 'left', 'right']}
+      edges={['left', 'right']}
       className="border-t border-primary bg-surface"
+      style={{ paddingBottom: Math.max(insets.bottom - 12, 4) }}
     >
-      <View className="mx-2 mb-2 mt-3 flex-row rounded-[22px] bg-surface px-1 py-2">
+      <View className="mx-2 mt-2 flex-row rounded-[22px] bg-surface py-1">
         {items.map((item) => {
           const notificationCount = notificationCounts[item.label] ?? 0;
           const active =
@@ -76,7 +78,7 @@ export function BottomNav() {
               accessibilityLabel={`${item.label}${notificationCount ? `, ${notificationCount} new notification${notificationCount === 1 ? '' : 's'}` : ''}`}
               accessibilityState={{ selected: active }}
               onPress={() => router.replace(item.href as Href)}
-              className="min-h-16 flex-1 items-center justify-center rounded-2xl active:bg-white/5"
+              className="min-h-14 flex-1 items-center justify-center rounded-2xl active:bg-white/5"
             >
               <View className="h-8 w-8 items-center justify-center">
                 <Text

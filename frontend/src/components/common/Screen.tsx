@@ -12,7 +12,7 @@ export function Screen({ children }: PropsWithChildren) {
         style={{ flex: 1, backgroundColor: colors.canvas }}
         contentContainerStyle={{
           flexGrow: 1,
-          paddingHorizontal: 24,
+          paddingHorizontal: 8,
           paddingTop: 20,
           paddingBottom: 32,
         }}

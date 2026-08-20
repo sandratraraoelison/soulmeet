@@ -113,6 +113,19 @@ export class MatchCandidatesService {
     };
   }
 
+  async loadForUser(userId: string): Promise<MatchCandidate | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: matchingUserSelect,
+    });
+    if (!user?.profile) return null;
+    return {
+      id: user.id,
+      profile: user.profile,
+      entries: user.soulprint?.entries ?? [],
+    };
+  }
+
   private genderCompatible(
     me: { gender: string; interestedInGender: string | null },
     candidate: { gender: string; interestedInGender: string | null },

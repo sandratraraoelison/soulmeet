@@ -7,6 +7,8 @@ import { profileApi } from '@/api/profile.api';
 import { Button } from '@/components/common/Button';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { Input } from '@/components/common/Input';
+import { LocationAutocompleteInput } from '@/components/forms/LocationAutocompleteInput';
+import { COUNTRY_OPTIONS, cityOptionsForCountry } from '@/constants/location-options';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { Screen } from '@/components/common/Screen';
 import { BackButton } from '@/components/navigation/BackButton';
@@ -17,7 +19,7 @@ import { useLogout } from '@/hooks/use-auth';
 const genders: { value: Gender; label: string }[] = [
   { value: 'MALE', label: 'Male' },
   { value: 'FEMALE', label: 'Female' },
-  { value: 'NON_GENDERED', label: 'Non-gendered' },
+  { value: 'NON_GENDERED', label: 'Any' },
 ];
 
 export default function ProfileScreen() {
@@ -90,8 +92,8 @@ export default function ProfileScreen() {
             ))}
           </View>
         </View>
-        <Input label="Country" value={country} onChangeText={setCountry} />
-        <Input label="City" value={city} onChangeText={setCity} />
+        <LocationAutocompleteInput label="Country of residence" value={country} onChangeText={setCountry} suggestions={COUNTRY_OPTIONS} placeholder="Start typing your current country" />
+        <LocationAutocompleteInput label="City of residence" value={city} onChangeText={setCity} suggestions={cityOptionsForCountry(country)} placeholder="Start typing your current city" />
         <Input label="Occupation (optional)" value={occupation} onChangeText={setOccupation} maxLength={100} />
         <ErrorMessage message={save.error ? getErrorMessage(save.error) : null} />
         <Button label="Save changes" disabled={!valid} loading={save.isPending} onPress={() => save.mutate()} />

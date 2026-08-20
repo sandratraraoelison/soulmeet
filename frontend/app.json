@@ -21,11 +21,7 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
-      ]
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
@@ -36,9 +32,17 @@
       "expo-apple-authentication",
       "expo-notifications",
       [
-        "expo-local-authentication",
+        "expo-image-picker",
         {
-          "faceIDPermission": "Allow Soulmeet to use Face ID to protect your private conversations and Soulprint."
+          "photosPermission": "Allow Soulmeet to access your photos so you can share them in conversations.",
+          "cameraPermission": "Allow Soulmeet to use your camera so you can share photos in conversations.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Soulmeet to use your microphone so you can send voice messages."
         }
       ],
       [

@@ -1,4 +1,5 @@
 export const CHAT_EVENTS = {
+  READY: 'connection:ready',
   JOIN: 'conversation:join',
   LEAVE: 'conversation:leave',
   JOINED: 'conversation:joined',

@@ -16,7 +16,6 @@ import { useSessionRestore } from '@/hooks/use-session-restore';
 import { queryClient } from '@/lib/query-client';
 import { useAuthStore } from '@/store/auth.store';
 import { NotificationPermissionPrompt } from '@/components/notifications/NotificationPermissionPrompt';
-import { BiometricGate } from '@/components/common/BiometricGate';
 import { useThemePalette, useThemeStore } from '@/store/theme.store';
 
 function Navigation() {
@@ -44,7 +43,6 @@ function Navigation() {
   return (
     <>
     <NotificationPermissionPrompt enabled={isAuthenticated && complete} />
-    <BiometricGate enabled={isAuthenticated && complete}>
     <Stack
       screenOptions={{
         headerShown: false,
@@ -61,7 +59,6 @@ function Navigation() {
         <Stack.Screen name="(app)" />
       </Stack.Protected>
     </Stack>
-    </BiometricGate>
     </>
   );
 }

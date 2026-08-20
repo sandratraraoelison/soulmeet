@@ -7,17 +7,12 @@ import { SettingsLinkRow } from '@/components/common/SettingsLinkRow';
 import { Screen } from '@/components/common/Screen';
 import { BackButton } from '@/components/navigation/BackButton';
 import { defaultNotificationPreferences, notificationService, notificationsSupported, type NotificationPreferences } from '@/services/notification.service';
-import { biometricService } from '@/services/biometric.service';
 import { useThemePalette, useThemeStore, visualStyleOptions, type ThemeMode } from '@/store/theme.store';
 export default function SettingsScreen() {
   const version = Constants.expoConfig?.version ?? '1.0.0';
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [notificationBusy, setNotificationBusy] = useState(true);
   const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(defaultNotificationPreferences);
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const [biometricAvailable, setBiometricAvailable] = useState(false);
-  const [biometricEnrolled, setBiometricEnrolled] = useState(false);
-  const [biometricBusy, setBiometricBusy] = useState(true);
   const theme = useThemeStore((state) => state.mode);
   const setTheme = useThemeStore((state) => state.setMode);
   const visualStyle = useThemeStore((state) => state.visualStyle);
@@ -27,15 +22,6 @@ export default function SettingsScreen() {
     void Promise.all([notificationService.status(), notificationService.preferences()])
       .then(([status, preferences]) => { setNotificationsEnabled(status.enabled); setNotificationPreferences(preferences); })
       .finally(() => setNotificationBusy(false));
-  }, []);
-  useEffect(() => {
-    void Promise.all([biometricService.availability(), biometricService.enabled()])
-      .then(([status, active]) => {
-        setBiometricAvailable(status.available);
-        setBiometricEnrolled(status.enrolled);
-        setBiometricEnabled(active && status.available && status.enrolled);
-      })
-      .finally(() => setBiometricBusy(false));
   }, []);
   const toggleNotifications = async (value: boolean) => {
     setNotificationBusy(true);
@@ -53,18 +39,6 @@ export default function SettingsScreen() {
     await notificationService.savePreferences(next);
   };
   const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
-  const toggleBiometrics = async (value: boolean) => {
-    setBiometricBusy(true);
-    if (!value) {
-      await biometricService.disable();
-      setBiometricEnabled(false);
-    } else {
-      const result = await biometricService.enable();
-      setBiometricEnabled(result.success);
-      if (!result.success) Alert.alert('Biometric lock unavailable', result.reason ?? 'Please configure biometrics in your device settings.');
-    }
-    setBiometricBusy(false);
-  };
   const openUrl = async (url: string) => {
     try { await Linking.openURL(url); }
     catch { Alert.alert('Unable to open this page', 'Please try again later.'); }
@@ -139,16 +113,7 @@ export default function SettingsScreen() {
         </View>
         <View className="rounded-2xl border border-border bg-surface-raised p-4">
           <Text className="font-label font-bold text-ink">Security</Text>
-          <Text className="mt-1 text-sm leading-5 text-muted">Protect access to your account and private information.</Text>
-          <View className="mt-4 flex-row items-center justify-between border-t border-border pt-4">
-            <View className="mr-4 flex-1">
-              <Text className="font-label font-semibold text-ink">Biometric lock</Text>
-              <Text className="mt-1 text-sm leading-5 text-muted">
-                {!biometricAvailable ? 'Biometric authentication is unavailable on this device.' : !biometricEnrolled ? 'Set up biometrics in your device settings first.' : 'Require Face ID or fingerprint when reopening Soulmeet.'}
-              </Text>
-            </View>
-            <Switch accessibilityLabel="Biometric lock" disabled={biometricBusy || !biometricAvailable || !biometricEnrolled} value={biometricEnabled} onValueChange={(value) => void toggleBiometrics(value)} trackColor={{ false: colors.border, true: colors.primary }} thumbColor={biometricEnabled ? '#FFFFFF' : colors.muted} />
-          </View>
+          <Text className="mt-1 text-sm leading-5 text-muted">Manage your account password.</Text>
           <View className="mt-4"><Button label="Change password" variant="secondary" onPress={() => router.push('/(app)/change-password')} /></View>
         </View>
       </View>

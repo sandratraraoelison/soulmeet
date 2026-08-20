@@ -11,6 +11,10 @@ const makeMessage = (overrides: Partial<Message> = {}): Message => ({
   senderId: 'me',
   content: 'Bonjour',
   type: 'TEXT',
+  mediaUrl: null,
+  mediaMimeType: null,
+  mediaSize: null,
+  mediaDurationMs: null,
   status: 'SENT',
   isEdited: false,
   editedAt: null,
@@ -65,14 +69,14 @@ describe('MessageBubble', () => {
   it('renders sent message content and status', async () => {
     const view = await render(<MessageBubble message={makeMessage()} mine />);
     expect(view.getByText('Bonjour')).toBeTruthy();
-    expect(view.getByText('✓')).toBeTruthy();
+    expect(view.getByText('Sent')).toBeTruthy();
   });
 
   it('shows read status with two checks', async () => {
     const view = await render(
       <MessageBubble message={makeMessage({ status: 'READ' })} mine />,
     );
-    expect(view.getByText('✓✓')).toBeTruthy();
+    expect(view.getByText('Read')).toBeTruthy();
   });
 
   it('never displays deleted original content', async () => {
@@ -115,6 +119,6 @@ describe('MessageBubble', () => {
     );
     fireEvent.press(view.getByText('Bonjour'));
     expect(onRetry).toHaveBeenCalledTimes(1);
-    expect(view.getByText('Failed · Tap to try again')).toBeTruthy();
+    expect(view.getByText('Failed - Tap to try again')).toBeTruthy();
   });
 });

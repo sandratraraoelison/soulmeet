@@ -53,6 +53,16 @@ describe('Profile and coach ownership', () => {
     await new CoachesService(prisma).create('user-a', coachDto);
     expect(prisma.coach.create.mock.calls[0][0].data.userId).toBe('user-a');
   });
+  it('rejects profiles younger than 19', async () => {
+    const birthDate = new Date();
+    birthDate.setUTCFullYear(birthDate.getUTCFullYear() - 18);
+    await expect(
+      new ProfilesService(prisma).createOrUpdate('user-a', {
+        ...profileDto,
+        birthDate: birthDate.toISOString(),
+      }),
+    ).rejects.toThrow('You must be at least 19 years old');
+  });
   it('cannot update another user because ownership is derived from JWT user id', async () => {
     prisma.coach.findUnique.mockResolvedValue({ userId: 'user-a' });
     await new CoachesService(prisma).update('user-a', { name: 'Mine' });

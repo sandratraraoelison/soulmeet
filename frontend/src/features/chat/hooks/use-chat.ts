@@ -217,6 +217,10 @@ export function useSendMessage(conversationId: string, senderId: string) {
         senderId,
         content,
         type: 'TEXT',
+        mediaUrl: null,
+        mediaMimeType: null,
+        mediaSize: null,
+        mediaDurationMs: null,
         status: 'PENDING',
         isEdited: false,
         editedAt: null,
@@ -253,6 +257,21 @@ export function useSendMessage(conversationId: string, senderId: string) {
     [conversationId, queryClient, senderId],
   );
   return { send, error };
+}
+
+export function useSendAttachment(conversationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { uri: string; name: string; mimeType: string; type: 'IMAGE' | 'AUDIO'; durationMs?: number; clientMessageId?: string }) =>
+      chatApi.uploadAttachment(conversationId, input),
+    onSuccess: (message) => {
+      queryClient.setQueryData<InfiniteData<MessagePage>>(
+        chatKeys.messages(conversationId),
+        (data) => upsertMessage(data, message),
+      );
+      void queryClient.invalidateQueries({ queryKey: chatKeys.conversations });
+    },
+  });
 }
 
 export function useEditMessage(conversationId: string) {

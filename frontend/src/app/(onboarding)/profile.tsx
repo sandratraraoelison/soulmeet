@@ -14,6 +14,8 @@ import { BackButton } from '@/components/navigation/BackButton';
 import { Button } from '@/components/common/Button';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { Input } from '@/components/common/Input';
+import { LocationAutocompleteInput } from '@/components/forms/LocationAutocompleteInput';
+import { COUNTRY_OPTIONS, cityOptionsForCountry } from '@/constants/location-options';
 import { useLogout } from '@/hooks/use-auth';
 import { profileSchema, type ProfileForm } from '@/schemas/onboarding.schemas';
 import type { Gender } from '@/types/models';
@@ -21,7 +23,7 @@ import type { Gender } from '@/types/models';
 const genders: { value: Gender; label: string }[] = [
   { value: 'MALE', label: 'Male' },
   { value: 'FEMALE', label: 'Female' },
-  { value: 'NON_GENDERED', label: 'Non-gendered' },
+  { value: 'NON_GENDERED', label: 'Any' },
 ];
 
 const formatDate = (date: Date) =>
@@ -29,7 +31,7 @@ const formatDate = (date: Date) =>
 
 const adultCutoff = () => {
   const date = new Date();
-  date.setFullYear(date.getFullYear() - 18);
+  date.setFullYear(date.getFullYear() - 19);
   return date;
 };
 
@@ -45,6 +47,8 @@ export default function ProfileOnboardingScreen() {
   const {
     control,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -68,6 +72,7 @@ export default function ProfileOnboardingScreen() {
           occupation: '',
         },
   });
+  const selectedCountry = watch('country');
   const save = useMutation({
     mutationFn: profileApi.save,
     onSuccess: (profile) => {
@@ -214,11 +219,17 @@ export default function ProfileOnboardingScreen() {
             control={control}
             name="country"
             render={({ field }) => (
-              <Input
+              <LocationAutocompleteInput
                 dark
-                label="Country"
+                label="Country of residence"
                 value={field.value}
-                onChangeText={field.onChange}
+                onChangeText={(country) => {
+                  if (country !== field.value)
+                    setValue('city', '', { shouldValidate: false });
+                  field.onChange(country);
+                }}
+                suggestions={COUNTRY_OPTIONS}
+                placeholder="Start typing your current country"
                 error={errors.country?.message}
               />
             )}
@@ -227,11 +238,13 @@ export default function ProfileOnboardingScreen() {
             control={control}
             name="city"
             render={({ field }) => (
-              <Input
+              <LocationAutocompleteInput
                 dark
-                label="City / location"
+                label="City of residence"
                 value={field.value}
                 onChangeText={field.onChange}
+                suggestions={cityOptionsForCountry(selectedCountry)}
+                placeholder="Start typing your current city"
                 error={errors.city?.message}
               />
             )}

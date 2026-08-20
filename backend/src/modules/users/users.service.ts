@@ -71,7 +71,7 @@ export class UsersService {
     return user;
   }
 
-  async discover(currentUserId: string) {
+  async discover(currentUserId: string, limit = 12, offset = 0) {
     const excludedIds = await this.candidates.blockedIds(currentUserId);
     return this.prisma.user.findMany({
       where: {
@@ -82,10 +82,18 @@ export class UsersService {
       select: {
         id: true,
         profile: {
-          select: { firstName: true, city: true, country: true },
+          select: {
+            firstName: true,
+            birthDate: true,
+            city: true,
+            country: true,
+            occupation: true,
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
     });
   }
 
@@ -95,7 +103,21 @@ export class UsersService {
     const asCandidate = (
       candidate: { id: string; profile: MatchingProfile; entries: MatchingEntry[] },
     ) => ({ id: candidate.id, profile: candidate.profile, soulprint: { entries: candidate.entries } });
-    let results: ScoredCandidate[] = eligible
+    const seenProfiles = new Set<string>();
+    const distinctEligible = eligible.filter((candidate) => {
+      const profile = candidate.profile;
+      const fingerprint = [
+        profile.firstName,
+        profile.birthDate.toISOString().slice(0, 10),
+        profile.city,
+        profile.country,
+        profile.occupation ?? '',
+      ].map((value) => value.toLowerCase().trim()).join('|');
+      if (seenProfiles.has(fingerprint)) return false;
+      seenProfiles.add(fingerprint);
+      return true;
+    });
+    let results: ScoredCandidate[] = distinctEligible
       .map((candidate) => {
         const forward = this.compatibility(me.profile, me.entries, asCandidate(candidate));
         const reverse = this.compatibility(candidate.profile, candidate.entries, asCandidate(me));
@@ -103,12 +125,72 @@ export class UsersService {
       })
       .sort((a, b) => b.score - a.score);
     if (this.semantic?.enabled()) {
-      results = await this.blendSemantic(currentUserId, me.entries, eligible, results);
+      results = await this.blendSemantic(currentUserId, me.entries, distinctEligible, results);
     }
-    results = results.slice(0, 3);
+    const responded = await this.prisma.match.findMany({
+      where: { userId: currentUserId, respondedAt: { not: null } },
+      select: { matchedUserId: true },
+    });
+    const hidden = new Set(responded.map((match) => match.matchedUserId));
+    results = results
+      .filter((result) => !hidden.has(result.userId))
+      .slice(0, 3)
+      .map((result, index) => ({
+        ...result,
+        coachInsight: this.coachInsight(
+          result.name,
+          result.compatibilityType,
+          result.reasons[0],
+          index,
+        ),
+      }));
     // Persist recommendations so the admin dashboard can surface match history.
     await this.persistence.persist(currentUserId, results);
     return results;
+  }
+
+  async respondToMatch(userId: string, matchedUserId: string, response: 'ACCEPTED' | 'REJECTED') {
+    const match = await this.prisma.match.findUnique({
+      where: { userId_matchedUserId: { userId, matchedUserId } },
+    });
+    if (!match) throw new NotFoundException('Recommendation not found');
+    return this.prisma.match.update({
+      where: { id: match.id },
+      data: { response, respondedAt: new Date() },
+    });
+  }
+
+  async matchHistory(userId: string, response?: 'ACCEPTED' | 'REJECTED') {
+    const matches = await this.prisma.match.findMany({
+      where: { userId, respondedAt: { not: null }, ...(response ? { response } : {}) },
+      orderBy: { respondedAt: 'desc' },
+      select: {
+        matchedUserId: true,
+        score: true,
+        response: true,
+        respondedAt: true,
+        matchedUser: {
+          select: {
+            profile: { select: { firstName: true, birthDate: true, city: true, country: true, occupation: true } },
+          },
+        },
+      },
+    });
+    return matches.flatMap((match) => {
+      const profile = match.matchedUser.profile;
+      if (!profile || !match.response || !match.respondedAt) return [];
+      return [{
+        userId: match.matchedUserId,
+        name: profile.firstName,
+        age: Math.floor((Date.now() - profile.birthDate.getTime()) / 31_557_600_000),
+        city: profile.city,
+        country: profile.country,
+        job: profile.occupation?.trim() || 'Occupation not shared yet',
+        score: match.score,
+        response: match.response,
+        respondedAt: match.respondedAt,
+      }];
+    });
   }
 
   private async blendSemantic(
@@ -174,13 +256,94 @@ export class UsersService {
             city: true,
             country: true,
             gender: true,
+            sexualOrientation: true,
+            interestedInGender: true,
             occupation: true,
+            birthDate: true,
+          },
+        },
+        soulprint: {
+          select: {
+            entries: {
+              where: {
+                visibility: 'MATCHING_ALLOWED',
+                status: { in: ['ACTIVE', 'CONFIRMED'] },
+                deletedAt: null,
+              },
+              select: {
+                id: true,
+                category: true,
+                key: true,
+                normalizedValue: true,
+                value: true,
+                matchingWeight: true,
+                importance: true,
+              },
+              orderBy: [{ importance: 'desc' }, { updatedAt: 'desc' }],
+            },
           },
         },
       },
     });
-    if (!user) throw new NotFoundException('Profile not found');
-    return user;
+    if (!user?.profile) throw new NotFoundException('Profile not found');
+    const entries: MatchingEntry[] = (user.soulprint?.entries ?? []).map((entry) => ({
+      id: entry.id,
+      category: entry.category,
+      key: entry.key,
+      normalizedValue: entry.normalizedValue,
+      value: entry.value,
+      matchingWeight: entry.matchingWeight,
+    }));
+    const me = await this.candidates.loadForUser(currentUserId);
+    let compatibility: {
+      score: number;
+      scoreMin: number;
+      scoreMax: number;
+      compatibilityType: string;
+      reasons: string[];
+    } | null = null;
+    if (me) {
+      const result = this.compatibility(me.profile, me.entries, {
+        id: user.id,
+        profile: user.profile,
+        soulprint: { entries },
+      });
+      compatibility = {
+        score: result.score,
+        scoreMin: result.scoreMin,
+        scoreMax: result.scoreMax,
+        compatibilityType: result.compatibilityType,
+        reasons: result.reasons,
+      };
+    }
+    const publicEntries = (user.soulprint?.entries ?? []).map((entry) => ({
+      category: entry.category,
+      value: entry.value,
+      importance: entry.importance,
+      shared:
+        !!me &&
+        me.entries.some(
+          (mine) =>
+            semanticSimilarity(
+              mine.normalizedValue ?? mine.value,
+              entry.normalizedValue ?? entry.value,
+            ).score >= 0.55,
+        ),
+    }));
+    return {
+      id: user.id,
+      profile: {
+        firstName: user.profile.firstName,
+        city: user.profile.city,
+        country: user.profile.country,
+        occupation: user.profile.occupation,
+        gender: user.profile.gender,
+        sexualOrientation: user.profile.sexualOrientation,
+        birthDate: user.profile.birthDate,
+      },
+      compatibility,
+      soulprint: publicEntries,
+    };
   }
 
   private compatibility(
@@ -301,6 +464,7 @@ export class UsersService {
         candidate.profile.firstName,
         compatibilityType,
         reasons[0],
+        0,
       ),
     };
   }
@@ -326,21 +490,38 @@ export class UsersService {
     )?.value;
   }
 
-  private coachInsight(name: string, type: string, reason?: string) {
-    const lead =
-      reason ?? 'Your profiles show meaningful common ground.';
-    const endings: Record<string, string> = {
-      'Safe Compatibility': `${name} may bring a kind of steadiness that still leaves room for playfulness and emotional depth.`,
-      'Passionate Compatibility':
-        'There is real intensity here. It could feel electric, as long as both of you communicate clearly instead of guessing.',
-      'Healing Compatibility':
-        'This connection could feel reassuring without becoming flat—a chance to experience closeness with more ease.',
-      'Growth Compatibility':
-        'You may challenge each other in useful ways. The potential is strong if curiosity stays bigger than defensiveness.',
-      'Long-Term Compatibility':
-        'This has the foundations of something healthy and lasting, even if the first spark feels quieter than chaos.',
+  private coachInsight(name: string, type: string, reason: string | undefined, variant: number) {
+    const detail = reason ? reason.replace(/^You /, 'You both ').replace(/: /, ' around ') : '';
+    const options: Record<string, string[]> = {
+      'Safe Compatibility': [
+        `${name} may be easy to talk to. You can take it slowly and see how you feel together.`,
+        `Things with ${name} may feel calm and clear. A simple conversation is a good place to start.`,
+        `Talking with ${name} may feel natural. Notice if you can both be honest and relaxed.`,
+      ],
+      'Passionate Compatibility': [
+        `There may be a strong spark with ${name}. Be open and say what you want clearly.`,
+        `${name} could bring a lot of energy. Enjoy it, but do not rush past honest communication.`,
+        `You may feel drawn to ${name} quickly. Stay curious and let the connection grow at its own pace.`,
+      ],
+      'Healing Compatibility': [
+        `${name} may make closeness feel easier. Start small and notice whether you feel comfortable.`,
+        `This could feel calm in a good way. Give ${name} time and see if trust grows naturally.`,
+        `${name} may offer a softer kind of connection. See if you feel safe being yourself.`,
+      ],
+      'Growth Compatibility': [
+        `${name} may see some things differently. That can help you grow if you both stay open.`,
+        `You and ${name} may challenge each other. Ask simple questions and listen before judging.`,
+        `${name} could bring a new point of view. This may work well if you both stay patient.`,
+      ],
+      'Long-Term Compatibility': [
+        `You and ${name} may want similar things. Talk and see if your everyday lives also fit.`,
+        `There is a good base with ${name}. Take time to learn what a real relationship would look like.`,
+        `${name} may fit what you want for the future. Start by seeing how you connect in everyday conversation.`,
+      ],
     };
-    return `${lead} ${endings[type]}`;
+    const choices = options[type] ?? [`It may be worth having a simple conversation with ${name}.`];
+    const index = variant % choices.length;
+    return detail ? `${detail}. ${choices[index]}` : choices[index]!;
   }
 
   private reason(category: string, value: string) {

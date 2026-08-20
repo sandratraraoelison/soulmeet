@@ -10,34 +10,30 @@ import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { BackButton } from '@/components/navigation/BackButton';
 import { useLogout } from '@/hooks/use-auth';
 import { useOnboardingStore } from '@/store/onboarding.store';
-import type { CoachGender } from '@/types/models';
+import type { InterestGender } from '@/types/models';
 
 const options: {
-  gender: CoachGender;
+  gender: InterestGender;
   symbol: string;
   title: string;
-  description: string;
   available: boolean;
 }[] = [
   {
     gender: 'MALE',
     symbol: '♂',
-    title: 'Male',
-    description: 'Grounded, protective, and direct guidance.',
+    title: 'Men',
     available: true,
   },
   {
     gender: 'FEMALE',
     symbol: '♀',
-    title: 'Female',
-    description: 'Nurturing, intuitive, and empathetic flow.',
+    title: 'Women',
     available: true,
   },
   {
     gender: 'NON_GENDERED',
     symbol: '☼',
-    title: 'Non-gendered',
-    description: 'Fluid, universal, and analytical wisdom.',
+    title: 'Any',
     available: true,
   },
 ];
@@ -107,7 +103,7 @@ export default function CompanionScreen() {
                 }}
                 disabled={!option.available}
                 onPress={() => option.available && setGender(option.gender)}
-                className={`min-h-[205px] items-center justify-center rounded-xl border px-7 py-6 ${selected ? 'border-primary bg-primary/10' : 'border-border bg-surface'} ${!option.available ? 'opacity-50' : 'active:opacity-80'}`}
+                className={`min-h-[170px] items-center justify-center rounded-xl border px-7 py-6 ${selected ? 'border-primary bg-primary/10' : 'border-border bg-surface'} ${!option.available ? 'opacity-50' : 'active:opacity-80'}`}
               >
                 <View
                   className={`h-14 w-14 items-center justify-center rounded-full ${selected ? 'bg-[#F7C94B]' : 'bg-surface-raised'}`}
@@ -120,9 +116,6 @@ export default function CompanionScreen() {
                 </View>
                 <Text className="mt-5 text-xl font-bold text-ink">
                   {option.title}
-                </Text>
-                <Text className="mt-2 text-center text-sm font-semibold leading-5 text-muted">
-                  {option.description}
                 </Text>
                 <View
                   className={`mt-5 h-5 w-5 items-center justify-center rounded-full border-2 ${selected ? 'border-[#F7C94B]' : 'border-border'}`}

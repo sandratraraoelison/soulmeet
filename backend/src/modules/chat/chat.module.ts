@@ -8,11 +8,12 @@ import { ConversationsController } from './conversations.controller';
 import { MessagesController } from './messages.controller';
 import { WsJwtGuard } from './guards/ws-jwt.guard';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ChatMediaService } from './chat-media.service';
 
 @Module({
   imports: [AuthModule, NotificationsModule],
   controllers: [ConversationsController, MessagesController],
-  providers: [ChatService, ChatGateway, ChatRateLimiter, ChatRealtimeService, WsJwtGuard],
+  providers: [ChatService, ChatGateway, ChatRateLimiter, ChatRealtimeService, ChatMediaService, WsJwtGuard],
   exports: [ChatService],
 })
 export class ChatModule {}

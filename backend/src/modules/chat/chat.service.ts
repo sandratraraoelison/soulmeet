@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { MessageStatus, Prisma } from '@prisma/client';
+import { MessageStatus, MessageType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { CHAT_CONFIG } from './constants/chat-config.constants';
 import { CHAT_EVENTS } from './constants/chat-events.constants';
@@ -213,8 +213,40 @@ export class ChatService {
     return { message: this.sanitizeMessage(message), duplicate: false };
   }
 
+  async sendAttachment(
+    userId: string,
+    conversationId: string,
+    clientMessageId: string,
+    type: 'IMAGE' | 'AUDIO',
+    media: { url: string; mimeType: string; size: number },
+    durationMs?: number,
+  ) {
+    await this.otherParticipant(conversationId, userId);
+    const duplicate = await this.prisma.message.findUnique({
+      where: { senderId_clientMessageId: { senderId: userId, clientMessageId } },
+    });
+    if (duplicate) return this.sanitizeMessage(duplicate);
+    const message = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.message.create({ data: {
+        conversationId,
+        senderId: userId,
+        clientMessageId,
+        type: type === 'IMAGE' ? MessageType.IMAGE : MessageType.AUDIO,
+        mediaUrl: media.url,
+        mediaMimeType: media.mimeType,
+        mediaSize: media.size,
+        mediaDurationMs: durationMs,
+      } });
+      await tx.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } });
+      return created;
+    });
+    return this.sanitizeMessage(message);
+  }
+
   async update(userId: string, messageId: string, content: string) {
     const message = await this.getOwnedMessage(userId, messageId);
+    if (message.type !== MessageType.TEXT)
+      throw new ChatException('MESSAGE_NOT_EDITABLE', 'Attachments cannot be edited', HttpStatus.BAD_REQUEST);
     if (message.isDeleted)
       throw new ChatException(
         'MESSAGE_ALREADY_DELETED',

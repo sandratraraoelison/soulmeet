@@ -9,7 +9,7 @@ export type SexualOrientation =
   | 'OTHER'
   | 'PREFER_NOT_TO_SAY';
 export type CoachGender = 'MALE' | 'FEMALE' | 'NON_GENDERED';
-export type InterestGender = CoachGender;
+export type InterestGender = 'MALE' | 'FEMALE' | 'NON_GENDERED';
 export type CoachPersonality =
   | 'FRIENDLY'
   | 'BRO_VIBE'

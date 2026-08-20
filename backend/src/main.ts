@@ -2,15 +2,19 @@ import { randomUUID } from 'crypto';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { type NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'node:path';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api/v1');
   const config = app.get(ConfigService);
+  if (config.get<string>('NODE_ENV') !== 'production')
+    app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' });
   // Correlation id for proxy propagation and support diagnostics.
   app.use((req: { id?: string }, res: { setHeader: (name: string, value: string) => void }, next: () => void) => {
     res.setHeader('x-request-id', req.id ?? randomUUID());

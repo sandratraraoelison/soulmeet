@@ -7,7 +7,11 @@ export type Message = {
   conversationId: string;
   senderId: string;
   content: string | null;
-  type: 'TEXT';
+  type: 'TEXT' | 'IMAGE' | 'AUDIO';
+  mediaUrl: string | null;
+  mediaMimeType: string | null;
+  mediaSize: number | null;
+  mediaDurationMs: number | null;
   status: MessageStatus;
   isEdited: boolean;
   editedAt: string | null;

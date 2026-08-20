@@ -58,6 +58,7 @@ export class ChatGateway implements OnGatewayConnection {
     try {
       const user = await this.auth.authenticate(client);
       await client.join(userRoom(user.id));
+      client.emit(CHAT_EVENTS.READY, { userId: user.id });
     } catch (error) {
       this.logger.warn(
         `Rejected socket connection: ${error instanceof Error ? error.message : 'unknown error'}`,

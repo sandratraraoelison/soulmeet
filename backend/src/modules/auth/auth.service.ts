@@ -31,7 +31,7 @@ export class AuthService {
     const today = new Date();
     const adultCutoff = new Date(
       Date.UTC(
-        today.getUTCFullYear() - 18,
+        today.getUTCFullYear() - 19,
         today.getUTCMonth(),
         today.getUTCDate(),
       ),
@@ -44,7 +44,7 @@ export class AuthService {
       ),
     );
     if (birthDate > adultCutoff)
-      throw new BadRequestException('You must be at least 18 years old');
+      throw new BadRequestException('You must be at least 19 years old');
     if (birthDate < oldestAllowed || birthDate > today)
       throw new BadRequestException('Invalid birth date');
     const passwordHash = await argon2.hash(dto.password);

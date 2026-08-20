@@ -53,8 +53,24 @@ describe('GuidanceService', () => {
     expect(prisma.__tx.guidanceMessage.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         role: GuidanceMessageRole.ASSISTANT,
-        content: expect.stringContaining('Hi Sam'),
+        content: expect.stringContaining('Hey Sam'),
       }),
+    });
+  });
+
+  it('reuses the existing active coach conversation', async () => {
+    prisma.guidanceConversation.findFirst.mockResolvedValue(conversation);
+    await expect(service.createConversation('user-a')).resolves.toBe(conversation);
+    expect(prisma.__tx.guidanceConversation.create).not.toHaveBeenCalled();
+  });
+
+  it('bases the home suggestion on a recent meaningful user message', async () => {
+    prisma.profile.findUnique.mockResolvedValue({ firstName: 'Sam' });
+    prisma.guidanceMessage.findMany.mockResolvedValue([
+      { content: 'I have a first date with Maya this weekend.' },
+    ]);
+    await expect(service.getHomeSuggestion('user-a')).resolves.toEqual({
+      message: expect.stringContaining('I have a first date with Maya this weekend.'),
     });
   });
 
@@ -73,12 +89,13 @@ describe('GuidanceService', () => {
 
   it('generates a proactive daily prompt across the relationship discovery areas', async () => {
     prisma.guidanceConversation.findFirst.mockResolvedValue(conversation);
+    prisma.guidanceMessage.findFirst.mockResolvedValue({ id: 'previous-user-message' });
     prisma.guidanceMessage.findMany.mockResolvedValue([]);
     await service.createDailyCoachMessage('user-a', 'check-in-a', '2026-08-10');
     expect(llm.complete).toHaveBeenCalledWith(expect.arrayContaining([
       expect.objectContaining({
         role: 'system',
-        content: expect.stringContaining('personality, emotional patterns, dating history'),
+        content: expect.stringContaining("complete but concise recap of the user's most recent conversation"),
       }),
     ]), expect.objectContaining({ priority: 'background', feature: 'coach_check_in', userId: 'user-a' }));
     expect(prisma.__tx.coachDailyCheckIn.update).toHaveBeenCalledWith(expect.objectContaining({
@@ -94,6 +111,29 @@ describe('GuidanceService', () => {
     expect(prisma.__tx.guidanceMessage.create).toHaveBeenNthCalledWith(1, { data: expect.objectContaining({ role: GuidanceMessageRole.USER }) });
     expect(prisma.__tx.guidanceMessage.create).toHaveBeenNthCalledWith(2, { data: expect.objectContaining({ role: GuidanceMessageRole.ASSISTANT, provider: 'ollama' }) });
     expect(llm.complete).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ role: 'system' })]), expect.objectContaining({ priority: 'interactive', feature: 'guidance', userId: 'user-a' }));
+  });
+
+  it('retrieves older conversation details when the user asks what the coach remembers', async () => {
+    prisma.guidanceConversation.findFirst.mockResolvedValue(conversation);
+    prisma.guidanceMessage.findMany
+      .mockResolvedValueOnce([
+        { role: GuidanceMessageRole.USER, content: 'Do you remember what I told you about Maya?', isDeleted: false },
+      ])
+      .mockResolvedValueOnce([
+        { content: 'Maya and I met at a friend party, and our first date felt calm.' },
+      ]);
+
+    await service.send('user-a', conversation.id, 'Do you remember what I told you about Maya?');
+
+    expect(llm.complete).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          role: 'system',
+          content: expect.stringContaining('Maya and I met at a friend party'),
+        }),
+      ]),
+      expect.objectContaining({ feature: 'guidance' }),
+    );
   });
 
   it('streams tokens and persists the final assistant response', async () => {
@@ -149,11 +189,11 @@ describe('GuidancePromptService', () => {
       soulprint: null,
       memories: [],
     });
-    expect(prompt).toContain('prefer concise answers of 2–4 short paragraphs');
+    expect(prompt).toContain('prefer 2 to 5 short sentences in 1 or 2 paragraphs');
     expect(prompt).toContain('say the difficult truth plainly');
     expect(prompt).toContain('usually zero or one targeted question');
     expect(prompt).toContain('recommend a specific action');
-    expect(prompt).toContain('one or two fitting emojis occasionally');
+    expect(prompt).toContain('Emojis and decorative symbols: do not use them');
   });
 
   it('turns a soft reflective coach into reassuring, exploratory behavior', () => {
@@ -171,9 +211,9 @@ describe('GuidancePromptService', () => {
     });
     expect(prompt).toContain('specific emotional validation');
     expect(prompt).toContain('ask permission before a strong challenge');
-    expect(prompt).toContain('one or two open, reflective questions');
+    expect(prompt).toContain('at most one open, reflective question');
     expect(prompt).toContain('help the user reach their own conclusion');
-    expect(prompt).toContain('do not use emojis unless the user uses them first');
+    expect(prompt).toContain('Emojis and decorative symbols: do not use them');
   });
 
   it('uses selected peer-vibe traits to change vocabulary', () => {

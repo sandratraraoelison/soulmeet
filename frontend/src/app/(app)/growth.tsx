@@ -56,7 +56,7 @@ export default function GrowthScreen() {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-canvas">
       <ScrollView
-        contentContainerClassName="px-5 pb-10"
+        contentContainerClassName="px-2 pb-10"
         refreshControl={
           <RefreshControl
             refreshing={query.isRefetching}

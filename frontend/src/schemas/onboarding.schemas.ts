@@ -8,9 +8,9 @@ const adultDate = z.string().refine((value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return false;
   const cutoff = new Date();
-  cutoff.setFullYear(cutoff.getFullYear() - 18);
+  cutoff.setFullYear(cutoff.getFullYear() - 19);
   return date <= cutoff;
-}, 'You must be at least 18 years old.');
+}, 'You must be at least 19 years old.');
 export const profileSchema = z.object({
   firstName: z.string().trim().min(1, 'First name is required.'),
   birthDate: adultDate,
@@ -24,8 +24,8 @@ export const profileSchema = z.object({
     'OTHER',
     'PREFER_NOT_TO_SAY',
   ]),
-  country: z.string().trim().min(1, 'Country is required.'),
-  city: z.string().trim().min(1, 'City is required.'),
+  country: z.string().trim().min(1, 'Country of residence is required.'),
+  city: z.string().trim().min(1, 'City of residence is required.'),
   occupation: z.string().trim().max(100, 'Occupation is too long.').optional(),
 });
 export const coachSchema = z.object({

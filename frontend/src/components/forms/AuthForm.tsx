@@ -10,6 +10,8 @@ import { getErrorMessage } from '@/api/client';
 import { Button } from '@/components/common/Button';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { Input } from '@/components/common/Input';
+import { LocationAutocompleteInput } from '@/components/forms/LocationAutocompleteInput';
+import { COUNTRY_OPTIONS, cityOptionsForCountry } from '@/constants/location-options';
 import { PasswordInput } from '@/components/common/PasswordInput';
 import { SocialButtons } from '@/components/common/SocialButtons';
 import { useEmailAuth } from '@/hooks/use-auth';
@@ -29,7 +31,7 @@ const formatDate = (date: Date) =>
 
 const getAdultCutoff = () => {
   const date = new Date();
-  date.setFullYear(date.getFullYear() - 18);
+  date.setFullYear(date.getFullYear() - 19);
   return date;
 };
 
@@ -45,6 +47,8 @@ export function AuthForm({
   const {
     control,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<LoginForm | RegisterForm>({
     resolver: zodResolver(mode === 'login' ? loginSchema : registerSchema),
@@ -64,6 +68,7 @@ export function AuthForm({
         : {}),
     },
   });
+  const selectedCountry = mode === 'register' ? watch('country') as string : '';
   const submit = (values: LoginForm | RegisterForm) => {
     if (mode === 'register' && 'firstName' in values) {
       mutation.mutate({
@@ -176,7 +181,7 @@ export function AuthForm({
                     [
                       { value: 'MALE', label: 'Male' },
                       { value: 'FEMALE', label: 'Female' },
-                      { value: 'NON_GENDERED', label: 'Non-gendered' },
+                      { value: 'NON_GENDERED', label: 'Any' },
                     ] as const
                   ).map((option) => (
                     <Pressable
@@ -203,11 +208,17 @@ export function AuthForm({
             control={control}
             name="country"
             render={({ field }) => (
-              <Input
+              <LocationAutocompleteInput
                 dark={dark}
-                label="Country"
+                label="Country of residence"
                 value={field.value as string}
-                onChangeText={field.onChange}
+                onChangeText={(country) => {
+                  if (country !== field.value)
+                    setValue('location', '', { shouldValidate: false });
+                  field.onChange(country);
+                }}
+                suggestions={COUNTRY_OPTIONS}
+                placeholder="Start typing your current country"
                 error={
                   'country' in errors ? errors.country?.message : undefined
                 }
@@ -218,11 +229,13 @@ export function AuthForm({
             control={control}
             name="location"
             render={({ field }) => (
-              <Input
+              <LocationAutocompleteInput
                 dark={dark}
-                label="City / location"
+                label="City of residence"
                 value={field.value as string}
                 onChangeText={field.onChange}
+                suggestions={cityOptionsForCountry(selectedCountry)}
+                placeholder="Start typing your current city"
                 error={
                   'location' in errors ? errors.location?.message : undefined
                 }

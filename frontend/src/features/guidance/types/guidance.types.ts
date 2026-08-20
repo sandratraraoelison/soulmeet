@@ -48,6 +48,7 @@ export interface GuidanceMessagesResponse {
 }
 
 export interface GuidanceApi {
+  getHomeSuggestion(): Promise<{ message: string }>;
   createConversation(input?: CreateGuidanceConversationInput): Promise<GuidanceConversation>;
   getConversations(params: { page: number; limit: number; status?: GuidanceConversationStatus; cursor?: string }): Promise<GuidanceConversationListResponse>;
   getConversation(conversationId: string): Promise<GuidanceConversation>;

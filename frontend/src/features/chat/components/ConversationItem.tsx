@@ -13,10 +13,14 @@ export const ConversationItem = memo(function ConversationItem({
 }) {
   const last = conversation.lastMessage;
   const preview = typing
-    ? 'typing…'
+    ? 'typing...'
     : last?.isDeleted
       ? 'Deleted message'
-      : last?.content ?? 'Start the conversation';
+      : last?.type === 'IMAGE'
+        ? 'Photo'
+        : last?.type === 'AUDIO'
+          ? 'Voice message'
+          : last?.content ?? 'Start the conversation';
   const date = conversation.lastMessageAt
     ? new Date(conversation.lastMessageAt).toLocaleTimeString([], {
         hour: '2-digit',

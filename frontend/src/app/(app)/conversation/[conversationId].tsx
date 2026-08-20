@@ -5,18 +5,21 @@ import { ThemedStatusBar } from '@/components/common/ThemedStatusBar';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Modal,
   Pressable,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { BackButton } from '@/components/navigation/BackButton';
 import { CopySelectionModal } from '@/components/common/CopySelectionModal';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { authApi } from '@/api/auth.api';
-import { MessageBubble } from '@/features/chat/components/MessageBubble';
+import { mediaUrl, MessageBubble } from '@/features/chat/components/MessageBubble';
 import { MessageComposer } from '@/features/chat/components/MessageComposer';
 import { ConversationHeader } from '@/features/chat/components/ConversationHeader';
 import { CHAT_EVENTS } from '@/features/chat/constants/chat-events';
@@ -29,12 +32,33 @@ import {
   useDeleteMessage,
   useEditMessage,
   useSendMessage,
+  useSendAttachment,
 } from '@/features/chat/hooks/use-chat';
 import { getChatSocket } from '@/features/chat/services/chat.socket';
 import { useChatStore } from '@/features/chat/store/chat.store';
 import type { Conversation, Message } from '@/features/chat/types/chat.types';
 
+type MediaGroup = { id: string; senderId: string; items: Message[] };
+const groupMediaMessages = (messages: Message[]): (Message | MediaGroup)[] => {
+  const result: (Message | MediaGroup)[] = [];
+  for (const message of messages) {
+    const previous = result.at(-1);
+    const previousMessage = previous && 'items' in previous ? previous.items.at(-1) : previous;
+    const sameBatch =
+      message.type === 'IMAGE' &&
+      previousMessage?.type === 'IMAGE' &&
+      previousMessage.senderId === message.senderId &&
+      Math.abs(new Date(message.createdAt).getTime() - new Date(previousMessage.createdAt).getTime()) < 15_000;
+    if (sameBatch && previous) {
+      if ('items' in previous) previous.items.push(message);
+      else result[result.length - 1] = { id: `media-${previous.id}`, senderId: message.senderId, items: [previous, message] };
+    } else result.push(message);
+  }
+  return result;
+};
+
 export default function ConversationScreen() {
+  const { width: screenWidth } = useWindowDimensions();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const me = useQuery({ queryKey: ['me'], queryFn: authApi.me });
   const queryClient = useQueryClient();
@@ -45,6 +69,7 @@ export default function ConversationScreen() {
   const otherUserOnline = useConversationPresence(conversationId);
   const senderId = me.data?.id ?? '';
   const sendMessage = useSendMessage(conversationId, senderId);
+  const sendAttachment = useSendAttachment(conversationId);
   const editMessage = useEditMessage(conversationId);
   const deleteMessage = useDeleteMessage(conversationId);
   const [selected, setSelected] = useState<Message | null>(null);
@@ -53,12 +78,14 @@ export default function ConversationScreen() {
   const [editContent, setEditContent] = useState('');
   const [copied, setCopied] = useState(false);
   const [copyText, setCopyText] = useState<string | null>(null);
+  const [gallery, setGallery] = useState<{ urls: string[]; index: number } | null>(null);
 
   useConversationSocket(conversationId, me.data?.id);
   const messages = useMemo(
     () => history.data?.pages.flatMap((page) => page.messages) ?? [],
     [history.data],
   );
+  const displayItems = useMemo(() => groupMediaMessages(messages), [messages]);
 
   useEffect(() => {
     const unread = messages.filter(
@@ -132,21 +159,30 @@ export default function ConversationScreen() {
 
         {connection !== 'connected' ? (
           <View className="bg-secondary/10 px-4 py-2">
-            <Text className="text-center font-label text-xs text-secondary">Connection interrupted · reconnecting…</Text>
+            <Text className="text-center font-label text-xs text-secondary">Connection interrupted - reconnecting...</Text>
           </View>
         ) : null}
 
         <FlatList
-          data={messages}
+          data={displayItems}
           inverted
           keyExtractor={(message) => message.id}
           renderItem={({ item }) => (
-            <MessageBubble
-              message={item}
-              mine={item.senderId === senderId}
-              onLongPress={() => openActions(item)}
-              onRetry={() => item.content && void sendMessage.send(item.content, item.clientMessageId)}
-            />
+            'items' in item ? (
+              <PhotoGroup
+                items={item.items}
+                mine={item.senderId === senderId}
+                onOpen={(index) => setGallery({ urls: item.items.map((message) => mediaUrl(message.mediaUrl!)), index })}
+              />
+            ) : (
+              <MessageBubble
+                message={item}
+                mine={item.senderId === senderId}
+                onLongPress={() => openActions(item)}
+                onImagePress={() => item.mediaUrl && setGallery({ urls: [mediaUrl(item.mediaUrl)], index: 0 })}
+                onRetry={() => item.content && void sendMessage.send(item.content, item.clientMessageId)}
+              />
+            )
           )}
           contentContainerClassName="px-4 py-5"
           keyboardDismissMode="interactive"
@@ -163,18 +199,25 @@ export default function ConversationScreen() {
           }
           ListEmptyComponent={
             <View className="items-center py-20">
-              <Text className="text-3xl text-secondary">✦</Text>
               <Text className="mt-4 text-center font-body text-muted">This connection is waiting for its first message.</Text>
             </View>
           }
         />
         {typingUser ? (
-          <Text className="px-5 pb-2 font-body text-xs italic text-secondary">{other.firstName} is typing…</Text>
+          <Text className="px-5 pb-2 font-body text-xs italic text-secondary">{other.firstName} is typing...</Text>
         ) : null}
         {sendMessage.error ? (
           <Text accessibilityRole="alert" className="px-5 pb-2 font-body text-xs text-danger">{sendMessage.error}</Text>
         ) : null}
-        <MessageComposer conversationId={conversationId} onSend={(content) => void sendMessage.send(content)} />
+        {sendAttachment.error ? (
+          <Text accessibilityRole="alert" className="px-5 pb-2 font-body text-xs text-danger">The attachment could not be sent. Please try again.</Text>
+        ) : null}
+        <MessageComposer
+          conversationId={conversationId}
+          onSend={(content) => void sendMessage.send(content)}
+          onAttachment={(input) => sendAttachment.mutateAsync(input)}
+          attachmentPending={sendAttachment.isPending}
+        />
         {copied ? <View className="absolute bottom-24 self-center rounded-full bg-ink px-5 py-3"><Text className="font-label text-sm font-bold text-canvas">Message copied</Text></View> : null}
       </KeyboardAvoidingView>
 
@@ -225,8 +268,8 @@ export default function ConversationScreen() {
             ) : (
               <View className="gap-3 pb-3">
                 <Text className="mb-2 font-headline text-lg font-bold text-ink">Message actions</Text>
-                <SheetButton label="Copy message" onPress={selectTextToCopy} />
-                {selected?.senderId === senderId ? <SheetButton label="Edit" onPress={() => setEditing(true)} /> : null}
+                {selected?.type === 'TEXT' ? <SheetButton label="Copy message" onPress={selectTextToCopy} /> : null}
+                {selected?.senderId === senderId && selected.type === 'TEXT' ? <SheetButton label="Edit" onPress={() => setEditing(true)} /> : null}
                 {selected?.senderId === senderId ? <SheetButton label="Delete" destructive onPress={() => setConfirmingDelete(true)} /> : null}
                 <SheetButton label="Cancel" onPress={() => setSelected(null)} />
               </View>
@@ -237,7 +280,78 @@ export default function ConversationScreen() {
         </KeyboardAvoidingView>
       </Modal>
       <CopySelectionModal text={copyText} onClose={() => setCopyText(null)} onCopied={() => setCopied(true)} />
+      <Modal visible={Boolean(gallery)} animationType="fade" onRequestClose={() => setGallery(null)}>
+        <SafeAreaView className="flex-1 bg-black">
+          <View className="flex-row items-center justify-between px-4 py-3">
+            <Pressable accessibilityRole="button" accessibilityLabel="Close gallery" onPress={() => setGallery(null)} className="h-12 w-12 items-center justify-center rounded-full bg-white/10">
+              <MaterialCommunityIcons name="close" size={25} color="#FFFFFF" />
+            </Pressable>
+            <Text className="font-label text-sm text-white">{gallery ? `${gallery.index + 1} / ${gallery.urls.length}` : ''}</Text>
+            <View className="h-12 w-12" />
+          </View>
+          {gallery ? (
+            <FlatList
+              key={`${gallery.urls.join('|')}-${screenWidth}`}
+              data={gallery.urls}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              initialScrollIndex={gallery.index}
+              getItemLayout={(_, index) => ({ length: screenWidth, offset: screenWidth * index, index })}
+              keyExtractor={(uri, index) => `${uri}-${index}`}
+              onMomentumScrollEnd={(event) => {
+                const index = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
+                setGallery((current) => current && ({ ...current, index }));
+              }}
+              renderItem={({ item, index }) => (
+                <View style={{ width: screenWidth }} className="flex-1 items-center justify-center">
+                  <Image source={{ uri: item }} resizeMode="contain" accessibilityLabel={`Photo ${index + 1}`} className="h-full w-full" />
+                </View>
+              )}
+            />
+          ) : null}
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
+  );
+}
+
+function PhotoGroup({ items, mine, onOpen }: { items: Message[]; mine: boolean; onOpen: (index: number) => void }) {
+  const { width } = useWindowDimensions();
+  const groupWidth = Math.min(340, width * 0.78);
+  const visible = items.slice(0, 4);
+  const photo = (message: Message, index: number, tall = false) => (
+    <Pressable
+      key={message.id}
+      style={{ height: tall ? 268 : items.length === 2 ? 180 : 132 }}
+      accessibilityRole="button"
+      accessibilityLabel={`Open photo ${index + 1}`}
+      onPress={() => onOpen(index)}
+      className="relative flex-1 overflow-hidden bg-surface-raised"
+    >
+      <Image source={{ uri: mediaUrl(message.mediaUrl!) }} resizeMode="cover" className="h-full w-full" />
+      {index === 3 && items.length > 4 ? <View className="absolute inset-0 items-center justify-center bg-black/60"><Text className="font-headline text-3xl font-bold text-white">+{items.length - 4}</Text></View> : null}
+    </Pressable>
+  );
+  return (
+    <View style={{ width: groupWidth }} className={`mb-2 overflow-hidden rounded-2xl border p-1 ${mine ? 'ml-auto rounded-br-sm border-primary bg-primary' : 'mr-auto rounded-bl-sm border-border bg-surface'}`}>
+      <View className="gap-1 overflow-hidden rounded-xl">
+        {visible.length === 3 ? (
+          <View className="flex-row gap-1">
+            {photo(visible[0]!, 0, true)}
+            <View className="flex-1 gap-1">{photo(visible[1]!, 1)}{photo(visible[2]!, 2)}</View>
+          </View>
+        ) : visible.length === 2 ? (
+          <View className="flex-row gap-1">{photo(visible[0]!, 0)}{photo(visible[1]!, 1)}</View>
+        ) : (
+          <>
+            <View className="flex-row gap-1">{visible[0] ? photo(visible[0]!, 0) : null}{visible[1] ? photo(visible[1]!, 1) : null}</View>
+            {visible.length > 2 ? <View className="flex-row gap-1">{photo(visible[2]!, 2)}{visible[3] ? photo(visible[3]!, 3) : null}</View> : null}
+          </>
+        )}
+      </View>
+      <Text className={`px-2 pb-1 pt-2 text-right font-label text-[10px] ${mine ? 'text-indigo-100' : 'text-muted'}`}>{new Date(items.at(-1)!.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+    </View>
   );
 }
 

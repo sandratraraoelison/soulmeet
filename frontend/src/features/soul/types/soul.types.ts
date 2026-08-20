@@ -20,3 +20,15 @@ export interface SoulMatch {
   persona: string;
   coachInsight: string;
 }
+
+export interface MatchDecision {
+  userId: string;
+  name: string;
+  age: number;
+  city: string;
+  country: string;
+  job: string;
+  score: number;
+  response: 'ACCEPTED' | 'REJECTED';
+  respondedAt: string;
+}

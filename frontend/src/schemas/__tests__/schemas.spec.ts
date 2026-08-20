@@ -48,4 +48,20 @@ describe('form schemas', () => {
       }).success,
     ).toBe(true);
   });
+  it('requires users to be at least 19 years old', () => {
+    const eighteen = new Date();
+    eighteen.setUTCFullYear(eighteen.getUTCFullYear() - 18);
+    const nineteen = new Date();
+    nineteen.setUTCFullYear(nineteen.getUTCFullYear() - 19);
+    nineteen.setUTCDate(nineteen.getUTCDate() - 1);
+    const profile = {
+      firstName: 'Jane',
+      gender: 'FEMALE' as const,
+      sexualOrientation: 'BISEXUAL' as const,
+      country: 'France',
+      city: 'Paris',
+    };
+    expect(profileSchema.safeParse({ ...profile, birthDate: eighteen.toISOString() }).success).toBe(false);
+    expect(profileSchema.safeParse({ ...profile, birthDate: nineteen.toISOString() }).success).toBe(true);
+  });
 });

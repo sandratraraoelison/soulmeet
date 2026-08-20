@@ -13,7 +13,7 @@ const genderLabels: Record<string, string> = {
   MALE: 'Man',
   FEMALE: 'Woman',
   NON_BINARY: 'Non-binary',
-  NON_GENDERED: 'Non-binary',
+  NON_GENDERED: 'Any',
   OTHER: 'Other',
   PREFER_NOT_TO_SAY: 'Not specified',
 };

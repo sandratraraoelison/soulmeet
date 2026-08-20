@@ -1,13 +1,13 @@
 import { create } from 'zustand';
-import type { CoachGender, CoachPersonality } from '@/types/models';
+import type { CoachGender, CoachPersonality, InterestGender } from '@/types/models';
 
 interface OnboardingState {
-  interestedInGender: CoachGender | null;
+  interestedInGender: InterestGender | null;
   coachGender: CoachGender | null;
   coachAppearance: string | null;
   coachName: string;
   coachTraits: CoachPersonality[];
-  setInterestedInGender: (gender: CoachGender) => void;
+  setInterestedInGender: (gender: InterestGender) => void;
   setCoachGender: (gender: CoachGender) => void;
   setCoachAppearance: (appearance: string) => void;
   setCoachName: (name: string) => void;

@@ -97,6 +97,8 @@ enum ConversationType {
 
 enum MessageType {
   TEXT
+  IMAGE
+  AUDIO
 }
 
 enum MessageStatus {
@@ -217,6 +219,7 @@ model User {
   updatedAt              DateTime                  @updatedAt
   lastLoginAt            DateTime?
   refreshTokens          RefreshToken[]
+  authIdentities         AuthIdentity[]
   passwordResetToken     PasswordResetToken?
   pushDevices            PushDevice[]
   notificationPreference NotificationPreference?
@@ -253,23 +256,37 @@ model User {
   @@unique([authProvider, providerId])
 }
 
+model AuthIdentity {
+  id         String       @id @default(uuid()) @db.Uuid
+  userId     String       @db.Uuid
+  provider   AuthProvider
+  providerId String
+  email      String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@index([userId])
+}
+
 model Match {
-  id              String   @id @default(uuid()) @db.Uuid
-  userId          String   @db.Uuid
-  matchedUserId   String   @db.Uuid
-  score           Int
-  reciprocalScore Int
-  reasons         Json?
-  createdAt       DateTime @default(now())
-  viewedAt        DateTime?
-  respondedAt     DateTime?
-  response        String?
-  semanticScore   Int?
+  id                 String    @id @default(uuid()) @db.Uuid
+  userId             String    @db.Uuid
+  matchedUserId      String    @db.Uuid
+  score              Int
+  reciprocalScore    Int
+  reasons            Json?
+  createdAt          DateTime  @default(now())
+  viewedAt           DateTime?
+  respondedAt        DateTime?
+  response           String?
+  semanticScore      Int?
   semanticConfidence Float?
-  semanticModel   String?
-  semanticAnalysis Json?
-  user            User     @relation("MatchUser", fields: [userId], references: [id], onDelete: Cascade)
-  matchedUser     User     @relation("MatchMatchedUser", fields: [matchedUserId], references: [id], onDelete: Cascade)
+  semanticModel      String?
+  semanticAnalysis   Json?
+  user               User      @relation("MatchUser", fields: [userId], references: [id], onDelete: Cascade)
+  matchedUser        User      @relation("MatchMatchedUser", fields: [matchedUserId], references: [id], onDelete: Cascade)
 
   @@unique([userId, matchedUserId])
   @@index([userId, createdAt])
@@ -434,6 +451,10 @@ model Message {
   clientMessageId String
   content         String?
   type            MessageType   @default(TEXT)
+  mediaUrl        String?
+  mediaMimeType   String?
+  mediaSize       Int?
+  mediaDurationMs Int?
   status          MessageStatus @default(SENT)
   isEdited        Boolean       @default(false)
   editedAt        DateTime?
@@ -597,35 +618,35 @@ model Soulprint {
 }
 
 model SoulprintEntry {
-  id              String                 @id @default(uuid()) @db.Uuid
-  soulprintId     String                 @db.Uuid
-  category        SoulprintCategory
-  key             String?
-  value           String                 @db.Text
-  normalizedValue String?                @db.Text
-  fingerprint     String
-  source          SoulprintSource
-  status          SoulprintEntryStatus
-  visibility      SoulprintVisibility    @default(PRIVATE)
-  sensitivity     SoulprintSensitivity   @default(NORMAL)
-  confidence      Float
-  importance      Int                    @default(50)
-  matchingWeight  Int                    @default(50)
-  firstObservedAt DateTime               @default(now())
-  lastObservedAt  DateTime               @default(now())
-  confirmedAt     DateTime?
-  rejectedAt      DateTime?
-  deletedAt       DateTime?
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
+  id                    String                 @id @default(uuid()) @db.Uuid
+  soulprintId           String                 @db.Uuid
+  category              SoulprintCategory
+  key                   String?
+  value                 String                 @db.Text
+  normalizedValue       String?                @db.Text
+  fingerprint           String
+  source                SoulprintSource
+  status                SoulprintEntryStatus
+  visibility            SoulprintVisibility    @default(PRIVATE)
+  sensitivity           SoulprintSensitivity   @default(NORMAL)
+  confidence            Float
+  importance            Int                    @default(50)
+  matchingWeight        Int                    @default(50)
+  firstObservedAt       DateTime               @default(now())
+  lastObservedAt        DateTime               @default(now())
+  confirmedAt           DateTime?
+  rejectedAt            DateTime?
+  deletedAt             DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
   semanticData          Json?
   semanticModel         String?
   semanticPromptVersion String?
   semanticSourceHash    String?
   semanticAnalyzedAt    DateTime?
-  soulprint       Soulprint              @relation(fields: [soulprintId], references: [id], onDelete: Cascade)
-  evidence        SoulprintEvidence[]
-  changes         SoulprintEntryChange[]
+  soulprint             Soulprint              @relation(fields: [soulprintId], references: [id], onDelete: Cascade)
+  evidence              SoulprintEvidence[]
+  changes               SoulprintEntryChange[]
 
   @@unique([soulprintId, fingerprint])
   @@index([soulprintId, category, status])
