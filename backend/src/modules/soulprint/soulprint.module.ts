@@ -9,9 +9,11 @@ import { SoulprintMatchingAdapterService } from './services/soulprint-matching-a
 import { SoulprintMergeService } from './services/soulprint-merge.service';
 import { SoulprintService } from './services/soulprint.service';
 import { SoulprintSummaryService } from './services/soulprint-summary.service';
+import { SoulprintConsentService } from './services/soulprint-consent.service';
+import { PeerConversationAnalysisService } from './services/peer-conversation-analysis.service';
 @Module({
   imports: [AuthModule, LlmModule], controllers: [SoulprintController],
-  providers: [SoulprintService, SoulprintMergeService, SoulprintSummaryService, SoulprintContextService, SoulprintExtractionService, SoulprintExtractionQueueService, SoulprintMatchingAdapterService],
-  exports: [SoulprintService, SoulprintContextService, SoulprintExtractionService, SoulprintExtractionQueueService, SoulprintMatchingAdapterService],
+  providers: [SoulprintService, SoulprintMergeService, SoulprintSummaryService, SoulprintContextService, SoulprintExtractionService, SoulprintExtractionQueueService, SoulprintMatchingAdapterService, SoulprintConsentService, PeerConversationAnalysisService],
+  exports: [SoulprintService, SoulprintContextService, SoulprintExtractionService, SoulprintExtractionQueueService, SoulprintMatchingAdapterService, SoulprintConsentService, PeerConversationAnalysisService],
 })
 export class SoulprintModule {}

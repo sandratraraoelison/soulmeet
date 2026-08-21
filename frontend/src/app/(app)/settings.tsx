@@ -8,6 +8,8 @@ import { Screen } from '@/components/common/Screen';
 import { BackButton } from '@/components/navigation/BackButton';
 import { defaultNotificationPreferences, notificationService, notificationsSupported, type NotificationPreferences } from '@/services/notification.service';
 import { useThemePalette, useThemeStore, visualStyleOptions, type ThemeMode } from '@/store/theme.store';
+import { consentApi, consentKey, useSoulprintConsent, useUpdateSoulprintConsent } from '@/features/consent/consent';
+import { useQueryClient } from '@tanstack/react-query';
 export default function SettingsScreen() {
   const version = Constants.expoConfig?.version ?? '1.0.0';
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -18,6 +20,17 @@ export default function SettingsScreen() {
   const visualStyle = useThemeStore((state) => state.visualStyle);
   const setVisualStyle = useThemeStore((state) => state.setVisualStyle);
   const { colors } = useThemePalette();
+  const queryClient = useQueryClient();
+  const consent = useSoulprintConsent();
+  const updateConsent = useUpdateSoulprintConsent();
+  const changeConsent = (allowed: boolean) => {
+    if (allowed) return updateConsent.mutate(true);
+    Alert.alert('Turn off conversation analysis?', 'Soulmeet will stop using your new conversations to improve your Soulprint. You can also remove insights previously generated from your conversations.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Stop future analysis only', onPress: () => updateConsent.mutate(false) },
+      { text: 'Stop and remove conversation-based insights', style: 'destructive', onPress: () => updateConsent.mutate(false, { onSuccess: async () => { await consentApi.removeInsights(); await queryClient.invalidateQueries({ queryKey: ['soulprint'] }); await queryClient.invalidateQueries({ queryKey: consentKey }); } }) },
+    ]);
+  };
   useEffect(() => {
     void Promise.all([notificationService.status(), notificationService.preferences()])
       .then(([status, preferences]) => { setNotificationsEnabled(status.enabled); setNotificationPreferences(preferences); })
@@ -110,6 +123,15 @@ export default function SettingsScreen() {
               ) : null}
             </View>
           </View>
+        </View>
+        <View className="rounded-2xl border border-border bg-surface-raised p-4">
+          <Text className="font-label font-bold text-ink">AI &amp; Soulprint Privacy</Text>
+          <View className="mt-4 flex-row items-center justify-between border-t border-border pt-4">
+            <View className="mr-4 flex-1"><Text className="font-label font-semibold text-ink">Allow AI to learn from my conversations</Text><Text className="mt-1 text-xs leading-5 text-muted">When enabled, Soulmeet can analyze relevant patterns from your new conversations to improve your Soulprint.</Text></View>
+            <Switch accessibilityLabel="Allow AI to learn from my conversations" disabled={consent.isPending || updateConsent.isPending} value={consent.data?.conversationAnalysisAllowed ?? false} onValueChange={changeConsent} trackColor={{ false: colors.border, true: colors.primary }} thumbColor={consent.data?.conversationAnalysisAllowed ? '#FFFFFF' : colors.muted} />
+          </View>
+          {consent.data?.lastChangedAt ? <Text className="mt-3 text-xs text-muted">Last changed {new Date(consent.data.lastChangedAt).toLocaleDateString()}.</Text> : null}
+          {consent.isError || updateConsent.isError ? <Text accessibilityRole="alert" className="mt-3 text-xs text-danger">Unable to update this privacy setting. Please try again.</Text> : null}
         </View>
         <View className="rounded-2xl border border-border bg-surface-raised p-4">
           <Text className="font-label font-bold text-ink">Security</Text>

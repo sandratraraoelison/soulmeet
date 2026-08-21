@@ -1,16 +1,18 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, Optional } from '@nestjs/common';
 import { MessageStatus, MessageType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { CHAT_CONFIG } from './constants/chat-config.constants';
 import { CHAT_EVENTS } from './constants/chat-events.constants';
 import { ChatException } from './chat.exception';
 import { ChatRealtimeService } from './chat-realtime.service';
+import { PeerConversationAnalysisService } from '../soulprint/services/peer-conversation-analysis.service';
 
 @Injectable()
 export class ChatService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly realtime: ChatRealtimeService,
+    @Optional() private readonly peerAnalysis?: PeerConversationAnalysisService,
   ) {}
 
   private pairKey(a: string, b: string) {
@@ -210,6 +212,7 @@ export class ChatService {
       });
       return created;
     });
+    void this.peerAnalysis?.enqueue(userId, conversationId);
     return { message: this.sanitizeMessage(message), duplicate: false };
   }
 

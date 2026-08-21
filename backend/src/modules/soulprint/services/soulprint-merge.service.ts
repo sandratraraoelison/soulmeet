@@ -19,6 +19,9 @@ const priority: Record<SoulprintSource, number> = {
   MANUAL_USER_ENTRY: 4,
   SYSTEM_MIGRATION: 2,
   USER_CONFIRMED: 5,
+  PEER_CONVERSATION: 1,
+  COACH_CONVERSATION: 2,
+  USER_FEEDBACK: 3,
 };
 @Injectable()
 /** Applies source precedence, deduplication, evidence and audit history atomically. */
@@ -94,7 +97,7 @@ export class SoulprintMergeService {
       // Inference is never silently promoted to fact; only user-controlled
       // confirmation can move it out of PENDING_CONFIRMATION.
       const status =
-        entry.source === SoulprintSource.AI_INFERRED
+        entry.source === SoulprintSource.AI_INFERRED || entry.source === SoulprintSource.PEER_CONVERSATION
           ? SoulprintEntryStatus.PENDING_CONFIRMATION
           : SoulprintEntryStatus.ACTIVE;
       // Extraction may suggest Guidance visibility but can never grant matching

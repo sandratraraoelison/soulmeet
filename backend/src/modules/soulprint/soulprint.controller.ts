@@ -1,19 +1,23 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
-import { ConfirmSoulprintEntryDto, CreateSoulprintEntryDto, SoulprintEntriesQueryDto, SoulprintHistoryQueryDto, UpdateSoulprintEntryDto, UpdateSoulprintVisibilityDto } from './dto/soulprint.dto';
+import { ConfirmSoulprintEntryDto, CreateSoulprintEntryDto, SoulprintEntriesQueryDto, SoulprintHistoryQueryDto, UpdateSoulprintConsentDto, UpdateSoulprintEntryDto, UpdateSoulprintVisibilityDto } from './dto/soulprint.dto';
 import { SoulprintException } from './soulprint.exception';
 import { SoulprintExtractionService } from './services/soulprint-extraction.service';
 import { SoulprintExtractionQueueService } from './services/soulprint-extraction-queue.service';
 import { SoulprintService } from './services/soulprint.service';
+import { SoulprintConsentService } from './services/soulprint-consent.service';
 
 @ApiTags('soulprint') @ApiBearerAuth() @UseGuards(JwtAuthGuard) @Controller('soulprint')
 /** Authenticated HTTP boundary; ownership always comes from the JWT subject. */
 export class SoulprintController {
-  constructor(private readonly soulprint: SoulprintService, private readonly extraction: SoulprintExtractionService, private readonly queue: SoulprintExtractionQueueService, private readonly config: ConfigService) {}
+  constructor(private readonly soulprint: SoulprintService, private readonly extraction: SoulprintExtractionService, private readonly queue: SoulprintExtractionQueueService, private readonly config: ConfigService, private readonly consent: SoulprintConsentService) {}
+  @Get('consent') getConsent(@CurrentUser() user: JwtPayload) { return this.consent.get(user.sub); }
+  @Put('consent') updateConsent(@CurrentUser() user: JwtPayload, @Body() dto: UpdateSoulprintConsentDto) { return this.consent.update(user.sub, dto.conversationAnalysisAllowed); }
+  @Delete('conversation-insights') removeConversationInsights(@CurrentUser() user: JwtPayload) { return this.consent.removeConversationInsights(user.sub); }
   @Get() get(@CurrentUser() user: JwtPayload) { return this.soulprint.get(user.sub); }
   @Get('summary') summary(@CurrentUser() user: JwtPayload) { return this.soulprint.summary(user.sub); }
   @Get('entries') entries(@CurrentUser() user: JwtPayload, @Query() query: SoulprintEntriesQueryDto) { return this.soulprint.entries(user.sub, query); }

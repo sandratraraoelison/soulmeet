@@ -9,9 +9,10 @@ import { MessagesController } from './messages.controller';
 import { WsJwtGuard } from './guards/ws-jwt.guard';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ChatMediaService } from './chat-media.service';
+import { SoulprintModule } from '../soulprint/soulprint.module';
 
 @Module({
-  imports: [AuthModule, NotificationsModule],
+  imports: [AuthModule, NotificationsModule, SoulprintModule],
   controllers: [ConversationsController, MessagesController],
   providers: [ChatService, ChatGateway, ChatRateLimiter, ChatRealtimeService, ChatMediaService, WsJwtGuard],
   exports: [ChatService],

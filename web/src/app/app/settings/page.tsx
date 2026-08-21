@@ -7,6 +7,8 @@ import { Failure, Loading } from '@/components/remote';
 import { FormField } from '@/components/ui/form-controls';
 import { PageHeader } from '@/components/ui/page-header';
 import { api, json } from '@/services/api';
+import { consentService } from '@/services/consent';
+import { consentKey } from '@/components/consent-gate';
 
 type Preferences = {
   newMessages: boolean;
@@ -39,6 +41,7 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [visualStyle, setVisualStyle] = useState<VisualStyle>('balanced');
+  const [confirmTurnOff, setConfirmTurnOff] = useState(false);
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       setTheme(localStorage.getItem('sm_theme') === 'light' ? 'light' : 'dark');
@@ -51,6 +54,11 @@ export default function Settings() {
     queryKey: ['notifications'],
     queryFn: () => api<Preferences>('/notifications/preferences'),
   });
+  const consent = useQuery({ queryKey: consentKey, queryFn: consentService.get });
+  const saveConsent = useMutation({ mutationFn: consentService.update, onSuccess: (next) => queryClient.setQueryData(consentKey, next) });
+  const turnOffConsent = (remove: boolean) => {
+    saveConsent.mutate(false, { onSuccess: async () => { setConfirmTurnOff(false); if (remove) { await consentService.removeInsights(); await queryClient.invalidateQueries({ queryKey: ['soulprint'] }); } } });
+  };
   const save = useMutation({
     mutationFn: (next: Preferences) =>
       api<Preferences>('/notifications/preferences', json('PATCH', next)),
@@ -223,6 +231,16 @@ export default function Settings() {
           </p>
         )}
       </section>
+      <section className="panel card stack section-gap">
+        <h2>AI &amp; Soulprint Privacy</h2>
+        <label className="setting-row">
+          <span><strong>Allow AI to learn from my conversations</strong><small className="muted">When enabled, Soulmeet can analyze relevant patterns from your new conversations to improve your Soulprint.</small></span>
+          <input type="checkbox" disabled={consent.isPending || saveConsent.isPending} checked={consent.data?.conversationAnalysisAllowed ?? false} onChange={(event) => event.target.checked ? saveConsent.mutate(true) : setConfirmTurnOff(true)} />
+        </label>
+        {consent.data?.lastChangedAt ? <p className="muted">Last changed {new Date(consent.data.lastChangedAt).toLocaleDateString()}.</p> : null}
+        {consent.isError || saveConsent.isError ? <p className="error" role="alert">Unable to update this privacy setting. Please try again.</p> : null}
+      </section>
+      {confirmTurnOff ? <div className="consent-overlay" role="presentation"><div className="consent-dialog" role="alertdialog" aria-modal="true" aria-labelledby="turn-off-title"><h2 id="turn-off-title">Turn off conversation analysis?</h2><p>Soulmeet will stop using your new conversations to improve your Soulprint. You can also remove insights previously generated from your conversations.</p><div className="action-row"><button className="button secondary" disabled={saveConsent.isPending} onClick={() => turnOffConsent(false)}>Stop future analysis only</button><button className="button danger" disabled={saveConsent.isPending} onClick={() => turnOffConsent(true)}>Stop and remove conversation-based insights</button><button className="button secondary" disabled={saveConsent.isPending} onClick={() => setConfirmTurnOff(false)}>Cancel</button></div></div></div> : null}
       <section className="panel card stack section-gap">
         <h2>Account</h2>
         <Link className="button secondary" href="/app/settings/password">

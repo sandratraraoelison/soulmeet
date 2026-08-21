@@ -17,6 +17,7 @@ import { queryClient } from '@/lib/query-client';
 import { useAuthStore } from '@/store/auth.store';
 import { NotificationPermissionPrompt } from '@/components/notifications/NotificationPermissionPrompt';
 import { useThemePalette, useThemeStore } from '@/store/theme.store';
+import { SoulprintConsentPrompt } from '@/features/consent/consent';
 
 function Navigation() {
   const { isAuthenticated, isRestoring } = useAuthStore();
@@ -43,6 +44,7 @@ function Navigation() {
   return (
     <>
     <NotificationPermissionPrompt enabled={isAuthenticated && complete} />
+    <SoulprintConsentPrompt enabled={isAuthenticated && complete} />
     <Stack
       screenOptions={{
         headerShown: false,

@@ -1,7 +1,7 @@
 import { Transform, Type } from 'class-transformer';
 import { SoulprintCategory, SoulprintEntryStatus, SoulprintSensitivity, SoulprintSource, SoulprintVisibility } from '@prisma/client';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 const trim = ({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value;
 export class CreateSoulprintEntryDto {
   @ApiProperty({ enum: SoulprintCategory }) @IsEnum(SoulprintCategory) category!: SoulprintCategory;
@@ -29,3 +29,6 @@ export class SoulprintEntriesQueryDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 20;
 }
 export class SoulprintHistoryQueryDto { @IsOptional() @IsString() cursor?: string; @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 20; }
+export class UpdateSoulprintConsentDto {
+  @ApiProperty() @IsBoolean() conversationAnalysisAllowed!: boolean;
+}
