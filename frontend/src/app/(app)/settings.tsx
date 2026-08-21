@@ -125,7 +125,7 @@ export default function SettingsScreen() {
           </View>
         </View>
         <View className="rounded-2xl border border-border bg-surface-raised p-4">
-          <Text className="font-label font-bold text-ink">AI &amp; Soulprint Privacy</Text>
+          <View className="flex-row items-start justify-between"><View className="mr-3 flex-1"><Text className="font-label font-bold text-ink">AI &amp; Soulprint Privacy</Text><Text className="mt-1 text-xs leading-5 text-muted">Control how conversations help improve your Soulprint.</Text></View><View className={`rounded-full border px-2.5 py-1 ${consent.data?.conversationAnalysisAllowed ? 'border-primary/40 bg-primary/10' : 'border-border bg-surface'}`}><Text className={`text-[9px] font-bold uppercase tracking-wider ${consent.data?.conversationAnalysisAllowed ? 'text-primary' : 'text-muted'}`}>{consent.isPending ? 'Loading' : consent.data?.conversationAnalysisAllowed ? 'Enabled' : 'Disabled'}</Text></View></View>
           <View className="mt-4 flex-row items-center justify-between border-t border-border pt-4">
             <View className="mr-4 flex-1"><Text className="font-label font-semibold text-ink">Allow AI to learn from my conversations</Text><Text className="mt-1 text-xs leading-5 text-muted">When enabled, Soulmeet can analyze relevant patterns from your new conversations to improve your Soulprint.</Text></View>
             <Switch accessibilityLabel="Allow AI to learn from my conversations" disabled={consent.isPending || updateConsent.isPending} value={consent.data?.conversationAnalysisAllowed ?? false} onValueChange={changeConsent} trackColor={{ false: colors.border, true: colors.primary }} thumbColor={consent.data?.conversationAnalysisAllowed ? '#FFFFFF' : colors.muted} />

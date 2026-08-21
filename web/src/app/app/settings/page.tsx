@@ -231,13 +231,14 @@ export default function Settings() {
           </p>
         )}
       </section>
-      <section className="panel card stack section-gap">
-        <h2>AI &amp; Soulprint Privacy</h2>
-        <label className="setting-row">
-          <span><strong>Allow AI to learn from my conversations</strong><small className="muted">When enabled, Soulmeet can analyze relevant patterns from your new conversations to improve your Soulprint.</small></span>
-          <input type="checkbox" disabled={consent.isPending || saveConsent.isPending} checked={consent.data?.conversationAnalysisAllowed ?? false} onChange={(event) => event.target.checked ? saveConsent.mutate(true) : setConfirmTurnOff(true)} />
+      <section className="panel card section-gap privacy-settings-card">
+        <div className="privacy-settings-head"><div><div className="eyebrow">Your choice</div><h2>AI &amp; Soulprint Privacy</h2><p className="muted">Control whether your conversations can help your Soulprint become more accurate.</p></div><span className={`privacy-status ${consent.data?.conversationAnalysisAllowed ? 'active' : ''}`}>{consent.isPending ? 'Loading…' : consent.data?.conversationAnalysisAllowed ? 'Enabled' : 'Disabled'}</span></div>
+        <label className="privacy-toggle-row">
+          <span className="privacy-toggle-copy"><strong>Allow AI to learn from my conversations</strong><small>When enabled, Soulmeet can analyze relevant patterns from your new conversations to improve your Soulprint.</small></span>
+          <input className="privacy-toggle-input" type="checkbox" disabled={consent.isPending || saveConsent.isPending} checked={consent.data?.conversationAnalysisAllowed ?? false} onChange={(event) => event.target.checked ? saveConsent.mutate(true) : setConfirmTurnOff(true)} />
+          <span className="privacy-toggle" aria-hidden><span /></span>
         </label>
-        {consent.data?.lastChangedAt ? <p className="muted">Last changed {new Date(consent.data.lastChangedAt).toLocaleDateString()}.</p> : null}
+        {consent.data?.lastChangedAt ? <p className="privacy-date">Last changed <strong>{new Date(consent.data.lastChangedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong></p> : null}
         {consent.isError || saveConsent.isError ? <p className="error" role="alert">Unable to update this privacy setting. Please try again.</p> : null}
       </section>
       {confirmTurnOff ? <div className="consent-overlay" role="presentation"><div className="consent-dialog" role="alertdialog" aria-modal="true" aria-labelledby="turn-off-title"><h2 id="turn-off-title">Turn off conversation analysis?</h2><p>Soulmeet will stop using your new conversations to improve your Soulprint. You can also remove insights previously generated from your conversations.</p><div className="action-row"><button className="button secondary" disabled={saveConsent.isPending} onClick={() => turnOffConsent(false)}>Stop future analysis only</button><button className="button danger" disabled={saveConsent.isPending} onClick={() => turnOffConsent(true)}>Stop and remove conversation-based insights</button><button className="button secondary" disabled={saveConsent.isPending} onClick={() => setConfirmTurnOff(false)}>Cancel</button></div></div></div> : null}
