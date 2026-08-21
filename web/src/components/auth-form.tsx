@@ -32,6 +32,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const params = useSearchParams();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
   const [maxBirthDate, setMaxBirthDate] = useState('');
   const [mounted, setMounted] = useState(false);
@@ -49,6 +50,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const appleId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID;
 
   const finish = useCallback(async () => {
+    setTransitioning(true);
     const [profile, coachExists] = await Promise.all([
       fetch('/api/backend/profile', { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
@@ -57,6 +59,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       fetch('/api/backend/coach', { cache: 'no-store' })
         .then((r) => r.ok)
         .catch(() => false),
+      new Promise((resolve) => setTimeout(resolve, 900)),
     ]);
     if (!profile?.onboardingCompleted || !coachExists)
       return router.replace('/onboarding');
@@ -173,6 +176,21 @@ export function AuthForm({ mode }: { mode: Mode }) {
         {Array.from({ length: mode === 'register' ? 7 : 2 }, (_, index) => (
           <div className="auth-loading-field" key={index} />
         ))}
+      </div>
+    );
+  }
+
+  if (transitioning) {
+    return (
+      <div className="auth-success-transition" role="status" aria-live="polite" aria-busy="true">
+        <div className="auth-success-mark" aria-hidden="true">
+          <span />
+        </div>
+        <div>
+          <div className="eyebrow">Login successful</div>
+          <h1>Welcome to Soulmeet</h1>
+          <p className="muted">Opening your private space...</p>
+        </div>
       </div>
     );
   }

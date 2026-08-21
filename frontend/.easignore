@@ -1,12 +1,16 @@
 # Dependencies are installed by EAS from package.json and pnpm-lock.yaml.
 node_modules/
+**/node_modules/
 .pnpm-store/
+**/.pnpm-store/
 
 # Expo and generated build output.
 .expo/
 .expo-export-oauth-check/
 dist/
 web-build/
+**/.next/
+**/.turbo/
 android/
 ios/
 
@@ -17,10 +21,15 @@ coverage/
 **/*.spec.tsx
 **/*.test.ts
 **/*.test.tsx
+jest.config.js
+jest.setup.ts
 
 # Local tooling and caches.
 .vscode/
 .claude/
+scripts/
+eslint.config.js
+.prettierrc
 *.tsbuildinfo
 .metro-health-check*
 *.log
@@ -28,6 +37,12 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 .DS_Store
+expo-env.d.ts
+
+# Documentation and agent/editor instructions are not used by Metro or Gradle.
+*.md
+AGENTS.md
+CLAUDE.md
 
 # Local environment and signing secrets must never be uploaded.
 .env

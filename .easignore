@@ -1,6 +1,7 @@
 # This EAS project builds only the Expo application.
 backend/
 dashboard/
+web/
 
 # Dependencies are restored by EAS from the frontend lockfile.
 **/node_modules/
