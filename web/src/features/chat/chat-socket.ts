@@ -40,14 +40,15 @@ export function getChatSocket(): Promise<Socket> {
       const instance = io(socketUrl, {
         // Start with HTTP polling, which also works behind proxies that reject a
         // direct WebSocket handshake, then upgrade to WebSocket when available.
-        transports: ['polling', 'websocket'],
+        transports: ['websocket', 'polling'],
+        rememberUpgrade: true,
         auth: { token: accessToken },
         autoConnect: false,
         reconnection: true,
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1_000,
         reconnectionDelayMax: 5_000,
-        timeout: 5_000,
+        timeout: 20_000,
       });
       instance.on('connect_error', () => {
         socketReady = false;
@@ -85,7 +86,7 @@ export function connectChatSocket(): Promise<Socket> {
           resolve(instance);
           return;
         }
-        const deadline = Date.now() + 5_000;
+        const deadline = Date.now() + 30_000;
         const listeners = new Set<() => void>();
         const onceEvent = (event: string, handler: (...args: unknown[]) => void) => {
           instance.once(event, handler as never);
@@ -114,7 +115,7 @@ export function connectChatSocket(): Promise<Socket> {
         const timer = setTimeout(() => {
           cleanup();
           reject(new Error('You are offline. Try again in a moment.'));
-        }, 5_000);
+        }, 30_000);
         tryConnect();
       }),
   );

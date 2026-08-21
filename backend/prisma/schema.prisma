@@ -230,6 +230,7 @@ model User {
   coach                  Coach?
   conversations          ConversationParticipant[]
   messages               Message[]
+  chatMedia              ChatMedia[]
   blocksCreated          Block[]                   @relation("Blocker")
   blocksReceived         Block[]                   @relation("Blocked")
   guidanceConversations  GuidanceConversation[]
@@ -516,6 +517,18 @@ model Message {
   @@unique([senderId, clientMessageId])
   @@index([conversationId, createdAt])
   @@index([senderId])
+}
+
+model ChatMedia {
+  id        String   @id @default(uuid()) @db.Uuid
+  ownerId   String   @db.Uuid
+  mimeType  String
+  size      Int
+  data      Bytes    @db.ByteA
+  createdAt DateTime @default(now())
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, createdAt])
 }
 
 model Block {
