@@ -18,13 +18,13 @@ import { Reveal } from '@/components/ui/reveal';
 const features = [
   {
     icon: MessageCircleHeart,
-    title: 'A Coach who keeps the thread',
-    text: 'Talk through a date, a difficult message, or the pattern you keep noticing. Your Coach uses the context you choose to share.',
+    title: 'A coach who remembers everything',
+    text: 'Talk about a date, a hard message, or something you keep doing wrong. Your coach remembers, and only knows what you tell it.',
   },
   {
     icon: Brain,
-    title: 'A SoulPrint you control',
-    text: 'Turn conversations into a living picture of your values, needs, boundaries, and relationship goals. Confirm, correct, or keep every insight private.',
+    title: 'A clear picture of who you are',
+    text: 'From your talks, your coach builds a picture of what you want and what matters to you. We call',
   },
   {
     icon: TrendingUp,
@@ -159,12 +159,9 @@ export default function Landing() {
 
       <section className="marketing-intro">
         <Reveal>
-          <div className="eyebrow">Less performance. More honesty.</div>
-          <h2>Dating gets clearer when you can hear yourself think.</h2>
-          <p>
-            Soulmeet gives you a warm private space to reflect, prepare, learn, and choose with
-            intention.
-          </p>
+          <div className="eyebrow">No games. Just be yourself.</div>
+          <h2>Dating gets easier when you know what you want.</h2>
+          <p>A calm, private space to think things through, before and after every date.</p>
         </Reveal>
       </section>
 
