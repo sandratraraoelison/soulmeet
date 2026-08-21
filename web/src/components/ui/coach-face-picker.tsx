@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { COACH_FACES, coachFace, coachFacePosition } from '@/features/coach/coach-faces';
 import type { CoachGender } from '@/types';
@@ -16,7 +17,9 @@ export function CoachFacePicker({
   value?: string | null;
   onChange: (appearance: string, gender: CoachGender) => void;
 }) {
-  const selected = coachFace(value);
+  const [selectedId, setSelectedId] = useState(() => coachFace(value).id);
+  const selected = coachFace(selectedId);
+
   return (
     <div className="coach-picker">
       <div className="coach-picker-strip" role="radiogroup" aria-label="Coach appearance">
@@ -28,10 +31,12 @@ export function CoachFacePicker({
               type="button"
               role="radio"
               aria-checked={active}
-              aria-label={`${face.title}, ${genderLabel[face.gender]}`}
+              aria-label={`${face.title}, ${face.description}`}
+              title={face.title}
               className={`coach-face ${active ? 'selected' : ''}`}
               style={coachFacePosition(face)}
               onClick={() => {
+                setSelectedId(face.id);
                 onChange(face.id, face.gender);
               }}
             >
@@ -40,14 +45,15 @@ export function CoachFacePicker({
                   <Check size={14} strokeWidth={3} />
                 </span>
               )}
+              <span className="coach-face-name" aria-hidden="true">{face.title}</span>
             </button>
           );
         })}
       </div>
-      <div className="coach-picker-info">
+      <div className="coach-picker-info" aria-live="polite">
         <strong>{selected.title}</strong>
         <span>{selected.description}</span>
-        <small>Gender · {genderLabel[selected.gender]}</small>
+        <small>{selected.category} · Gender: {genderLabel[selected.gender]}</small>
       </div>
     </div>
   );
