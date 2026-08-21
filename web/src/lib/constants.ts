@@ -59,7 +59,7 @@ export const ONBOARDING_COACH_TRAITS: CoachPersonality[] = [
 export const COACH_GENDER_OPTIONS: readonly [CoachGender, string][] = [
   ['FEMALE', 'Female'],
   ['MALE', 'Male'],
-  ['NON_GENDERED', 'Non-gendered'],
+  ['NON_GENDERED', 'Any'],
 ];
 
 export const COACH_APPEARANCE_OPTIONS: readonly [string, string][] = [

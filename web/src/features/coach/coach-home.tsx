@@ -8,7 +8,7 @@ import { ApiError } from '@/services/api';
 import { guidanceService } from '@/services/guidance';
 import { profileService } from '@/services/profile';
 import { Failure, Loading } from '@/components/remote';
-import { COACH_FACES, coachFace } from '@/features/coach/coach-faces';
+import { coachFace, coachFacePosition } from '@/features/coach/coach-faces';
 
 export function CoachHome() {
   const router = useRouter();
@@ -39,7 +39,6 @@ export function CoachHome() {
     );
   const traits = (coach.data.traits.length ? coach.data.traits : []).slice(0, 3);
   const face = coachFace(coach.data.appearance);
-  const faceIndex = Math.max(0, COACH_FACES.findIndex((f) => f.id === face.id));
   return (
     <div className="page">
       <header className="coach-home-head">
@@ -53,8 +52,8 @@ export function CoachHome() {
         <div
           className="coach-avatar coach-avatar-face"
           style={{
-            backgroundImage: "url('/coach-faces-v1.png')",
-            backgroundPosition: `${(faceIndex / 3) * 100}% 50%`,
+            backgroundImage: "url('/coach-faces-v2.png')",
+            ...coachFacePosition(face),
           }}
           aria-hidden="true"
         />

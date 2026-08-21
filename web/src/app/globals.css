@@ -1661,29 +1661,32 @@ a {
 .coach-picker-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  aspect-ratio: 2 / 1;
+  gap: 8px;
   border: 1px solid var(--border);
   border-radius: 18px;
-  overflow: hidden;
-  background: #100b1f center / cover no-repeat url('/coach-faces-v1.png');
+  background: var(--surface);
+  padding: 8px;
 }
 .coach-face {
+  aspect-ratio: 1;
   position: relative;
-  border: 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  background: transparent;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 13px;
+  background-color: #100b1f;
+  background-image: url('/coach-faces-v2.png');
+  background-repeat: no-repeat;
+  background-size: 400% 400%;
   cursor: pointer;
 }
-.coach-face:last-child {
-  border-right: 0;
-}
 .coach-face:hover {
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--pink);
+  filter: brightness(1.08);
 }
 .coach-face.selected::after {
   content: '';
   position: absolute;
-  inset: 3px;
+  inset: 2px;
   border: 3px solid var(--pink);
   border-radius: 14px;
   pointer-events: none;
@@ -1700,27 +1703,6 @@ a {
   border-radius: 50%;
   background: linear-gradient(135deg, var(--pink), var(--violet));
   color: #ffffff;
-}
-.coach-picker-labels {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-.coach-picker-labels span {
-  display: grid;
-  gap: 1px;
-  text-align: center;
-  color: var(--muted);
-}
-.coach-picker-labels span.active {
-  color: var(--pink);
-}
-.coach-picker-labels strong {
-  font-size: 0.72rem;
-  font-weight: 800;
-}
-.coach-picker-labels small {
-  font-size: 0.68rem;
 }
 .coach-picker-info {
   display: grid;
@@ -3130,7 +3112,7 @@ a {
   box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--pink), transparent 50%);
 }
 .coach-avatar-face {
-  background-size: 400% auto;
+  background-size: 400% 400%;
   background-repeat: no-repeat;
 }
 .coach-identity h2 {

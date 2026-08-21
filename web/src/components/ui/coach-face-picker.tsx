@@ -1,29 +1,22 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
-import { COACH_FACES, coachFace } from '@/features/coach/coach-faces';
+import { COACH_FACES, coachFace, coachFacePosition } from '@/features/coach/coach-faces';
 import type { CoachGender } from '@/types';
 
 const genderLabel: Record<CoachGender, string> = {
   MALE: 'Male',
   FEMALE: 'Female',
-  NON_GENDERED: 'Non-gendered',
+  NON_GENDERED: 'Any',
 };
 
 export function CoachFacePicker({
-  value = 'neutral-ai',
+  value = 'lumen',
   onChange,
 }: {
   value?: string | null;
   onChange: (appearance: string, gender: CoachGender) => void;
 }) {
-  const [selectedId, setSelectedId] = useState(() => coachFace(value).id);
-
-  useEffect(() => {
-    setSelectedId(coachFace(value).id);
-  }, [value]);
-
-  const selected = coachFace(selectedId);
+  const selected = coachFace(value);
   return (
     <div className="coach-picker">
       <div className="coach-picker-strip" role="radiogroup" aria-label="Coach appearance">
@@ -37,8 +30,8 @@ export function CoachFacePicker({
               aria-checked={active}
               aria-label={`${face.title}, ${genderLabel[face.gender]}`}
               className={`coach-face ${active ? 'selected' : ''}`}
+              style={coachFacePosition(face)}
               onClick={() => {
-                setSelectedId(face.id);
                 onChange(face.id, face.gender);
               }}
             >
@@ -50,14 +43,6 @@ export function CoachFacePicker({
             </button>
           );
         })}
-      </div>
-      <div className="coach-picker-labels">
-        {COACH_FACES.map((face) => (
-          <span key={face.id} className={face.id === selected.id ? 'active' : ''}>
-            <strong>{face.title}</strong>
-            <small>{genderLabel[face.gender]}</small>
-          </span>
-        ))}
       </div>
       <div className="coach-picker-info">
         <strong>{selected.title}</strong>
