@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
 import { COACH_FACES, coachFace } from '@/features/coach/coach-faces';
 import type { CoachGender } from '@/types';
@@ -16,7 +17,13 @@ export function CoachFacePicker({
   value?: string | null;
   onChange: (appearance: string, gender: CoachGender) => void;
 }) {
-  const selected = coachFace(value);
+  const [selectedId, setSelectedId] = useState(() => coachFace(value).id);
+
+  useEffect(() => {
+    setSelectedId(coachFace(value).id);
+  }, [value]);
+
+  const selected = coachFace(selectedId);
   return (
     <div className="coach-picker">
       <div className="coach-picker-strip" role="radiogroup" aria-label="Coach appearance">
@@ -30,7 +37,10 @@ export function CoachFacePicker({
               aria-checked={active}
               aria-label={`${face.title}, ${genderLabel[face.gender]}`}
               className={`coach-face ${active ? 'selected' : ''}`}
-              onClick={() => onChange(face.id, face.gender)}
+              onClick={() => {
+                setSelectedId(face.id);
+                onChange(face.id, face.gender);
+              }}
             >
               {active && (
                 <span className="coach-face-check" aria-hidden="true">
