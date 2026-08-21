@@ -586,6 +586,89 @@ a {
 .nav a.active svg {
   color: var(--pink);
 }
+.nav-unread-badge {
+  display: grid;
+  min-width: 22px;
+  height: 22px;
+  margin-left: auto;
+  place-items: center;
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--pink), var(--violet));
+  color: #ffffff;
+  padding: 0 5px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+}
+.mobile-nav-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.mobile-unread-badge {
+  position: absolute;
+  top: -9px;
+  right: -13px;
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 2px solid #0f131a;
+  border-radius: 999px;
+  background: var(--pink);
+  color: #ffffff;
+  padding: 0 3px;
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+.message-notice {
+  position: fixed;
+  z-index: 60;
+  top: 24px;
+  right: 24px;
+  display: grid;
+  width: min(360px, calc(100vw - 32px));
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--pink), var(--border) 55%);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--raised), transparent 4%);
+  color: var(--ink);
+  padding: 13px 15px;
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(18px);
+  animation: message-notice-in 0.24s ease-out;
+}
+.message-notice-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--pink), var(--violet));
+  color: #ffffff;
+}
+.message-notice > span:nth-child(2) {
+  display: grid;
+  gap: 2px;
+}
+.message-notice small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.message-notice-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--pink);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--pink), transparent 82%);
+}
+@keyframes message-notice-in {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 .sidebar footer {
   display: grid;
   gap: 8px;
@@ -1374,6 +1457,10 @@ a {
     gap: 3px;
     color: var(--muted);
     font-size: 0.66rem;
+  }
+  .message-notice {
+    top: 14px;
+    right: 16px;
   }
   .chat {
     height: calc(100dvh - 122px);

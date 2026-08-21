@@ -28,6 +28,7 @@ export function useConversations() {
   return useQuery({
     queryKey: chatKeys.conversations,
     queryFn: () => api<Conversation[]>('/conversations'),
+    refetchInterval: 10_000,
   });
 }
 

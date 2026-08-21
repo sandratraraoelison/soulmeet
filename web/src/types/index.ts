@@ -176,6 +176,7 @@ export interface Conversation {
   participants: { userId: string; user?: { profile?: { firstName: string } | null } }[];
   messages?: ChatMessage[];
   lastMessageAt: string | null;
+  unreadCount: number;
 }
 export interface DiscoverableUser {
   id: string;

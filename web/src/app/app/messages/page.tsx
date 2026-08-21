@@ -15,7 +15,7 @@ import { api, json } from '@/services/api';
 import type { Conversation, DiscoverableUser } from '@/types';
 import { Failure, Loading } from '@/components/remote';
 import { useMeQuery } from '@/providers/me';
-import { useChatSocketLifecycle, useConversations } from '@/features/chat/use-chat';
+import { useConversations } from '@/features/chat/use-chat';
 const PAGE_SIZE = 8;
 const initials = (name: string) =>
   name
@@ -44,7 +44,6 @@ export default function Messages() {
   const router = useRouter();
   const me = useMeQuery();
   const [discoverPage, setDiscoverPage] = useState(0);
-  useChatSocketLifecycle(true);
   const q = useConversations();
   const discover = useQuery({
     queryKey: ['discover', discoverPage],

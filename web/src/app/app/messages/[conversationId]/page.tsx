@@ -23,7 +23,6 @@ import { BackButton } from '@/components/ui/back-button';
 import { useMeQuery } from '@/providers/me';
 import {
   chatKeys,
-  useChatSocketLifecycle,
   useConversation,
   useConversationPresence,
   useConversationSocket,
@@ -107,7 +106,6 @@ export default function Conversation() {
   const recordingSecondsRef = useRef(0);
   const [seconds, setSeconds] = useState(0);
   const me = useMeQuery();
-  useChatSocketLifecycle(true);
   useEffect(() => {
     if (!emojiOpen) return;
     const closeOnOutsideClick = (event: PointerEvent) => {
