@@ -8,9 +8,9 @@ export const consentKey = ['soulprint-consent'] as const;
 export function ConsentGate() {
   const client = useQueryClient();
   const panel = useRef<HTMLDivElement>(null);
-  const query = useQuery({ queryKey: consentKey, queryFn: consentService.get, retry: false });
+  const query = useQuery({ queryKey: consentKey, queryFn: consentService.get, retry: false, staleTime: Infinity });
   const save = useMutation({ mutationFn: consentService.update, onSuccess: (data) => client.setQueryData(consentKey, data) });
-  const open = query.isPending || query.isError || !query.data?.hasChoice;
+  const open = query.isError || (!query.isPending && !query.data?.hasChoice);
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement as HTMLElement | null;
@@ -28,10 +28,10 @@ export function ConsentGate() {
     document.addEventListener('keydown', trap);
     return () => { document.body.style.overflow = ''; document.removeEventListener('keydown', trap); previous?.focus(); };
   }, [open]);
-  if (!open) return null;
+  if (query.isPending || !open) return null;
   return <div className="consent-overlay" role="presentation">
     <div ref={panel} className="consent-dialog" role="dialog" aria-modal="true" aria-labelledby="consent-title" tabIndex={-1}>
-      {query.isPending ? <p role="status">Loading your privacy choice…</p> : query.isError ? <><p className="error" role="alert">We could not load your privacy choice.</p><button className="button" onClick={() => void query.refetch()}>Try again</button></> : <>
+      {query.isError ? <><p className="error" role="alert">We could not load your privacy choice.</p><button className="button" onClick={() => void query.refetch()}>Try again</button></> : <>
         <h2 id="consent-title">Help us build a Soulprint that truly reflects you</h2>
         <p>Your Soulprint becomes more accurate as Soulmeet learns about your personality, communication style, values, interests and relationship preferences.</p>
         <p>You can allow Soulmeet AI to learn from your conversations with other people on Soulmeet. Real conversations often reveal small but meaningful details that a traditional questionnaire cannot capture.</p>

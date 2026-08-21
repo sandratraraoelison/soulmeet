@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { ActivityIndicator, BackHandler, Modal, ScrollView, Text, View } from 'react-native';
+import { BackHandler, Modal, ScrollView, Text, View } from 'react-native';
 import { apiClient } from '@/api/client';
 import { Button } from '@/components/common/Button';
 
@@ -11,7 +11,7 @@ export const consentApi = {
   update: async (conversationAnalysisAllowed: boolean) => (await apiClient.put<SoulprintConsent>('/soulprint/consent', { conversationAnalysisAllowed })).data,
   removeInsights: async () => (await apiClient.delete<{ removed: number }>('/soulprint/conversation-insights')).data,
 };
-export const useSoulprintConsent = (enabled = true) => useQuery({ queryKey: consentKey, queryFn: consentApi.get, enabled, retry: false });
+export const useSoulprintConsent = (enabled = true) => useQuery({ queryKey: consentKey, queryFn: consentApi.get, enabled, retry: false, staleTime: Infinity });
 export function useUpdateSoulprintConsent() {
   const client = useQueryClient();
   return useMutation({ mutationFn: consentApi.update, onSuccess: (data) => client.setQueryData(consentKey, data) });
@@ -25,13 +25,13 @@ export function SoulprintConsentPrompt({ enabled }: { enabled: boolean }) {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => subscription.remove();
   }, [enabled, query.data?.hasChoice]);
-  if (!enabled || query.data?.hasChoice) return null;
+  if (!enabled || query.isPending || query.data?.hasChoice) return null;
   return (
     <Modal visible transparent animationType="fade" onRequestClose={() => undefined} statusBarTranslucent>
       <View className="flex-1 justify-center bg-black/80 px-4 py-8">
         <ScrollView contentContainerClassName="grow justify-center" keyboardShouldPersistTaps="handled">
           <View className="rounded-[28px] border border-border bg-surface p-6">
-            {query.isPending ? <View className="items-center py-10"><ActivityIndicator /><Text accessibilityRole="text" className="mt-4 text-muted">Loading your privacy choice…</Text></View> : query.isError ? <View className="items-center py-6"><Text accessibilityRole="alert" className="mb-4 text-center text-danger">We could not load your privacy choice.</Text><Button label="Try again" onPress={() => void query.refetch()} /></View> : <>
+            {query.isError ? <View className="items-center py-6"><Text accessibilityRole="alert" className="mb-4 text-center text-danger">We could not load your privacy choice.</Text><Button label="Try again" onPress={() => void query.refetch()} /></View> : <>
             <Text accessibilityRole="header" className="font-headline text-2xl font-bold text-ink">Help us build a Soulprint that truly reflects you</Text>
             <Text className="mt-4 text-sm leading-6 text-muted">Your Soulprint becomes more accurate as Soulmeet learns about your personality, communication style, values, interests and relationship preferences.</Text>
             <Text className="mt-3 text-sm leading-6 text-muted">You can allow Soulmeet AI to learn from your conversations with other people on Soulmeet. Real conversations often reveal small but meaningful details that a traditional questionnaire cannot capture.</Text>
