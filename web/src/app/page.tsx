@@ -43,7 +43,11 @@ const showcases = [
     eyebrow: '01 — Your Coach',
     title: 'A conversation that remembers what matters.',
     text: 'Arrive directly in one continuous conversation. Ask for perspective before a date, unpack what happened afterward, or find words for the message you want to send.',
-    bullets: ['Streaming responses with interruption and retry', 'Context restored when you return', 'A Coach personality you can shape'],
+    bullets: [
+      'Streaming responses with interruption and retry',
+      'Context restored when you return',
+      'A Coach personality you can shape',
+    ],
     image: '/screens/coach.png',
     alt: 'Coach conversation in Soulmeet',
     reverse: false,
@@ -53,7 +57,11 @@ const showcases = [
     eyebrow: '02 — SoulPrint',
     title: 'A clearer picture of who you are.',
     text: 'Your SoulPrint brings together confirmed insights about your values, communication, boundaries, and hopes for a relationship.',
-    bullets: ['Review and correct Coach reflections', 'Choose what can support matching', 'Delete anything that no longer feels true'],
+    bullets: [
+      'Review and correct Coach reflections',
+      'Choose what can support matching',
+      'Delete anything that no longer feels true',
+    ],
     image: '/screens/soulprint.png',
     alt: 'SoulPrint personal insights interface',
     reverse: true,
@@ -63,7 +71,11 @@ const showcases = [
     eyebrow: '03 — Growth',
     title: 'Insight becomes something you can practice.',
     text: 'Build confidence through small goals, private check-ins, gentle exercises, and guided paths designed for real relationship moments.',
-    bullets: ['Personal and Coach-suggested goals', 'Weekly mood and reflection check-ins', 'Progress without pressure or shame'],
+    bullets: [
+      'Personal and Coach-suggested goals',
+      'Weekly mood and reflection check-ins',
+      'Progress without pressure or shame',
+    ],
     image: '/screens/growth.png',
     alt: 'Soulmeet personal growth tools',
     reverse: false,
@@ -109,7 +121,7 @@ export default function Landing() {
             </p>
             <div className="hero-actions">
               <Link className="button" href="/register">
-                Meet your Coach <ArrowRight size={18} />
+                Your coach is ready <ArrowRight size={18} />
               </Link>
               <Link className="text-link" href="#experience">
                 See the experience <ArrowRight size={17} />
@@ -236,8 +248,8 @@ export default function Landing() {
           <div className="eyebrow">Native apps</div>
           <h2>Soulmeet goes with you.</h2>
           <p>
-            Available on iPhone and Android — with notifications, voice notes, and your Coach on
-            the go.
+            Available on iPhone and Android — with notifications, voice notes, and your Coach on the
+            go.
           </p>
           <div className="apps-store">
             <span className="store-badge" aria-disabled="true">
