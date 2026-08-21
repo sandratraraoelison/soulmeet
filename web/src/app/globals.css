@@ -927,6 +927,13 @@ a {
 }
 .emoji-picker-wrap {
   position: relative;
+  display: flex;
+  align-self: stretch;
+}
+.emoji-picker-wrap > .button {
+  min-width: 58px;
+  height: 100%;
+  padding-inline: 18px;
 }
 .emoji-picker-panel {
   position: absolute;

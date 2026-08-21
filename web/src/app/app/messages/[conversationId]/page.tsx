@@ -89,6 +89,7 @@ export default function Conversation() {
   const [recordingError, setRecordingError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<{ file: File; previewUrl: string }[]>([]);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
   const [gallery, setGallery] = useState<{ urls: string[]; index: number } | null>(null);
   const selectedFilesRef = useRef(selectedFiles);
   const [recorded, setRecorded] = useState<{ blob: Blob; url: string; seconds: number } | null>(
@@ -99,6 +100,21 @@ export default function Conversation() {
   const [seconds, setSeconds] = useState(0);
   const me = useMeQuery();
   useChatSocketLifecycle(true);
+  useEffect(() => {
+    if (!emojiOpen) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!emojiPickerRef.current?.contains(event.target as Node)) setEmojiOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setEmojiOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [emojiOpen]);
   useConversationSocket(conversationId, me.data?.id);
   const conversation = useConversation(conversationId);
   const presenceOnline = useConversationPresence(conversationId);
@@ -575,7 +591,7 @@ export default function Conversation() {
             maxLength={2000}
             placeholder="Share a thought..."
           />
-          <div className="emoji-picker-wrap">
+          <div className="emoji-picker-wrap" ref={emojiPickerRef}>
             <button type="button" className="button secondary" aria-label="Choose an emoji" onClick={() => setEmojiOpen((open) => !open)}>
               <Smile size={18} />
             </button>
