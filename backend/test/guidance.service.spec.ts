@@ -207,6 +207,7 @@ describe('GuidancePromptService', () => {
     expect(prompt).toContain('usually zero or one targeted question');
     expect(prompt).toContain('recommend a specific action');
     expect(prompt).toContain('Emojis and decorative symbols: do not use them');
+    expect(prompt).toContain('Never use -- as a pause or sentence separator');
   });
 
   it('turns a soft reflective coach into reassuring, exploratory behavior', () => {
