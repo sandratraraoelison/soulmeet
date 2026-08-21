@@ -45,7 +45,6 @@ export function CoachFacePicker({
                   <Check size={14} strokeWidth={3} />
                 </span>
               )}
-              <span className="coach-face-name" aria-hidden="true">{face.title}</span>
             </button>
           );
         })}

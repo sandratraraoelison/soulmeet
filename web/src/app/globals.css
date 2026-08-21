@@ -1704,27 +1704,6 @@ a {
   background: linear-gradient(135deg, var(--pink), var(--violet));
   color: #ffffff;
 }
-.coach-face-name {
-  position: absolute;
-  right: 6px;
-  bottom: 6px;
-  left: 6px;
-  overflow: hidden;
-  border-radius: 8px;
-  background: rgba(8, 6, 18, 0.76);
-  color: #ffffff;
-  padding: 5px 6px;
-  font-size: 0.68rem;
-  font-weight: 800;
-  line-height: 1;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  backdrop-filter: blur(5px);
-}
-.coach-face.selected .coach-face-name {
-  background: color-mix(in srgb, var(--pink), #14091e 55%);
-}
 .coach-picker-info {
   display: grid;
   gap: 2px;
