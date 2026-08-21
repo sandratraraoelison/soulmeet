@@ -48,6 +48,10 @@ const statusTitle: Record<string, string> = {
 const mediaSource = (value: string) => {
   try {
     const url = new URL(value);
+    const postgresMediaId = url.pathname.match(/\/media\/([0-9a-f-]{36})\/?$/i)?.[1];
+    if (postgresMediaId) {
+      return `/api/backend/media/${postgresMediaId}`;
+    }
     if (url.pathname.startsWith('/uploads/')) {
       return `/api/backend-media/${url.pathname.slice('/uploads/'.length)}`;
     }
@@ -128,7 +132,7 @@ export default function Conversation() {
     queryKey: chatKeys.messages(conversationId),
     queryFn: () =>
       api<MessagePage>(`/conversations/${conversationId}/messages?limit=50`),
-    refetchInterval: 10_000,
+    refetchInterval: connection === 'connected' ? 10_000 : 3_000,
   });
   const messageCount = q.data?.messages.length ?? 0;
   useEffect(() => {
@@ -335,13 +339,19 @@ export default function Conversation() {
           )}
           <div
             className={`chat-presence ${
-              connection !== 'connected' ? 'reconnecting' : presenceOnline ? 'online' : 'offline'
+              connection !== 'connected' && !q.isSuccess
+                ? 'reconnecting'
+                : presenceOnline
+                  ? 'online'
+                  : 'offline'
             }`}
           >
             {typing ? (
               <span className="typing-indicator">typing…</span>
+            ) : connection !== 'connected' && !q.isSuccess ? (
+              'Connecting…'
             ) : connection !== 'connected' ? (
-              'Reconnecting…'
+              'Synced'
             ) : presenceOnline ? (
               'Online'
             ) : (

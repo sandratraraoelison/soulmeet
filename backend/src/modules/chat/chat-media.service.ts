@@ -20,7 +20,8 @@ export class ChatMediaService {
       data: { ownerId: userId, mimeType, size: file.size, data: Uint8Array.from(file.buffer) },
       select: { id: true },
     });
-    const publicBaseUrl = this.config.get<string>('PUBLIC_BASE_URL', 'http://localhost:3000').replace(/\/$/, '');
+    const configuredBaseUrl = this.config.get<string>('PUBLIC_BASE_URL', 'http://localhost:3000');
+    const publicBaseUrl = new URL(configuredBaseUrl).origin;
     return { url: `${publicBaseUrl}/api/v1/media/${media.id}`, mimeType, size: file.size };
   }
 
