@@ -282,11 +282,12 @@ export default function Landing() {
             <LockKeyhole size={24} />
           </span>
           <div>
-            <div className="eyebrow">Private by design</div>
-            <h2>Your inner life is not content.</h2>
+            <div className="eyebrow">Your privacy comes first</div>
+            <h2>We&apos;ll never sell what you tell your coach.</h2>
             <p>
-              Your session uses secure HttpOnly cookies. SoulPrint lets you decide which insights
-              remain private, support Coaching, or may support matching.
+              Your conversations are encrypted and never sold or shared with advertisers. What you
+              share with your coach stays between you and your coach, so it can understand you
+              deeply and find people who truly fit.
             </p>
           </div>
           <Link className="button secondary" href="/privacy">
@@ -297,22 +298,21 @@ export default function Landing() {
 
       <section className="closing">
         <Reveal>
-          <div className="eyebrow">A better next conversation starts here</div>
-          <h2>Meet yourself before you meet someone else.</h2>
+          <div className="eyebrow">Ready when you are</div>
+          <h2>Your coach is already looking for the person who fits you. Just say hi.</h2>
           <p>Create your private Soulmeet space and choose the Coach who feels right for you.</p>
           <Link className="button button-lg" href="/register">
-            Begin your journey <ArrowRight size={18} />
+            Your person is out there <ArrowRight size={18} />
           </Link>
         </Reveal>
       </section>
 
       <section className="apps-band">
         <Reveal>
-          <div className="eyebrow">Native apps</div>
+          <div className="eyebrow">On your phone</div>
           <h2>Soulmeet goes with you.</h2>
           <p>
-            Available on iPhone and Android — with notifications, voice notes, and your Coach on the
-            go.
+            On iPhone and Android. Notifications, voice notes, and your coach wherever you are.
           </p>
           <div className="apps-store">
             <span className="store-badge" aria-disabled="true">
