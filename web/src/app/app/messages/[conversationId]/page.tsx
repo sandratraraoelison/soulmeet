@@ -51,6 +51,9 @@ const mediaSource = (value: string) => {
     if (url.pathname.startsWith('/uploads/')) {
       return `/api/backend-media/${url.pathname.slice('/uploads/'.length)}`;
     }
+    if (url.pathname.startsWith('/api/v1/media/')) {
+      return `/api/backend/media/${url.pathname.slice('/api/v1/media/'.length)}`;
+    }
     return value;
   } catch {
     const path = value.replace(/^\/?uploads\//, '');

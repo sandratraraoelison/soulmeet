@@ -40,8 +40,7 @@ export function getChatSocket(): Promise<Socket> {
       const instance = io(socketUrl, {
         // Start with HTTP polling, which also works behind proxies that reject a
         // direct WebSocket handshake, then upgrade to WebSocket when available.
-        transports: ['websocket', 'polling'],
-        rememberUpgrade: true,
+        transports: ['polling', 'websocket'],
         auth: { token: accessToken },
         autoConnect: false,
         reconnection: true,

@@ -11,6 +11,7 @@ export class ChatMediaController {
   @Get(':mediaId')
   @Header('Cache-Control', 'public, max-age=31536000, immutable')
   @Header('X-Content-Type-Options', 'nosniff')
+  @Header('Cross-Origin-Resource-Policy', 'cross-origin')
   @ApiOperation({ summary: 'Read an immutable chat attachment' })
   async get(@Param('mediaId', ParseUUIDPipe) mediaId: string, @Res({ passthrough: true }) response: Response) {
     const media = await this.media.get(mediaId);
