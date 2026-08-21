@@ -19,7 +19,9 @@ export class ChatMediaService {
     if (file.size > maxBytes) throw new BadRequestException(`${type === 'IMAGE' ? 'Image' : 'Audio'} is too large`);
 
     const baseUrl = this.config.get<string>('SUPABASE_URL')?.replace(/\/$/, '');
-    const serviceKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
+    const serviceKey =
+      this.config.get<string>('SUPABASE_SECRET_KEY') ||
+      this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
     const bucket = this.config.get<string>('SUPABASE_MEDIA_BUCKET') || 'chat-media';
     const extension = this.extension(mimeType, type);
     const path = `${userId}/${new Date().toISOString().slice(0, 10)}/${randomUUID()}.${extension}`;
@@ -33,14 +35,16 @@ export class ChatMediaService {
       const publicBaseUrl = this.config.get<string>('PUBLIC_BASE_URL', 'http://localhost:3000').replace(/\/$/, '');
       return { url: `${publicBaseUrl}/uploads/${relativePath}`, mimeType, size: file.size };
     }
+    const headers: Record<string, string> = {
+      apikey: serviceKey,
+      'Content-Type': mimeType,
+      'x-upsert': 'false',
+    };
+    if (!serviceKey.startsWith('sb_secret_'))
+      headers.Authorization = `Bearer ${serviceKey}`;
     const response = await fetch(`${baseUrl}/storage/v1/object/${bucket}/${path}`, {
       method: 'POST',
-      headers: {
-        apikey: serviceKey,
-        Authorization: `Bearer ${serviceKey}`,
-        'Content-Type': mimeType,
-        'x-upsert': 'false',
-      },
+      headers,
       body: file.buffer as unknown as BodyInit,
     });
     if (!response.ok) throw new ServiceUnavailableException('Unable to store this attachment');

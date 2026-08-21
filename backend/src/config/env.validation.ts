@@ -17,6 +17,7 @@ export const envValidationSchema = Joi.object({
   EMAIL_FROM: Joi.string().default('Soulmeet <noreply@soulmeet.app>'),
   EXPO_ACCESS_TOKEN: Joi.string().allow('').default(''),
   SUPABASE_URL: Joi.string().uri().allow('').default(''),
+  SUPABASE_SECRET_KEY: Joi.string().allow('').default(''),
   SUPABASE_SERVICE_ROLE_KEY: Joi.string().allow('').default(''),
   SUPABASE_MEDIA_BUCKET: Joi.string().default('chat-media'),
   PUBLIC_BASE_URL: Joi.string().uri().default('http://localhost:3000'),
