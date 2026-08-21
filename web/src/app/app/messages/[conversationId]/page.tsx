@@ -410,7 +410,7 @@ export default function Conversation() {
                   <div className="bubble-actions">
                     <button
                       type="button"
-                      className="button ghost icon-button"
+                      className="button ghost icon-button chat-message-action"
                       aria-label="Edit message"
                       title="Edit"
                       onClick={() => {
@@ -425,7 +425,7 @@ export default function Conversation() {
                       confirmIcon={<Check size={16} />}
                       label="Delete message"
                       ariaLabel="Delete message"
-                      className="button ghost icon-button"
+                      className="button ghost icon-button chat-message-action chat-message-delete"
                       onConfirm={() => void manageMessage({ id: m.id, method: 'DELETE' })}
                     />
                   </div>
