@@ -42,7 +42,6 @@ export class ChatMediaService {
     const headers: Record<string, string> = {
       apikey: serviceKey,
       'Content-Type': mimeType,
-      'x-upsert': 'false',
     };
     if (!serviceKey.startsWith('sb_secret_'))
       headers.Authorization = `Bearer ${serviceKey}`;
