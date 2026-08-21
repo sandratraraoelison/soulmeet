@@ -6,7 +6,6 @@ import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { Screen } from '@/components/common/Screen';
 import { MotionPressable } from '@/components/motion/MotionPressable';
 import { AccountButton } from '@/components/navigation/AccountButton';
-import { ConversationList } from '@/features/chat/components/ConversationList';
 import { useMatchHistory, useRespondSoulMatch, useSoulMatches } from '@/features/soul/hooks/use-soul';
 import type { CompatibilityType, SoulMatch } from '@/features/soul/types/soul.types';
 
@@ -45,13 +44,7 @@ export default function SoulScreen() {
           <AccountButton />
         </View>
 
-        <View className="mt-8 flex-row items-end justify-between">
-          <View><Text className="font-headline text-xl font-bold text-ink">Your conversations</Text><Text className="mt-1 text-sm text-muted">Continue where you left off.</Text></View>
-          <View className="rounded-full bg-primary/15 px-3 py-1.5"><Text className="text-[10px] font-bold uppercase tracking-wider text-primary">Private</Text></View>
-        </View>
-        <ConversationList />
-
-        <View className="mt-7 rounded-[24px] border border-border bg-surface p-4">
+        <View className="mt-8 rounded-[24px] border border-border bg-surface p-4">
           <Text className="font-headline text-lg font-bold text-ink">Match decisions</Text>
           <Text className="mt-1 text-sm text-muted">Profiles you accepted or passed on.</Text>
           <View className="mt-4 flex-row gap-3">

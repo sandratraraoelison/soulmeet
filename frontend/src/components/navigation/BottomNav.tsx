@@ -37,6 +37,13 @@ const items = [
     href: '/(app)/soul',
     route: '/soul',
   },
+  {
+    label: 'Messages',
+    icon: '✉',
+    iconSize: 24,
+    href: '/(app)/messages',
+    route: '/messages',
+  },
 ] as const;
 
 export function BottomNav() {
@@ -48,7 +55,7 @@ export function BottomNav() {
   const notificationCounts: Partial<Record<(typeof items)[number]['label'], number>> = {
     Soulprint: insights.data?.pendingConfirmationCount ?? 0,
     Growth: growth.data?.suggestedGoals.length ?? 0,
-    'Your matche': conversations.data?.reduce(
+    Messages: conversations.data?.reduce(
       (total, conversation) => total + conversation.unreadCount,
       0,
     ) ?? 0,
@@ -66,6 +73,7 @@ export function BottomNav() {
           const active =
             pathname === item.route ||
             (item.label === 'Soulprint' && pathname.startsWith('/insights/')) ||
+            (item.label === 'Messages' && pathname.startsWith('/conversation/')) ||
             (item.label === 'Your matche' &&
               (pathname === '/profile' ||
                 pathname === '/settings' ||
