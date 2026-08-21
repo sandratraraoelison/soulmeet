@@ -32,10 +32,10 @@ export function ConsentGate() {
   return <div className="consent-overlay" role="presentation">
     <div ref={panel} className="consent-dialog" role="dialog" aria-modal="true" aria-labelledby="consent-title" tabIndex={-1}>
       {query.isError ? <><p className="error" role="alert">We could not load your privacy choice.</p><button className="button" onClick={() => void query.refetch()}>Try again</button></> : <>
-        <h2 id="consent-title">Help us build a Soulprint that truly reflects you</h2>
+        <h2 id="consent-title">Make your Soulprint even more accurate</h2>
         <p>Your Soulprint becomes more accurate as Soulmeet learns about your personality, communication style, values, interests and relationship preferences.</p>
         <p>You can allow Soulmeet AI to learn from your conversations with other people on Soulmeet. Real conversations often reveal small but meaningful details that a traditional questionnaire cannot capture.</p>
-        <p>If you allow access, the AI will analyze relevant patterns from your conversations to improve your Soulprint. This analysis is automated, and no human will read or access your conversations for this purpose. Your private messages will not be displayed in your Soulprint, and Soulmeet will never send messages or speak on your behalf.</p>
+        <p>If you allow access, the AI will analyze relevant patterns from your conversations to improve your Soulprint. This analysis is automated: only the AI ever accesses your messages, and no human will ever read your conversations. The AI only learns from your own messages, never from what the people you talk to have written. Your private messages will not be displayed in your Soulprint, and Soulmeet will never send messages or speak on your behalf.</p>
         <p>If you prefer not to allow access, that’s completely fine. Your AI Coach will occasionally ask you questions and request feedback directly so your Soulprint can still evolve and become more accurate over time.</p>
         <div className="consent-options">
           <Choice title="Allow AI to learn from my conversations" text="Soulmeet AI can analyze relevant patterns from my new conversations to better understand my communication style, interests, values and relationship preferences." button="Allow and continue" disabled={save.isPending} onClick={() => save.mutate(true)} />
