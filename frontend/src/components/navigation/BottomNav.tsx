@@ -10,7 +10,7 @@ import { motionFadeIn } from '@/lib/motion';
 
 const items = [
   {
-    label: 'Discovery',
+    label: 'Discover',
     icon: '✦',
     iconSize: 25,
     href: '/(app)/home',

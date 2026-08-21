@@ -16,7 +16,7 @@ import {
 import { Brand } from './brand';
 
 const items = [
-  ['/app', 'Discovery', MessageCircleHeart],
+  ['/app', 'Discover', MessageCircleHeart],
   ['/app/insights', 'Soulprint', Sparkles],
   ['/app/growth', 'Growth', TrendingUp],
   ['/app/soul', 'Your matche', Heart],
