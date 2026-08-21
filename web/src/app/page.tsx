@@ -210,6 +210,72 @@ export default function Landing() {
         </section>
       ))}
 
+      <section className="soulprint-story">
+        <Reveal className="soulprint-story-intro">
+          <div className="eyebrow">The heart of Soulmeet</div>
+          <h2>YOUR SOULPRINT</h2>
+          <p className="soulprint-story-lead">
+            Not a dating profile. Not a personality test. A living understanding of who you are
+            in love and what a meaningful relationship looks like for you.
+          </p>
+        </Reveal>
+        <div className="soulprint-story-layout">
+          <Reveal className="soulprint-story-screen" delay={100}>
+            <div className="soulprint-story-glow" aria-hidden="true" />
+            <Image
+              src="/screens/soulprint.png"
+              alt="A private Soulprint showing values, communication style, boundaries, and relationship goals"
+              width={944}
+              height={1674}
+              sizes="(max-width: 760px) 82vw, 430px"
+            />
+          </Reveal>
+          <div className="soulprint-story-points">
+            <Reveal as="article">
+              <span>01</span>
+              <div>
+                <h3>What it is</h3>
+                <p>
+                  It&apos;s a real picture of you: the way you love, the patterns you keep repeating
+                  without noticing, the people you&apos;re drawn to versus the ones you actually need,
+                  and what it takes for you to feel truly loved.
+                </p>
+              </div>
+            </Reveal>
+            <Reveal as="article" delay={80}>
+              <span>02</span>
+              <div>
+                <h3>How it&apos;s built</h3>
+                <p>
+                  You just talk to your coach, like texting a friend, and everything you share
+                  slowly shapes your Soulprint. No forms, no questionnaires.
+                </p>
+              </div>
+            </Reveal>
+            <Reveal as="article" delay={160}>
+              <span>03</span>
+              <div>
+                <h3>It learns from your dates</h3>
+                <p>
+                  After each date, you tell your coach how it went, what you liked, what felt off,
+                  and what surprised you. All of it feeds back in.
+                </p>
+              </div>
+            </Reveal>
+            <Reveal as="article" delay={240}>
+              <span>04</span>
+              <div>
+                <h3>It grows with you</h3>
+                <p>
+                  Your Soulprint keeps growing. The more you talk and the more you date, the better
+                  it knows you, and the better it finds the right people for you.
+                </p>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
       <section id="privacy" className="privacy-band">
         <Reveal className="privacy-inner">
           <span className="privacy-icon">
