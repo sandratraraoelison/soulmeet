@@ -223,8 +223,8 @@ export default function Landing() {
           <Reveal className="soulprint-story-screen" delay={100}>
             <div className="soulprint-story-glow" aria-hidden="true" />
             <Image
-              src="/screens/soulprint.png"
-              alt="A private Soulprint showing values, communication style, boundaries, and relationship goals"
+              src="/screens/soulprint-orange.png"
+              alt="A living Soulprint shaped by values, communication, emotional patterns, and relationship experiences"
               width={944}
               height={1674}
               sizes="(max-width: 760px) 82vw, 430px"
