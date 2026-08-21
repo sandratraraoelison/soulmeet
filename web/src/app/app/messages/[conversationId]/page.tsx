@@ -50,7 +50,7 @@ const mediaSource = (value: string) => {
     const url = new URL(value);
     const postgresMediaId = url.pathname.match(/\/media\/([0-9a-f-]{36})\/?$/i)?.[1];
     if (postgresMediaId) {
-      return `/api/backend/media/${postgresMediaId}`;
+      return `/api/media/${postgresMediaId}`;
     }
     if (url.pathname.startsWith('/uploads/')) {
       return `/api/backend-media/${url.pathname.slice('/uploads/'.length)}`;

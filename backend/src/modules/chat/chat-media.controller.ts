@@ -1,4 +1,4 @@
-import { Controller, Get, Header, Param, ParseUUIDPipe, Res } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Res } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ChatMediaService } from './chat-media.service';
@@ -9,14 +9,15 @@ export class ChatMediaController {
   constructor(private readonly media: ChatMediaService) {}
 
   @Get(':mediaId')
-  @Header('Cache-Control', 'public, max-age=31536000, immutable')
-  @Header('X-Content-Type-Options', 'nosniff')
-  @Header('Cross-Origin-Resource-Policy', 'cross-origin')
   @ApiOperation({ summary: 'Read an immutable chat attachment' })
-  async get(@Param('mediaId', ParseUUIDPipe) mediaId: string, @Res({ passthrough: true }) response: Response) {
+  async get(@Param('mediaId', ParseUUIDPipe) mediaId: string, @Res() response: Response) {
     const media = await this.media.get(mediaId);
-    response.type(media.mimeType);
+    response.status(200);
+    response.setHeader('Content-Type', media.mimeType);
     response.setHeader('Content-Length', String(media.size));
-    return Buffer.from(media.data);
+    response.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    response.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    response.send(Buffer.from(media.data));
   }
 }
