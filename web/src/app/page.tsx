@@ -108,34 +108,34 @@ export default function Landing() {
         <div className="container hero-grid">
           <div className="hero-copy">
             <div className="hero-pill">
-              <Sparkles size={13} /> A wise, luminous companion
+              <Sparkles size={13} /> Your private AI dating coach
             </div>
             <h1>
-              Know yourself.
+              What if someone actually
               <br />
-              <em>Connect better.</em>
+              <em>understood how you love?</em>
             </h1>
             <p>
-              Soulmeet is a private AI dating Coach, a living SoulPrint, and a calmer way to turn
-              relationship insight into action.
+              No more profiles or swiping! Just talk to your coach. It figures out who you really
+              are and helps you find someone who truly fits.
             </p>
             <div className="hero-actions">
               <Link className="button" href="/register">
-                Your coach is ready <ArrowRight size={18} />
+                Meet your coach <ArrowRight size={18} />
               </Link>
               <Link className="text-link" href="#experience">
-                See the experience <ArrowRight size={17} />
+                See how it works <ArrowRight size={17} />
               </Link>
             </div>
             <div className="trust-line">
               <span>
-                <LockKeyhole size={15} /> Private by design
+                <LockKeyhole size={15} /> Your chats stay private
               </span>
               <span>
-                <ShieldCheck size={15} /> You stay in control
+                <ShieldCheck size={15} /> Talk about what you want
               </span>
               <span>
-                <Sparkles size={15} /> Built around your real life
+                <Sparkles size={15} /> Go at your own pace
               </span>
             </div>
           </div>
@@ -143,15 +143,15 @@ export default function Landing() {
             <div className="device-glow" />
             <Image
               className="device-img"
-              src="/screens/coach.png"
-              alt="Soulmeet AI relationship Coach conversation"
-              width={944}
-              height={1674}
+              src="/screens/hero-ai-coach-orange.png"
+              alt="A person having a private conversation with a luminous AI dating coach"
+              width={1024}
+              height={1536}
               priority
               sizes="(max-width: 760px) 78vw, 390px"
             />
             <div className="device-badge">
-              <span className="pulse-dot" /> Your Coach is ready
+              <span className="pulse-dot" /> Your coach is listening
             </div>
           </div>
         </div>
