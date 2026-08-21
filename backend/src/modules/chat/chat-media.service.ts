@@ -20,7 +20,8 @@ export class ChatMediaService {
     const maxBytes = type === 'IMAGE' ? 10 * 1024 * 1024 : 15 * 1024 * 1024;
     if (file.size > maxBytes) throw new BadRequestException(`${type === 'IMAGE' ? 'Image' : 'Audio'} is too large`);
 
-    const baseUrl = this.clean(this.config.get<string>('SUPABASE_URL'))?.replace(/\/$/, '');
+    const configuredUrl = this.clean(this.config.get<string>('SUPABASE_URL'));
+    const baseUrl = this.projectOrigin(configuredUrl);
     const serviceKey = this.clean(
       this.config.get<string>('SUPABASE_SECRET_KEY') ||
       this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY'),
@@ -71,8 +72,8 @@ export class ChatMediaService {
       });
       if ([401, 403].includes(response.status))
         throw new ServiceUnavailableException('Media storage credentials were rejected');
-      if (/bucket.*not found|not found.*bucket/i.test(providerMessage))
-        throw new ServiceUnavailableException('Media storage bucket was not found');
+      if (response.status === 404)
+        throw new ServiceUnavailableException('Media storage endpoint or bucket was not found');
       throw new ServiceUnavailableException(`Unable to store this attachment (storage ${response.status})`);
     }
     return {
@@ -92,5 +93,16 @@ export class ChatMediaService {
 
   private clean(value?: string) {
     return value?.trim().replace(/^(['"])(.*)\1$/, '$2');
+  }
+
+  private projectOrigin(value?: string) {
+    if (!value) return undefined;
+    try {
+      const url = new URL(value);
+      if (!['http:', 'https:'].includes(url.protocol)) return undefined;
+      return url.origin;
+    } catch {
+      return undefined;
+    }
   }
 }
