@@ -3207,6 +3207,8 @@ a {
   padding: 10px 0;
 }
 .marketing {
+  --pink: #dc2626;
+  --secondary: #ef4444;
   overflow: hidden;
   background:
     radial-gradient(
