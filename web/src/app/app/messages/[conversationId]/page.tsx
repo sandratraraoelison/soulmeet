@@ -97,6 +97,7 @@ export default function Conversation() {
   );
   const recorderRef = useRef<MediaRecorder | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordingSecondsRef = useRef(0);
   const [seconds, setSeconds] = useState(0);
   const me = useMeQuery();
   useChatSocketLifecycle(true);
@@ -165,12 +166,14 @@ export default function Conversation() {
     if (method === 'PATCH') setEditing(null);
     void refresh();
   };
-  const upload = async (files: File[]) => {
+  const upload = async (files: File[], durationMs?: number) => {
     const groupId = crypto.randomUUID();
     for (const [index, file] of files.entries()) {
       const form = new FormData();
       form.append('type', file.type.startsWith('audio/') ? 'AUDIO' : 'IMAGE');
       form.append('clientMessageId', `${groupId}:${index}`);
+      if (file.type.startsWith('audio/') && durationMs !== undefined)
+        form.append('durationMs', String(durationMs));
       form.append('file', file);
       const message = await api<ChatMessage>(`/conversations/${conversationId}/attachments`, {
         method: 'POST',
@@ -183,6 +186,7 @@ export default function Conversation() {
     void refresh();
   };
   const [uploadState, setUploadState] = useState<'idle' | 'busy' | 'error'>('idle');
+  const [uploadError, setUploadError] = useState('');
   const clearSelectedFiles = () => {
     setSelectedFiles((selected) => {
       selected.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
@@ -193,10 +197,12 @@ export default function Conversation() {
     if (!selectedFiles.length) return;
     try {
       setUploadState('busy');
+      setUploadError('');
       await upload(selectedFiles.map(({ file }) => file));
       clearSelectedFiles();
       setUploadState('idle');
-    } catch {
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Could not send the attachment.');
       setUploadState('error');
     }
   };
@@ -204,10 +210,18 @@ export default function Conversation() {
     if (!recorded) return;
     try {
       setUploadState('busy');
-      await upload([new File([recorded.blob], 'voice.webm', { type: recorded.blob.type })]);
+      setUploadError('');
+      const mimeType = recorded.blob.type.split(';')[0] || 'audio/webm';
+      const extension = mimeType === 'audio/mp4' ? 'm4a' : mimeType === 'audio/mpeg' ? 'mp3' : 'webm';
+      await upload(
+        [new File([recorded.blob], `voice.${extension}`, { type: mimeType })],
+        Math.round(recorded.seconds * 1000),
+      );
+      URL.revokeObjectURL(recorded.url);
       setRecorded(null);
       setUploadState('idle');
-    } catch {
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Could not send the audio.');
       setUploadState('error');
     }
   };
@@ -219,17 +233,26 @@ export default function Conversation() {
         return;
       }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const preferredMimeType = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+      ].find((type) => MediaRecorder.isTypeSupported(type));
+      const recorder = new MediaRecorder(
+        stream,
+        preferredMimeType ? { mimeType: preferredMimeType } : undefined,
+      );
       const chunks: BlobPart[] = [];
       recorder.ondataavailable = (event) => {
         if (event.data.size) chunks.push(event.data);
       };
       recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+        const mimeType = recorder.mimeType.split(';')[0] || 'audio/webm';
+        const blob = new Blob(chunks, { type: mimeType });
         setRecorded({
           blob,
           url: URL.createObjectURL(blob),
-          seconds,
+          seconds: recordingSecondsRef.current,
         });
         stream.getTracks().forEach((track) => track.stop());
       };
@@ -237,7 +260,11 @@ export default function Conversation() {
       recorder.start();
       setRecording(true);
       setSeconds(0);
-      timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1_000);
+      recordingSecondsRef.current = 0;
+      timerRef.current = setInterval(() => {
+        recordingSecondsRef.current += 1;
+        setSeconds(recordingSecondsRef.current);
+      }, 1_000);
     } catch (error) {
       const denied = error instanceof DOMException && error.name === 'NotAllowedError';
       const missing = error instanceof DOMException && error.name === 'NotFoundError';
@@ -456,7 +483,7 @@ export default function Conversation() {
       <div className="chat-footer">
       {(send.isError || uploadState === 'error') && (
         <p className="error" role="alert">
-          {send.isError ? send.error?.message : 'Could not send the attachment. Try again.'}
+          {send.isError ? send.error?.message : uploadError || 'Could not send the attachment. Try again.'}
         </p>
       )}
       {recordingError && (
