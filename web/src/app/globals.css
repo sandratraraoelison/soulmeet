@@ -121,6 +121,9 @@ a {
   opacity: 0.55;
   cursor: not-allowed;
 }
+.button-spinner {
+  animation: spin 0.9s linear infinite;
+}
 .icon-button {
   min-width: 34px;
   min-height: 34px;

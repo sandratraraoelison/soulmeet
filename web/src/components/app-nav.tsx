@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import {
   Heart,
+  LoaderCircle,
   MessageCircle,
   MessageCircleHeart,
   Settings,
@@ -26,11 +28,18 @@ const items = [
 export function AppNav() {
   const router = useRouter();
   const pathname = usePathname();
+  const [signingOut, setSigningOut] = useState(false);
 
   const logout = async () => {
-    await fetch('/api/auth/logout', { method: 'DELETE' });
-    router.replace('/login');
-    router.refresh();
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'DELETE' });
+      router.replace('/login');
+      router.refresh();
+    } catch {
+      setSigningOut(false);
+    }
   };
 
   return (
@@ -55,8 +64,14 @@ export function AppNav() {
             <Settings size={19} />
             Settings
           </Link>
-          <button className="button danger-ghost" onClick={() => void logout()}>
-            Sign out
+          <button
+            className="button danger-ghost"
+            disabled={signingOut}
+            aria-busy={signingOut}
+            onClick={() => void logout()}
+          >
+            {signingOut && <LoaderCircle className="button-spinner" size={18} aria-hidden="true" />}
+            {signingOut ? 'Signing out...' : 'Sign out'}
           </button>
         </footer>
       </aside>
