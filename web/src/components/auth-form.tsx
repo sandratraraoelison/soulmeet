@@ -200,7 +200,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       <Script
         src="https://accounts.google.com/gsi/client"
         strategy="afterInteractive"
-        onLoad={() => setGoogleReady(true)}
+        onReady={() => setGoogleReady(true)}
       />
       <Script
         src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"
