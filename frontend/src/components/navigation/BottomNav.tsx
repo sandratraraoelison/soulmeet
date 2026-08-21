@@ -10,14 +10,14 @@ import { motionFadeIn } from '@/lib/motion';
 
 const items = [
   {
-    label: 'Guidance',
+    label: 'Discovery',
     icon: '✦',
     iconSize: 25,
     href: '/(app)/home',
     route: '/home',
   },
   {
-    label: 'Insights',
+    label: 'Soulprint',
     icon: '✧',
     iconSize: 28,
     href: '/(app)/insights',
@@ -31,7 +31,7 @@ const items = [
     route: '/growth',
   },
   {
-    label: 'Soul',
+    label: 'Your matche',
     icon: '♥',
     iconSize: 24,
     href: '/(app)/soul',
@@ -46,9 +46,9 @@ export function BottomNav() {
   const growth = useGrowth();
   const conversations = useConversations();
   const notificationCounts: Partial<Record<(typeof items)[number]['label'], number>> = {
-    Insights: insights.data?.pendingConfirmationCount ?? 0,
+    Soulprint: insights.data?.pendingConfirmationCount ?? 0,
     Growth: growth.data?.suggestedGoals.length ?? 0,
-    Soul: conversations.data?.reduce(
+    'Your matche': conversations.data?.reduce(
       (total, conversation) => total + conversation.unreadCount,
       0,
     ) ?? 0,
@@ -65,8 +65,8 @@ export function BottomNav() {
           const notificationCount = notificationCounts[item.label] ?? 0;
           const active =
             pathname === item.route ||
-            (item.label === 'Insights' && pathname.startsWith('/insights/')) ||
-            (item.label === 'Soul' &&
+            (item.label === 'Soulprint' && pathname.startsWith('/insights/')) ||
+            (item.label === 'Your matche' &&
               (pathname === '/profile' ||
                 pathname === '/settings' ||
                 pathname.startsWith('/connection/')));

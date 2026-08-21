@@ -16,10 +16,10 @@ import {
 import { Brand } from './brand';
 
 const items = [
-  ['/app', 'Guidance', MessageCircleHeart],
-  ['/app/insights', 'Insights', Sparkles],
+  ['/app', 'Discovery', MessageCircleHeart],
+  ['/app/insights', 'Soulprint', Sparkles],
   ['/app/growth', 'Growth', TrendingUp],
-  ['/app/soul', 'Soul', Heart],
+  ['/app/soul', 'Your matche', Heart],
   ['/app/messages', 'Messages', MessageCircle],
   ['/app/profile', 'Profile', UserRound],
   ['/app/profile/coach', 'My Coach', Sparkles],
