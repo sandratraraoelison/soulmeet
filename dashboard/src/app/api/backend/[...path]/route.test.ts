@@ -14,7 +14,7 @@ describe('backend proxy route', () => {
     if (cookie) headers.set('cookie', cookie);
     const { signal, ...rest } = init ?? {};
     void signal;
-    return new NextRequest(`http://localhost:3001${url}`, { ...rest, headers });
+    return new NextRequest(`http://localhost:3002${url}`, { ...rest, headers });
   }
 
   const params = { params: Promise.resolve({ path: ['admin', 'overview'] }) };

@@ -1,13 +1,14 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Check, Heart, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { Brand } from '@/components/brand';
 import { CoachFacePicker } from '@/components/ui/coach-face-picker';
+import { CountryCityFields } from '@/components/ui/country-city';
 import { coachFace } from '@/features/coach/coach-faces';
 import { ApiError, api, json } from '@/services/api';
 import type { CoachPersonality, DatingGenderPreference } from '@/types';
-import { COACH_TRAIT_OPTIONS, DATING_GENDER_OPTIONS, ONBOARDING_COACH_TRAITS } from '@/lib/constants';
+import { COACH_TRAIT_OPTIONS, DATING_GENDER_OPTIONS, ONBOARDING_COACH_TRAITS, PROFILE_GENDER_OPTIONS } from '@/lib/constants';
 const NAME_SUGGESTIONS = [
   'Lumina',
   'Milo',
@@ -46,6 +47,12 @@ const stepMeta = [
     hint: 'Pick the traits that make the Coach feel right to you. They can be refined later.',
   },
 ] as const;
+const profileStep = {
+  icon: Heart,
+  title: 'Tell us about',
+  highlight: 'yourself',
+  hint: 'Google does not share these details. They are required to create your private profile.',
+} as const;
 export default function Onboarding() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -57,7 +64,26 @@ export default function Onboarding() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
-  const meta = stepMeta[step];
+  const [needsProfile, setNeedsProfile] = useState<boolean | null>(null);
+  const [profileInput, setProfileInput] = useState<Record<string, string> | null>(null);
+  const [maxBirthDate] = useState(() =>
+    new Date(Date.now() - 19 * 365.2425 * 86400000).toISOString().slice(0, 10),
+  );
+  const profileForm = useRef<HTMLFormElement>(null);
+  const steps = needsProfile ? [profileStep, ...stepMeta] : stepMeta;
+  const meta = steps[step];
+  const contentStep = step - (needsProfile ? 1 : 0);
+  useEffect(() => {
+    api('/profile')
+      .then(() => setNeedsProfile(false))
+      .catch((error) => {
+        if (error instanceof ApiError && error.status === 404) setNeedsProfile(true);
+        else {
+          setError(error instanceof Error ? error.message : 'Unable to load your profile.');
+          setNeedsProfile(false);
+        }
+      });
+  }, []);
   useEffect(() => {
     if (!ready) return;
     const timer = setTimeout(() => {
@@ -76,7 +102,11 @@ export default function Onboarding() {
     setBusy(true);
     setError('');
     try {
-      await api('/profile', json('PUT', { interestedInGender: datingGenderPreference }));
+      await api('/profile', json('PUT', {
+        ...(profileInput ?? {}),
+        ...(needsProfile ? { sexualOrientation: 'PREFER_NOT_TO_SAY' } : {}),
+        interestedInGender: datingGenderPreference,
+      }));
       const coachInput = {
         name: coachName.trim(),
         gender: coachGender,
@@ -95,6 +125,16 @@ export default function Onboarding() {
       setBusy(false);
     }
   };
+  const continueOnboarding = () => {
+    if (needsProfile && step === 0) {
+      const form = profileForm.current;
+      if (!form?.reportValidity()) return;
+      setProfileInput(Object.fromEntries(new FormData(form)) as Record<string, string>);
+    }
+    setStep((value) => value + 1);
+  };
+  if (needsProfile === null)
+    return <main className="auth-page" aria-busy="true" />;
   if (ready)
     return (
       <main className="auth-page">
@@ -131,18 +171,18 @@ export default function Onboarding() {
       <section className="auth-card">
         <section className="auth-form panel card" aria-labelledby="onboarding-title">
           <div className="eyebrow onboarding-eyebrow">
-            Step {step + 1} of {stepMeta.length}
+            Step {step + 1} of {steps.length}
           </div>
           <div
             className="progress"
             role="progressbar"
             aria-valuenow={step + 1}
             aria-valuemin={1}
-            aria-valuemax={stepMeta.length}
+            aria-valuemax={steps.length}
           >
             <div
               style={{
-                width: `${((step + 1) / stepMeta.length) * 100}%`,
+                width: `${((step + 1) / steps.length) * 100}%`,
                 height: '100%',
                 background: 'var(--gold)',
                 borderRadius: 4,
@@ -158,7 +198,27 @@ export default function Onboarding() {
             </h1>
           </div>
           <p className="muted">{meta.hint}</p>
-          {step === 0 && (
+          {needsProfile && step === 0 && (
+            <form ref={profileForm} className="grid" onSubmit={(event) => event.preventDefault()}>
+              <div className="field">
+                <label htmlFor="firstName">First name</label>
+                <input id="firstName" name="firstName" required maxLength={80} />
+              </div>
+              <div className="field">
+                <label htmlFor="birthDate">Birth date</label>
+                <input id="birthDate" name="birthDate" type="date" required max={maxBirthDate} />
+              </div>
+              <div className="field">
+                <label htmlFor="gender">Gender</label>
+                <select id="gender" name="gender" required defaultValue="">
+                  <option value="" disabled>Choose</option>
+                  {PROFILE_GENDER_OPTIONS.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
+                </select>
+              </div>
+              <CountryCityFields required />
+            </form>
+          )}
+          {contentStep === 0 && (
             <div className="choice-list" role="radiogroup" aria-label={meta.title}>
               {(DATING_GENDER_OPTIONS as [string, string][]).map(([id, label]) => (
                 <Choice
@@ -170,7 +230,7 @@ export default function Onboarding() {
               ))}
             </div>
           )}
-          {step === 1 && (
+          {contentStep === 1 && (
             <>
               <div className="field">
                 <label htmlFor="coachName">Coach name</label>
@@ -203,7 +263,7 @@ export default function Onboarding() {
               />
             </>
           )}
-          {step === 2 && (
+          {contentStep === 2 && (
             <div className="choice-list" role="group" aria-label={meta.title}>
               {traits.map((trait) => (
                 <button
@@ -245,12 +305,12 @@ export default function Onboarding() {
               className="button button-gold"
               disabled={
                 busy ||
-                (step === 0 && !datingGenderPreference) ||
-                (step === 1 && !coachName.trim())
+                (contentStep === 0 && !datingGenderPreference) ||
+                (contentStep === 1 && !coachName.trim())
               }
-              onClick={() => (step < 2 ? setStep((v) => v + 1) : void finish())}
+              onClick={() => (step < steps.length - 1 ? continueOnboarding() : void finish())}
             >
-              {busy ? 'Setting things up...' : step < 2 ? 'Continue' : 'Create my coach'}
+              {busy ? 'Setting things up...' : step < steps.length - 1 ? 'Continue' : 'Create my coach'}
               {!busy && <ArrowRight size={18} />}
             </button>
           </div>

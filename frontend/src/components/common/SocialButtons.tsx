@@ -57,22 +57,30 @@ export function SocialButtons() {
         <Text className="text-xs font-semibold text-muted">OR</Text>
         <View className="h-px flex-1 bg-border" />
       </View>
-      {googleConfigured ? (
-        <GoogleButton />
-      ) : (
-        <Button label="Continue with Google" variant="secondary" disabled />
-      )}
-      {appleAvailable ? (
-        <AppleAuthentication.AppleAuthenticationButton
-          buttonType={
-            AppleAuthentication.AppleAuthenticationButtonType.CONTINUE
-          }
-          buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-          cornerRadius={14}
-          style={{ width: '100%', height: 56 }}
-          onPress={() => void signInWithApple()}
-        />
-      ) : null}
+      <View className={appleAvailable ? 'flex-row gap-3' : undefined}>
+        <View className="flex-1">
+          {googleConfigured ? (
+            <GoogleButton compact={appleAvailable} />
+          ) : (
+            <Button
+              label={appleAvailable ? 'Google' : 'Continue with Google'}
+              variant="secondary"
+              disabled
+            />
+          )}
+        </View>
+        {appleAvailable ? (
+          <View className="flex-1">
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+              cornerRadius={14}
+              style={{ width: '100%', height: 56 }}
+              onPress={() => void signInWithApple()}
+            />
+          </View>
+        ) : null}
+      </View>
       <ErrorMessage
         message={apple.error ? getErrorMessage(apple.error) : providerError}
       />
@@ -80,7 +88,7 @@ export function SocialButtons() {
   );
 }
 
-function GoogleButton() {
+function GoogleButton({ compact = false }: { compact?: boolean }) {
   const google = useSocialAuth('google');
   const [request, response, promptGoogle] = Google.useIdTokenAuthRequest({
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
@@ -98,7 +106,7 @@ function GoogleButton() {
   return (
     <View className="gap-2">
       <Button
-        label="Continue with Google"
+        label={compact ? 'Google' : 'Continue with Google'}
         variant="secondary"
         loading={google.isPending}
         disabled={!request}

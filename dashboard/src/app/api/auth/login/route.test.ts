@@ -12,7 +12,7 @@ describe('login route', () => {
   });
 
   function request(body: Record<string, string>): NextRequest {
-    return new NextRequest('http://localhost:3001/api/auth/login', {
+    return new NextRequest('http://localhost:3002/api/auth/login', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.2.3.4' },
       body: JSON.stringify(body),

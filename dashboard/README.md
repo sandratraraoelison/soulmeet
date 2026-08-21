@@ -23,7 +23,7 @@ pnpm install
 pnpm dev
 ```
 
-Backend defaults to `http://localhost:3000`; dashboard defaults to `http://localhost:3001`.
+Backend defaults to `http://localhost:3000`; dashboard defaults to `http://localhost:3002`.
 
 ## Environment
 

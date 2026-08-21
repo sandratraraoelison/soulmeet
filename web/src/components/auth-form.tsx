@@ -92,13 +92,15 @@ export function AuthForm({ mode }: { mode: Mode }) {
     });
     const el = document.getElementById('google-signin');
     if (el) {
+      el.replaceChildren();
       window.google.accounts.id.renderButton(el, {
         theme: 'filled_black',
         size: 'large',
         width: 210,
+        text: mode === 'login' ? 'signin_with' : 'signup_with',
       });
     }
-  }, [googleReady, googleId, social]);
+  }, [googleReady, googleId, mode, social]);
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -197,7 +199,19 @@ export function AuthForm({ mode }: { mode: Mode }) {
         </p>
 
         <div className="socials">
-          <div id="google-signin" aria-label="Sign in with Google" />
+          <div className="google-signin-slot">
+            <div id="google-signin" aria-label={`${mode === 'login' ? 'Sign in' : 'Sign up'} with Google`} />
+            {(!googleReady || !googleId) && (
+              <button
+                type="button"
+                className="button secondary google-placeholder"
+                disabled
+                title={googleId ? 'Google Sign-In is loading' : 'Google Sign-In is not configured'}
+              >
+                Google
+              </button>
+            )}
+          </div>
           <button
             type="button"
             className="button secondary"

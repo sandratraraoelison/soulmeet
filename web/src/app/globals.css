@@ -459,6 +459,21 @@ a {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+.google-signin-slot {
+  min-width: 0;
+  min-height: 40px;
+  display: grid;
+  align-items: center;
+}
+.google-signin-slot > * {
+  grid-area: 1 / 1;
+}
+.google-signin-slot iframe {
+  max-width: 100%;
+}
+.google-placeholder {
+  width: 100%;
+}
 .divider {
   display: flex;
   align-items: center;
@@ -1277,9 +1292,6 @@ a {
   .page-head {
     align-items: start;
     flex-direction: column;
-  }
-  .socials {
-    grid-template-columns: 1fr;
   }
   .container {
     width: min(100% - 24px, 1180px);

@@ -10,7 +10,7 @@ describe('logout route', () => {
   it('revokes the refresh token at the backend and clears cookies', async () => {
     const fetchMock = vi.mocked(fetch);
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
-    const request = new NextRequest('http://localhost:3001/api/auth/logout', {
+    const request = new NextRequest('http://localhost:3002/api/auth/logout', {
       method: 'POST',
       headers: { cookie: 'sm_access=access-1; sm_refresh=refresh-1' },
     });
@@ -26,7 +26,7 @@ describe('logout route', () => {
   it('clears cookies even when no refresh token exists', async () => {
     const fetchMock = vi.mocked(fetch);
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
-    const request = new NextRequest('http://localhost:3001/api/auth/logout', { method: 'POST' });
+    const request = new NextRequest('http://localhost:3002/api/auth/logout', { method: 'POST' });
     const response = await POST(request);
     expect(response.status).toBe(200);
     expect(fetchMock).not.toHaveBeenCalled();
