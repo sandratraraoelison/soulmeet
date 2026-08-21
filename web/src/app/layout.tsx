@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   title: { default: 'Soulmeet', template: '%s | Soulmeet' },
   description: 'Dating clarity, meaningful connection, and a personal AI relationship coach.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
+  icons: { icon: '/icon.svg' },
 };
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
