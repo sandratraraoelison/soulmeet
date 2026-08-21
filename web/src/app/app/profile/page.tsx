@@ -9,7 +9,6 @@ import { PageHeader } from '@/components/ui/page-header';
 import { profileService } from '@/services/profile';
 import {
   DATING_GENDER_OPTIONS,
-  ORIENTATION_OPTIONS,
   PROFILE_GENDER_OPTIONS,
 } from '@/lib/constants';
 import type { Profile } from '@/types';
@@ -24,7 +23,7 @@ export default function ProfilePage() {
         firstName: String(form.get('firstName')),
         birthDate: String(form.get('birthDate')),
         gender: String(form.get('gender')) as Profile['gender'],
-        sexualOrientation: String(form.get('sexualOrientation')),
+        sexualOrientation: profile.data?.sexualOrientation ?? 'PREFER_NOT_TO_SAY',
         country: String(form.get('country')),
         city: String(form.get('city')),
         occupation: String(form.get('occupation') || ''),
@@ -92,13 +91,6 @@ export default function ProfilePage() {
             label="Gender"
             defaultValue={data.gender}
             options={PROFILE_GENDER_OPTIONS}
-          />
-          <FormSelect
-            id="sexualOrientation"
-            name="sexualOrientation"
-            label="Sexual orientation"
-            defaultValue={data.sexualOrientation}
-            options={ORIENTATION_OPTIONS}
           />
           <CountryCityFields
             defaultCountry={data.country}
