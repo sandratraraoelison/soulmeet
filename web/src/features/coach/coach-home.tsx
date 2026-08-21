@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Archive, ArrowRight, Pencil } from 'lucide-react';
+import { ArrowRight, Pencil } from 'lucide-react';
 import { ApiError } from '@/services/api';
 import { guidanceService } from '@/services/guidance';
 import { profileService } from '@/services/profile';
@@ -86,8 +86,8 @@ export function CoachHome() {
           Talk to {coach.data.name}
           <ArrowRight size={18} />
         </button>
-        <Link className="button ghost" href="/app/coach/archive">
-          <Archive size={17} /> Find something from a past conversation
+        <Link className="coach-archive-link" href="/app/coach/archive">
+          Look back at everything you and your coach talked about <ArrowRight size={14} />
         </Link>
       </section>
     </div>

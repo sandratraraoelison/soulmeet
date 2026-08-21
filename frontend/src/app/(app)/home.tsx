@@ -10,6 +10,7 @@ import { AccountButton } from '@/components/navigation/AccountButton';
 import { CoachIdentityCard } from '@/features/guidance/components/CoachIdentityCard';
 import { guidanceApi } from '@/features/guidance/api/guidance.api';
 import { useCreateGuidanceConversation } from '@/features/guidance/hooks/use-guidance';
+import { MotionPressable } from '@/components/motion/MotionPressable';
 
 export default function GuidanceHomeScreen() {
   const profile = useQuery({ queryKey: ['profile'], queryFn: profileApi.get });
@@ -39,9 +40,9 @@ export default function GuidanceHomeScreen() {
           <View className="mt-5">
             <Button label={`Talk to ${coach.data.name}`} loading={create.isPending} onPress={() => void createAndOpen()} />
           </View>
-          <View className="mt-3">
-            <Button label="Find something from a past conversation" variant="ghost" onPress={() => router.push('/(app)/guidance-history')} />
-          </View>
+          <MotionPressable accessibilityRole="link" accessibilityLabel="Open Coach archive" onPress={() => router.push('/(app)/guidance-history')} className="mt-4 self-start py-2">
+            <Text className="text-xs font-semibold text-muted">Look back at everything you and your coach talked about  →</Text>
+          </MotionPressable>
         </View>
       </View>
     </Screen>

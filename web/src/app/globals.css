@@ -3885,3 +3885,5 @@ a {
 .coach-archive-delete { align-self: center; display: flex; align-items: center; gap: 6px; border: 0; background: transparent; color: var(--muted); font-size: 11px; cursor: pointer; }
 .coach-archive-empty { padding: 70px 0; text-align: center; }
 @media (max-width: 680px) { .coach-archive-banner { align-items: stretch; flex-direction: column; } .coach-archive-thread .bubble { max-width: 88%; } }
+.coach-archive-link { display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; margin-top: 4px; color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; }
+.coach-archive-link:hover { color: var(--ink); }
