@@ -1404,6 +1404,15 @@ a {
 :root[data-theme='light'] .mobile-nav {
   background: rgba(255, 255, 255, 0.92);
 }
+:root[data-theme='light'] .bubble.user {
+  color: #ffffff;
+}
+:root[data-theme='light'] .bubble.user .bubble-meta,
+:root[data-theme='light'] .bubble.user .bubble-meta time,
+:root[data-theme='light'] .bubble.user .bubble-meta small,
+:root[data-theme='light'] .bubble.user .chat-status {
+  color: rgba(255, 255, 255, 0.88);
+}
 :root[data-theme='light'] .bubble.user .chat-message-action {
   border: 1px solid rgba(255, 255, 255, 0.42);
   background: rgba(255, 255, 255, 0.16);
