@@ -35,14 +35,23 @@ export function AppNav() {
     conversationId: string;
     sender: string;
   } | null>(null);
+  const [messagesSeenAt, setMessagesSeenAt] = useState<number | null>(null);
   const previousUnread = useRef<Map<string, number> | null>(null);
   const me = useMeQuery();
   const conversations = useConversations();
   useChatSocketLifecycle(Boolean(me.data?.id));
-  const unreadCount = (conversations.data ?? []).reduce(
-    (total, conversation) => total + (conversation.unreadCount ?? 0),
-    0,
-  );
+  const unseenUnreadCount = (conversations.data ?? []).reduce((total, conversation) => {
+    if (
+      messagesSeenAt !== null &&
+      (!conversation.lastMessageAt || new Date(conversation.lastMessageAt).getTime() <= messagesSeenAt)
+    ) return total;
+    return total + (conversation.unreadCount ?? 0);
+  }, 0);
+  const menuUnreadCount = pathname.startsWith('/app/messages') ? 0 : unseenUnreadCount;
+  const openMessages = () => {
+    setMessagesSeenAt(Date.now());
+    setMessageNotice(null);
+  };
 
   useEffect(() => {
     if (!conversations.data) return;
@@ -88,12 +97,17 @@ export function AppNav() {
         <Brand />
         <nav className="nav">
           {items.map(([href, label, Icon]) => (
-            <Link key={href} href={href} className={pathname === href ? 'active' : ''}>
+            <Link
+              key={href}
+              href={href}
+              className={pathname === href ? 'active' : ''}
+              onClick={href === '/app/messages' ? openMessages : undefined}
+            >
               <Icon size={19} />
               <span>{label}</span>
-              {href === '/app/messages' && unreadCount > 0 && (
-                <span className="nav-unread-badge" aria-label={`${unreadCount} unread messages`}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
+              {href === '/app/messages' && menuUnreadCount > 0 && (
+                <span className="nav-unread-badge" aria-label={`${menuUnreadCount} new messages`}>
+                  {menuUnreadCount > 99 ? '99+' : menuUnreadCount}
                 </span>
               )}
             </Link>
@@ -123,12 +137,17 @@ export function AppNav() {
 
       <nav className="mobile-nav" aria-label="Main navigation">
         {items.slice(0, 6).map(([href, label, Icon]) => (
-          <Link key={href} href={href} className={pathname === href ? 'active' : ''}>
+          <Link
+            key={href}
+            href={href}
+            className={pathname === href ? 'active' : ''}
+            onClick={href === '/app/messages' ? openMessages : undefined}
+          >
             <span className="mobile-nav-icon">
               <Icon size={20} />
-              {href === '/app/messages' && unreadCount > 0 && (
-                <span className="mobile-unread-badge" aria-label={`${unreadCount} unread messages`}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
+              {href === '/app/messages' && menuUnreadCount > 0 && (
+                <span className="mobile-unread-badge" aria-label={`${menuUnreadCount} new messages`}>
+                  {menuUnreadCount > 9 ? '9+' : menuUnreadCount}
                 </span>
               )}
             </span>
@@ -140,7 +159,7 @@ export function AppNav() {
         <Link
           href={`/app/messages/${messageNotice.conversationId}`}
           className="message-notice"
-          onClick={() => setMessageNotice(null)}
+          onClick={openMessages}
           role="status"
         >
           <span className="message-notice-icon"><MessageCircle size={19} /></span>
