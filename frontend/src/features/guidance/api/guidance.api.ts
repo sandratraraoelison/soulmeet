@@ -28,6 +28,9 @@ export const guidanceApi: GuidanceApi = {
   async getMessages(conversationId, params) {
     return (await apiClient.get<GuidanceMessagesResponse>(`/guidance/conversations/${conversationId}/messages`, { params: { limit: params.limit, cursor: params.cursor } })).data;
   },
+  async getArchive(params) {
+    return (await apiClient.get<GuidanceMessagesResponse>('/guidance/archive', { params })).data;
+  },
   async sendMessage(conversationId, input) {
     return (await apiClient.post<SendGuidanceMessageResponse>(`/guidance/conversations/${conversationId}/messages`, { content: input.content })).data;
   },

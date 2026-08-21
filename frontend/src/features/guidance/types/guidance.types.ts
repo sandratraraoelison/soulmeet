@@ -46,6 +46,7 @@ export interface GuidanceMessagesResponse {
   messages: GuidanceMessage[];
   nextCursor: string | null;
 }
+export type GuidanceArchiveResponse = GuidanceMessagesResponse;
 
 export interface GuidanceApi {
   getHomeSuggestion(): Promise<{ message: string }>;
@@ -56,6 +57,7 @@ export interface GuidanceApi {
   archiveConversation(conversationId: string): Promise<GuidanceConversation>;
   deleteConversation(conversationId: string): Promise<void>;
   getMessages(conversationId: string, params: { page: number; limit: number; cursor?: string }): Promise<GuidanceMessagesResponse>;
+  getArchive(params: { limit: number; cursor?: string; query?: string }): Promise<GuidanceArchiveResponse>;
   sendMessage(conversationId: string, input: SendGuidanceMessageInput): Promise<SendGuidanceMessageResponse>;
   updateMessage(messageId: string, input: UpdateGuidanceMessageInput): Promise<GuidanceMessage>;
   deleteMessage(messageId: string): Promise<void>;

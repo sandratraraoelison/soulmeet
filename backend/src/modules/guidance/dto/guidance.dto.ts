@@ -21,6 +21,12 @@ export class GuidancePageQueryDto {
   @ApiPropertyOptional({ enum: GuidanceConversationStatus }) @IsOptional() @IsEnum(GuidanceConversationStatus) status?: GuidanceConversationStatus;
 }
 
+export class GuidanceArchiveQueryDto {
+  @ApiPropertyOptional({ format: 'uuid' }) @IsOptional() @IsUUID() cursor?: string;
+  @ApiPropertyOptional({ default: 50, maximum: 100 }) @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 50;
+  @ApiPropertyOptional({ maxLength: 200 }) @IsOptional() @Transform(trim) @IsString() @MaxLength(200) query?: string;
+}
+
 export class UpdateGuidanceConversationDto {
   @ApiProperty({ maxLength: 120 }) @Transform(trim) @IsString() @MinLength(1) @MaxLength(120) title!: string;
 }

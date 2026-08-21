@@ -136,6 +136,24 @@ export class GuidanceService {
     return { conversations: page, nextCursor: rows.length > limit ? page.at(-1)?.id ?? null : null };
   }
 
+  async archive(userId: string, query?: string, cursor?: string, limit = 50) {
+    const search = query?.trim();
+    const rows = await this.prisma.guidanceMessage.findMany({
+      where: {
+        conversation: { userId },
+        role: { in: [GuidanceMessageRole.USER, GuidanceMessageRole.ASSISTANT] },
+        isDeleted: false,
+        content: { not: null, ...(search ? { contains: search, mode: 'insensitive' } : {}) },
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      select: { id: true, conversationId: true, role: true, content: true, createdAt: true, updatedAt: true, isEdited: true, isDeleted: true },
+    });
+    const page = rows.slice(0, limit);
+    return { messages: page, nextCursor: rows.length > limit ? page.at(-1)?.id ?? null : null };
+  }
+
   getConversation(userId: string, id: string) { return this.ownedConversation(userId, id); }
   async updateConversation(userId: string, id: string, title: string) {
     await this.ownedConversation(userId, id);

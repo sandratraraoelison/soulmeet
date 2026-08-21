@@ -46,6 +46,19 @@ describe('GuidanceService', () => {
     expect(prisma.guidanceMessage.findMany).not.toHaveBeenCalled();
   });
 
+  it('builds one read-only searchable archive across all owned Coach conversations', async () => {
+    prisma.guidanceMessage.findMany.mockResolvedValue([
+      { id: 'message-2', conversationId: 'conversation-2', content: 'A later thought' },
+      { id: 'message-1', conversationId: 'conversation-1', content: 'An earlier thought' },
+    ]);
+    const result = await service.archive('user-a', 'thought', undefined, 50);
+    expect(result.messages).toHaveLength(2);
+    expect(prisma.guidanceMessage.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ conversation: { userId: 'user-a' }, content: expect.objectContaining({ contains: 'thought', mode: 'insensitive' }) }),
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    }));
+  });
+
   it('opens a new conversation with a warm coach-led question', async () => {
     prisma.profile.findUnique.mockResolvedValue({ firstName: 'Sam' });
     const created = await service.createConversation('user-a', 'Getting to know me');

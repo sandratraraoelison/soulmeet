@@ -39,6 +39,9 @@ export default function GuidanceHomeScreen() {
           <View className="mt-5">
             <Button label={`Talk to ${coach.data.name}`} loading={create.isPending} onPress={() => void createAndOpen()} />
           </View>
+          <View className="mt-3">
+            <Button label="Find something from a past conversation" variant="ghost" onPress={() => router.push('/(app)/guidance-history')} />
+          </View>
         </View>
       </View>
     </Screen>

@@ -5,7 +5,7 @@ import type { Response } from 'express';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
-import { CreateGuidanceConversationDto, GuidancePageQueryDto, SendGuidanceMessageDto, UpdateGuidanceConversationDto, UpdateGuidanceMessageDto, UpsertMemoryDto } from './dto/guidance.dto';
+import { CreateGuidanceConversationDto, GuidanceArchiveQueryDto, GuidancePageQueryDto, SendGuidanceMessageDto, UpdateGuidanceConversationDto, UpdateGuidanceMessageDto, UpsertMemoryDto } from './dto/guidance.dto';
 import { GuidanceService } from './guidance.service';
 import { writeSseError, writeSseEvent } from './sse.util';
 
@@ -31,6 +31,12 @@ export class GuidanceController {
   @Get('conversations')
   listConversations(@CurrentUser() user: JwtPayload, @Query() query: GuidancePageQueryDto) {
     return this.guidance.listConversations(user.sub, query.cursor, query.limit, query.status);
+  }
+
+  @Get('archive')
+  @ApiOperation({ summary: 'Read-only unified and searchable Coach archive' })
+  archive(@CurrentUser() user: JwtPayload, @Query() query: GuidanceArchiveQueryDto) {
+    return this.guidance.archive(user.sub, query.query, query.cursor, query.limit);
   }
 
   @Get('conversations/:conversationId')

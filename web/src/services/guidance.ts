@@ -17,6 +17,9 @@ export const guidanceService = {
         cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''
       }`,
     ),
+  archive: (query = '', cursor?: string) =>
+    api<GuidanceMessagePage>(`/guidance/archive?limit=50${query ? `&query=${encodeURIComponent(query)}` : ''}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`),
+  deleteConversation: (conversationId: string) => api(`/guidance/conversations/${conversationId}`, { method: 'DELETE' }),
   mutateMessage: (messageId: string, method: 'POST' | 'PATCH' | 'DELETE', body = {}) =>
     api(
       `/guidance/messages/${messageId}${method === 'POST' ? '/regenerate' : ''}`,
