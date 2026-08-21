@@ -167,11 +167,10 @@ export default function Conversation() {
     void refresh();
   };
   const upload = async (files: File[], durationMs?: number) => {
-    const groupId = crypto.randomUUID();
-    for (const [index, file] of files.entries()) {
+    for (const file of files) {
       const form = new FormData();
       form.append('type', file.type.startsWith('audio/') ? 'AUDIO' : 'IMAGE');
-      form.append('clientMessageId', `${groupId}:${index}`);
+      form.append('clientMessageId', crypto.randomUUID());
       if (file.type.startsWith('audio/') && durationMs !== undefined)
         form.append('durationMs', String(durationMs));
       form.append('file', file);
