@@ -64,7 +64,7 @@ export default function MatchHistoryScreen() {
 
 function TabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} className={`min-h-12 flex-1 items-center justify-center rounded-xl ${active ? 'bg-secondary' : ''}`}>
+    <Pressable onPress={onPress} className={`min-h-12 flex-1 items-center justify-center rounded-xl ${active ? 'bg-primary' : ''}`}>
       <Text className={`font-bold ${active ? 'text-[#25262E]' : 'text-muted'}`}>{label}</Text>
     </Pressable>
   );

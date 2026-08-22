@@ -129,7 +129,7 @@ export default function GrowthScreen() {
                     <Text className="mt-3 text-xs text-muted">Based on a confirmed Soulprint insight. You stay in control.</Text>
                     <View className="mt-4 flex-row gap-3">
                       <Pressable disabled={reviewing} className={`flex-1 items-center rounded-xl border border-border py-3 ${reviewing ? 'opacity-50' : ''}`} onPress={() => archive.mutate(goal.id, { onError: fail })}>{dismissing ? <ActivityIndicator color={colors.muted} /> : <Text className="font-bold text-muted">Not now</Text>}</Pressable>
-                      <Pressable disabled={reviewing} className={`flex-1 items-center rounded-xl bg-secondary py-3 ${reviewing ? 'opacity-50' : ''}`} onPress={() => acceptGoal.mutate(goal.id, { onError: fail })}>{accepting ? <ActivityIndicator color={colors.canvas} /> : <Text className="font-bold text-canvas">Accept</Text>}</Pressable>
+                      <Pressable disabled={reviewing} className={`flex-1 items-center rounded-xl bg-primary py-3 ${reviewing ? 'opacity-50' : ''}`} onPress={() => acceptGoal.mutate(goal.id, { onError: fail })}>{accepting ? <ActivityIndicator color={colors.ink} /> : <Text className="font-bold text-white">Accept</Text>}</Pressable>
                     </View>
                   </View>
                   );

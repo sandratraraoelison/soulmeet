@@ -12,23 +12,37 @@ const read = (key: string) => Platform.OS === 'web' ? Promise.resolve(webStorage
 const write = (key: string, value: string) => Platform.OS === 'web' ? Promise.resolve(webStorage?.setItem(key, value)) : SecureStore.setItemAsync(key, value);
 
 export const visualStyleOptions: { id: VisualStyle; label: string; description: string; swatches: string[] }[] = [
-  { id: 'soft', label: 'Soft', description: 'Warm, gentle and expressive.', swatches: ['#9B4F7F', '#D9A7B8', '#8B7AD8'] },
-  { id: 'balanced', label: 'Balanced', description: 'Welcoming, calm and universal.', swatches: ['#6D5BD0', '#C9869E', '#4F9C96'] },
-  { id: 'bold', label: 'Bold', description: 'Structured, vivid and confident.', swatches: ['#176B77', '#E09F3E', '#D05A75'] },
+  { id: 'soft', label: 'Soft', description: 'A quieter, intimate presentation.', swatches: ['#E9694F', '#7C5CFF', '#111832'] },
+  { id: 'balanced', label: 'Balanced', description: 'Action and atmosphere in balance.', swatches: ['#E9694F', '#7C5CFF', '#0A0E1A'] },
+  { id: 'bold', label: 'Bold', description: 'A stronger, more contrasted presentation.', swatches: ['#E9694F', '#4A3A8C', '#1A2340'] },
 ];
+
+const soulmeetPalette = {
+  primary: '#E9694F',
+  primaryDark: '#C9543C',
+  secondary: '#7C5CFF',
+  tertiary: '#4A3A8C',
+  canvas: '#0A0E1A',
+  surface: '#111832',
+  raised: '#1A2340',
+  ink: '#F4F5F7',
+  muted: '#9AA0AD',
+  border: '#1A2340',
+  danger: '#E5484D',
+} as const;
 
 export const themePalettes = {
   soft: {
-    dark: { primary: '#A8558A', primaryDark: '#873E6D', secondary: '#D9A7B8', tertiary: '#8B7AD8', canvas: '#151116', surface: '#251E26', raised: '#302631', ink: '#F8F1F5', muted: '#B6A5AF', border: '#493B45', danger: '#F49AA8' },
-    light: { primary: '#9B4F7F', primaryDark: '#7B3B64', secondary: '#C9869E', tertiary: '#7462C4', canvas: '#FFF8FB', surface: '#FFFFFF', raised: '#F8EAF0', ink: '#2A2027', muted: '#786570', border: '#E7CDD8', danger: '#C94F66' },
+    dark: soulmeetPalette,
+    light: soulmeetPalette,
   },
   balanced: {
-    dark: { primary: '#6D5BD0', primaryDark: '#5948B8', secondary: '#C9869E', tertiary: '#4F9C96', canvas: '#121117', surface: '#211E26', raised: '#2B2731', ink: '#F5F1F6', muted: '#AAA1AD', border: '#403A47', danger: '#F39AAA' },
-    light: { primary: '#6251C5', primaryDark: '#4E3FAD', secondary: '#B76F8A', tertiary: '#357D78', canvas: '#FBF8FA', surface: '#FFFFFF', raised: '#F2EDF2', ink: '#241F27', muted: '#706875', border: '#DED6DF', danger: '#C94F66' },
+    dark: soulmeetPalette,
+    light: soulmeetPalette,
   },
   bold: {
-    dark: { primary: '#176B77', primaryDark: '#105761', secondary: '#E09F3E', tertiary: '#D05A75', canvas: '#0D1215', surface: '#182126', raised: '#223036', ink: '#F2F7F8', muted: '#99ADB3', border: '#30444B', danger: '#F08181' },
-    light: { primary: '#176B77', primaryDark: '#105761', secondary: '#B96F16', tertiary: '#B33F5C', canvas: '#F5F9F9', surface: '#FFFFFF', raised: '#E8F0F1', ink: '#152326', muted: '#5F7378', border: '#CADADC', danger: '#B93838' },
+    dark: soulmeetPalette,
+    light: soulmeetPalette,
   },
 } as const;
 

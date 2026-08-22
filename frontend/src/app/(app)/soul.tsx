@@ -141,12 +141,12 @@ function MatchCard({ match, coachName, rank, respond }: { match: SoulMatch; coac
           accessibilityLabel={`Accept suggestion for ${match.name}`}
           disabled={pending}
           onPress={() => respond.mutate({ userId: match.userId, response: 'ACCEPTED' })}
-          className={`min-h-14 flex-1 items-center justify-center rounded-2xl bg-secondary ${pending ? 'opacity-50' : ''}`}
+          className={`min-h-14 flex-1 items-center justify-center rounded-2xl bg-primary ${pending ? 'opacity-50' : ''}`}
         >
           {accepting ? <ActivityIndicator color="#25262E" /> : <Text className="font-bold text-[#25262E]">Accept</Text>}
         </MotionPressable>
       </View>
-      <MotionPressable accessibilityRole="button" accessibilityLabel={`Explore connection with ${match.name}`} onPress={() => router.push(`/(app)/person/${match.userId}`)} className="min-h-14 items-center justify-center border-t border-border bg-secondary"><Text className="font-bold text-[#25262E]">Explore this connection →</Text></MotionPressable>
+      <MotionPressable accessibilityRole="button" accessibilityLabel={`Explore connection with ${match.name}`} onPress={() => router.push(`/(app)/person/${match.userId}`)} className="min-h-14 items-center justify-center border-t border-border bg-primary"><Text className="font-bold text-white">Explore this connection →</Text></MotionPressable>
     </View>
   );
 }

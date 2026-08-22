@@ -132,7 +132,7 @@ export default function ChatScreen() {
             accessibilityState={{ disabled: !draft.trim() }}
             disabled={!draft.trim()}
             onPress={send}
-            className={`h-14 w-14 items-center justify-center rounded-full bg-secondary ${draft.trim() ? 'active:opacity-80' : 'opacity-40'}`}
+            className={`h-14 w-14 items-center justify-center rounded-full bg-primary ${draft.trim() ? 'active:opacity-80' : 'opacity-40'}`}
           >
             <Text className="text-2xl font-bold text-[#25262E]">➤</Text>
           </Pressable>

@@ -537,9 +537,28 @@ a {
   background: var(--border);
 }
 .app-shell {
+  --canvas: #0a0e1a;
+  --surface: #111832;
+  --raised: #1a2340;
+  --ink: #f4f5f7;
+  --muted: #9aa0ad;
+  --border: #1a2340;
+  --pink: #e9694f;
+  --violet: #7c5cff;
+  --secondary: #7c5cff;
+  --danger: #e5484d;
   display: grid;
   min-height: 100vh;
   grid-template-columns: 264px minmax(0, 1fr);
+  background:
+    radial-gradient(900px 520px at 88% -8%, rgba(124, 92, 255, 0.15), transparent 62%),
+    radial-gradient(720px 440px at 12% 108%, rgba(74, 58, 140, 0.18), transparent 65%),
+    var(--canvas);
+  color: var(--ink);
+  color-scheme: dark;
+}
+.app-shell :focus-visible {
+  outline-color: var(--pink);
 }
 .sidebar {
   position: sticky;
@@ -575,11 +594,7 @@ a {
   color: var(--ink);
 }
 .nav a.active {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--pink), transparent 82%),
-    color-mix(in srgb, var(--violet), transparent 82%)
-  );
+  background: color-mix(in srgb, var(--violet), transparent 86%);
   color: var(--ink);
   border: 1px solid var(--border);
 }
@@ -594,7 +609,7 @@ a {
   place-items: center;
   border: 2px solid var(--surface);
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--pink), var(--violet));
+  background: var(--pink);
   color: #ffffff;
   padding: 0 5px;
   font-size: 0.68rem;
@@ -693,11 +708,7 @@ a {
 }
 .nav-footer-link.active {
   border: 1px solid var(--border);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--pink), transparent 82%),
-    color-mix(in srgb, var(--violet), transparent 82%)
-  );
+  background: color-mix(in srgb, var(--violet), transparent 86%);
   color: var(--ink);
 }
 .nav-footer-link.active svg {
@@ -1533,6 +1544,12 @@ a {
   --pink: #176b77;
   --violet: #b33f5c;
   --secondary: #b96f16;
+}
+.app-shell .sidebar {
+  background: rgba(10, 14, 26, 0.78);
+}
+.app-shell .mobile-nav {
+  background: rgba(17, 24, 50, 0.92);
 }
 .style-grid {
   display: grid;

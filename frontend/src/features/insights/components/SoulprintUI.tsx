@@ -345,7 +345,7 @@ export function InferenceReviewCard({
           accessibilityRole="button"
           disabled={busy}
           onPress={onConfirm}
-          className={`mt-6 min-h-14 items-center justify-center rounded-2xl bg-secondary px-5 ${busy ? 'opacity-60' : 'active:opacity-80'}`}
+          className={`mt-6 min-h-14 items-center justify-center rounded-2xl bg-primary px-5 ${busy ? 'opacity-60' : 'active:opacity-80'}`}
         >
           <Text className="font-label text-base font-bold text-canvas">{confirming ? 'Confirming…' : 'Yes, that feels right'}</Text>
         </Pressable>

@@ -158,7 +158,7 @@ export default function ConnectionScreen() {
               accessibilityRole="button"
               accessibilityLabel={`Chat with ${match.name}`}
               onPress={() => router.push(`/(app)/chat/${match.slug}` as Href)}
-              className="mt-4 min-h-14 items-center justify-center rounded-2xl bg-secondary px-5 active:opacity-80"
+              className="mt-4 min-h-14 items-center justify-center rounded-2xl bg-primary px-5 active:opacity-80"
             >
               <Text className="font-label text-base font-bold text-[#25262E]">
                 Chat with {match.name}  →

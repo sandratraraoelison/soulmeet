@@ -93,7 +93,7 @@ export function TodayExerciseCard({
         <MotionPressable
           disabled={done || loading}
           onPress={onComplete}
-          className={`mt-5 min-h-12 items-center justify-center rounded-2xl ${done ? 'bg-surface-raised' : 'bg-secondary active:opacity-80'}`}
+          className={`mt-5 min-h-12 items-center justify-center rounded-2xl ${done ? 'bg-surface-raised' : 'bg-primary active:opacity-80'}`}
         >
           <Text
             className={`font-label font-bold ${done ? 'text-secondary' : 'text-canvas'}`}

@@ -160,7 +160,7 @@ export function MessageComposer({
           {attachmentPending ? <ActivityIndicator color="#D4AF37" /> : <MaterialCommunityIcons name={recorderState.isRecording ? 'stop-circle-outline' : 'microphone-outline'} size={25} color={recorderState.isRecording ? '#F87171' : '#D57FAC'} />}
         </Pressable>
         {draft.trim() ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Send message" onPress={send} className="h-14 min-w-12 items-center justify-center rounded-full bg-secondary px-2">
+          <Pressable accessibilityRole="button" accessibilityLabel="Send message" onPress={send} className="h-14 min-w-12 items-center justify-center rounded-full bg-primary px-2">
             <MaterialCommunityIcons name="send" size={20} color="#25262E" />
           </Pressable>
         ) : null}
@@ -237,7 +237,7 @@ function AttachmentPreview({ attachments, sending, onDelete, onClear, onSend }: 
         <Pressable accessibilityRole="button" accessibilityLabel="Delete attachments" disabled={sending} onPress={onClear} className="min-h-12 min-w-14 items-center justify-center rounded-xl border border-border bg-surface-raised">
           <MaterialCommunityIcons name="trash-can-outline" size={22} color="#F87171" />
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Send attachments" disabled={sending} onPress={() => void onSend()} className="min-h-12 flex-1 flex-row items-center justify-center rounded-xl bg-secondary">
+        <Pressable accessibilityRole="button" accessibilityLabel="Send attachments" disabled={sending} onPress={() => void onSend()} className="min-h-12 flex-1 flex-row items-center justify-center rounded-xl bg-primary">
           {sending ? <ActivityIndicator color="#25262E" /> : <><MaterialCommunityIcons name="send" size={19} color="#25262E" /><Text className="ml-2 font-bold text-[#25262E]">Send{multiple ? ` ${attachments.length}` : ''}</Text></>}
         </Pressable>
       </View>
