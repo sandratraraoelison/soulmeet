@@ -31,9 +31,9 @@ const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 const labelFor = (key: string) =>
   key.replace(/([A-Z])/g, ' $1').replace(/^./, (character) => character.toUpperCase());
 const visualStyles = [
-  { id: 'soft', label: 'Soft', description: 'Warm, gentle and expressive.', swatches: ['#9B4F7F', '#D9A7B8', '#8B7AD8'] },
-  { id: 'balanced', label: 'Balanced', description: 'Welcoming, calm and universal.', swatches: ['#6D5BD0', '#C9869E', '#4F9C96'] },
-  { id: 'bold', label: 'Bold', description: 'Structured, vivid and confident.', swatches: ['#176B77', '#E09F3E', '#D05A75'] },
+  { id: 'soft', label: 'Soft', description: 'Softer coral and a lighter violet glow.', swatches: ['#F27A61', '#927BFF', '#121A35'] },
+  { id: 'balanced', label: 'Balanced', description: 'Action and atmosphere in balance.', swatches: ['#E9694F', '#7C5CFF', '#0A0E1A'] },
+  { id: 'bold', label: 'Bold', description: 'Deeper navy and stronger coral contrast.', swatches: ['#C9543C', '#6849E8', '#080B15'] },
 ] as const;
 export type VisualStyle = (typeof visualStyles)[number]['id'];
 

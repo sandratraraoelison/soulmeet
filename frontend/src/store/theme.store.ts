@@ -12,12 +12,12 @@ const read = (key: string) => Platform.OS === 'web' ? Promise.resolve(webStorage
 const write = (key: string, value: string) => Platform.OS === 'web' ? Promise.resolve(webStorage?.setItem(key, value)) : SecureStore.setItemAsync(key, value);
 
 export const visualStyleOptions: { id: VisualStyle; label: string; description: string; swatches: string[] }[] = [
-  { id: 'soft', label: 'Soft', description: 'A quieter, intimate presentation.', swatches: ['#E9694F', '#7C5CFF', '#111832'] },
+  { id: 'soft', label: 'Soft', description: 'Softer coral and a lighter violet glow.', swatches: ['#F27A61', '#927BFF', '#121A35'] },
   { id: 'balanced', label: 'Balanced', description: 'Action and atmosphere in balance.', swatches: ['#E9694F', '#7C5CFF', '#0A0E1A'] },
-  { id: 'bold', label: 'Bold', description: 'A stronger, more contrasted presentation.', swatches: ['#E9694F', '#4A3A8C', '#1A2340'] },
+  { id: 'bold', label: 'Bold', description: 'Deeper navy and stronger coral contrast.', swatches: ['#C9543C', '#6849E8', '#080B15'] },
 ];
 
-const soulmeetPalette = {
+const balancedDark = {
   primary: '#E9694F',
   primaryDark: '#C9543C',
   secondary: '#7C5CFF',
@@ -31,18 +31,23 @@ const soulmeetPalette = {
   danger: '#E5484D',
 } as const;
 
+const balancedLight = {
+  primary: '#E9694F', primaryDark: '#C9543C', secondary: '#7C5CFF', tertiary: '#4A3A8C',
+  canvas: '#F7F5FF', surface: '#FFFFFF', raised: '#EEEAFB', ink: '#161A2B', muted: '#62697A', border: '#DCD6F3', danger: '#E5484D',
+} as const;
+
 export const themePalettes = {
   soft: {
-    dark: soulmeetPalette,
-    light: soulmeetPalette,
+    dark: { ...balancedDark, primary: '#F27A61', primaryDark: '#E9694F', secondary: '#927BFF', tertiary: '#5A4A99', canvas: '#0C1120', surface: '#121A35', raised: '#1C2645' },
+    light: { ...balancedLight, primary: '#F27A61', primaryDark: '#E9694F', secondary: '#927BFF', tertiary: '#5A4A99', canvas: '#FAF8FF', raised: '#F2EEFC' },
   },
   balanced: {
-    dark: soulmeetPalette,
-    light: soulmeetPalette,
+    dark: balancedDark,
+    light: balancedLight,
   },
   bold: {
-    dark: soulmeetPalette,
-    light: soulmeetPalette,
+    dark: { ...balancedDark, primary: '#C9543C', primaryDark: '#A94230', secondary: '#6849E8', tertiary: '#4A3A8C', canvas: '#080B15', surface: '#0F152B', raised: '#182039' },
+    light: { ...balancedLight, primary: '#C9543C', primaryDark: '#A94230', secondary: '#6849E8', tertiary: '#4A3A8C', canvas: '#F2F0FA', raised: '#E6E1F5', ink: '#101421' },
   },
 } as const;
 

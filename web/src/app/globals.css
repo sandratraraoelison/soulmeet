@@ -414,6 +414,7 @@ a {
   --violet: #7c5cff;
   --secondary: #7c5cff;
   --danger: #e5484d;
+  --violet-glow: rgba(124, 92, 255, 0.15);
   display: grid;
   min-height: 100vh;
   grid-template-columns: 1fr 1fr;
@@ -430,7 +431,7 @@ a {
   padding: 40px;
   background: radial-gradient(
     circle at 30% 30%,
-    color-mix(in srgb, var(--violet), transparent 78%),
+    var(--violet-glow),
     var(--canvas) 60%
   );
 }
@@ -606,12 +607,14 @@ a {
   --violet: #7c5cff;
   --secondary: #7c5cff;
   --danger: #e5484d;
+  --violet-glow: rgba(124, 92, 255, 0.15);
+  --violet-deep-glow: rgba(74, 58, 140, 0.18);
   display: grid;
   min-height: 100vh;
   grid-template-columns: 264px minmax(0, 1fr);
   background:
-    radial-gradient(900px 520px at 88% -8%, rgba(124, 92, 255, 0.15), transparent 62%),
-    radial-gradient(720px 440px at 12% 108%, rgba(74, 58, 140, 0.18), transparent 65%),
+    radial-gradient(900px 520px at 88% -8%, var(--violet-glow), transparent 62%),
+    radial-gradient(720px 440px at 12% 108%, var(--violet-deep-glow), transparent 65%),
     var(--canvas);
   color: var(--ink);
   color-scheme: dark;
@@ -1605,10 +1608,52 @@ a {
   --secondary: #b96f16;
 }
 .app-shell .sidebar {
-  background: rgba(10, 14, 26, 0.78);
+  background: color-mix(in srgb, var(--canvas), transparent 22%);
 }
 .app-shell .mobile-nav {
-  background: rgba(17, 24, 50, 0.92);
+  background: color-mix(in srgb, var(--surface), transparent 8%);
+}
+:root[data-style='soft'] .app-shell,
+:root[data-style='soft'] .auth-page {
+  --canvas: #0c1120;
+  --surface: #121a35;
+  --raised: #1c2645;
+  --pink: #f27a61;
+  --violet: #927bff;
+  --secondary: #927bff;
+  --violet-glow: rgba(146, 123, 255, 0.12);
+  --violet-deep-glow: rgba(90, 74, 153, 0.14);
+}
+:root[data-style='bold'] .app-shell,
+:root[data-style='bold'] .auth-page {
+  --canvas: #080b15;
+  --surface: #0f152b;
+  --raised: #182039;
+  --pink: #c9543c;
+  --violet: #6849e8;
+  --secondary: #6849e8;
+  --violet-glow: rgba(104, 73, 232, 0.2);
+  --violet-deep-glow: rgba(74, 58, 140, 0.24);
+}
+:root[data-theme='light'] .app-shell,
+:root[data-theme='light'] .auth-page {
+  --canvas: #f7f5ff;
+  --surface: #ffffff;
+  --raised: #eeeafb;
+  --ink: #161a2b;
+  --muted: #62697a;
+  --border: #dcd6f3;
+}
+:root[data-theme='light'][data-style='soft'] .app-shell,
+:root[data-theme='light'][data-style='soft'] .auth-page {
+  --canvas: #faf8ff;
+  --raised: #f2eefc;
+}
+:root[data-theme='light'][data-style='bold'] .app-shell,
+:root[data-theme='light'][data-style='bold'] .auth-page {
+  --canvas: #f2f0fa;
+  --raised: #e6e1f5;
+  --ink: #101421;
 }
 .style-grid {
   display: grid;
