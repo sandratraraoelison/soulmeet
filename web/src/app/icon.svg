@@ -1,24 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="background" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FF5C8A"/>
-      <stop offset="1" stop-color="#7656D6"/>
-    </linearGradient>
-    <linearGradient id="heart" x1="18" y1="17" x2="46" y2="50" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#F8E8FF"/>
-    </linearGradient>
+    <radialGradient id="ambience" cx="50%" cy="48%" r="58%">
+      <stop stop-color="#7C5CFF" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#0A0E1A" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="64" height="64" rx="16" fill="url(#background)"/>
-  <path
-    d="M32 49.5C29.1 46.7 18.1 38.7 15.2 32.2C11.8 24.7 16.4 17 24 17C27.7 17 30.4 19 32 21.4C33.6 19 36.3 17 40 17C47.6 17 52.2 24.7 48.8 32.2C45.9 38.7 34.9 46.7 32 49.5Z"
-    fill="url(#heart)"
-  />
-  <path
-    d="M24 29.5C26.7 26.5 30.1 27.3 32 30C33.9 27.3 37.3 26.5 40 29.5"
-    fill="none"
-    stroke="#A34FB9"
-    stroke-width="3"
-    stroke-linecap="round"
-  />
+  <rect width="64" height="64" rx="15" fill="#0A0E1A"/>
+  <rect width="64" height="64" rx="15" fill="url(#ambience)"/>
+  <circle cx="23" cy="19" r="5" fill="#E9694F"/>
+  <circle cx="41" cy="19" r="5" fill="#E9694F"/>
+  <path d="M31.2 50.5C27.5 45.6 17.2 41.7 14.5 32.9C12.5 26.3 17.5 23.3 22.5 24.8C27.8 26.4 30.5 30.4 31.5 33.2C27.9 29.3 23.4 29.7 21.2 33.1C18.3 37.5 24.9 42.8 31.2 50.5Z" fill="#E9694F"/>
+  <path d="M32.8 50.5C36.5 45.6 46.8 41.7 49.5 32.9C51.5 26.3 46.5 23.3 41.5 24.8C36.2 26.4 33.5 30.4 32.5 33.2C36.1 29.3 40.6 29.7 42.8 33.1C45.7 37.5 39.1 42.8 32.8 50.5Z" fill="#E9694F"/>
 </svg>
