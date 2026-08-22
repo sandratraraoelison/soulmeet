@@ -486,6 +486,7 @@ a {
   border: 1px solid var(--border);
 }
 .auth-success-transition {
+  position: relative;
   display: grid;
   width: min(460px, 100%);
   min-height: 340px;
@@ -495,6 +496,21 @@ a {
   text-align: center;
   animation: auth-success-in 0.35s ease both;
 }
+.auth-success-transition::before {
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124, 92, 255, 0.15), transparent 68%);
+  content: '';
+  pointer-events: none;
+}
+.auth-success-transition > * {
+  position: relative;
+}
+.auth-success-transition .eyebrow {
+  color: #3fb984;
+}
 .auth-success-transition h1 {
   margin: 8px 0 6px;
 }
@@ -502,6 +518,7 @@ a {
   margin: 0;
 }
 .auth-success-mark {
+  position: relative;
   display: grid;
   width: 70px;
   height: 70px;
@@ -509,6 +526,14 @@ a {
   border-radius: 22px;
   background: #3fb984;
   box-shadow: 0 18px 45px color-mix(in srgb, #3fb984, transparent 72%);
+}
+.auth-success-mark::after {
+  position: absolute;
+  inset: -9px;
+  border: 1px solid rgba(124, 92, 255, 0.28);
+  border-radius: 28px;
+  content: '';
+  animation: auth-success-ring 1.8s ease-in-out infinite;
 }
 .auth-success-mark span {
   width: 28px;
@@ -528,6 +553,12 @@ a {
   from {
     opacity: 0;
     transform: translateY(-3px) rotate(-45deg) scale(0.55);
+  }
+}
+@keyframes auth-success-ring {
+  50% {
+    opacity: 0.35;
+    transform: scale(1.08);
   }
 }
 .socials {
