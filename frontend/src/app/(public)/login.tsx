@@ -12,7 +12,7 @@ export default function LoginScreen() {
       <AuthForm mode="login" dark />
       <Link
         href="/(public)/register"
-        className="mt-8 text-center font-semibold text-secondary"
+        className="mt-8 text-center font-semibold text-primary"
       >
         New here? Create an account
       </Link>

@@ -11,7 +11,7 @@ export default function RegisterScreen() {
       <AuthForm mode="register" dark />
       <Link
         href="/(public)/login"
-        className="mt-8 text-center font-semibold text-secondary"
+        className="mt-8 text-center font-semibold text-primary"
       >
         Already have an account? Sign in
       </Link>

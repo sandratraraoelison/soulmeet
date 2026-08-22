@@ -15,7 +15,7 @@ export function AuthScreen({ eyebrow, title, subtitle, onBackPress, children }: 
   return (
     <SafeAreaView className="flex-1 overflow-hidden bg-canvas">
       <ThemedStatusBar />
-      <View className="absolute -right-28 top-24 h-64 w-64 rounded-full bg-primary opacity-10" />
+      <View className="absolute -right-28 top-24 h-64 w-64 rounded-full bg-secondary opacity-15" />
       <KeyboardAwareScrollView
         bottomOffset={32}
         style={{ flex: 1 }}

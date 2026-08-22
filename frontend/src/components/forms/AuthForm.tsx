@@ -123,7 +123,7 @@ export function AuthForm({
 
               return (
                 <View className="gap-2">
-                  <Text className="text-sm font-semibold text-[#D9D5E3]">
+                  <Text className="text-sm font-semibold text-ink">
                     Date of birth
                   </Text>
                   <Pressable
@@ -133,7 +133,7 @@ export function AuthForm({
                     className={`min-h-14 justify-center rounded-2xl border border-border bg-surface-raised px-4 ${'birthDate' in errors && errors.birthDate ? 'border-danger' : ''}`}
                   >
                     <Text
-                      className={`text-base ${value ? 'text-ink' : 'text-[#9B94A5]'}`}
+                      className={`text-base ${value ? 'text-ink' : 'text-muted'}`}
                     >
                       {value || 'Select your date of birth'}
                     </Text>
@@ -171,7 +171,7 @@ export function AuthForm({
             }}
           />
           <View className="gap-2">
-            <Text className="text-sm font-semibold text-[#D9D5E3]">Gender</Text>
+            <Text className="text-sm font-semibold text-ink">Gender</Text>
             <Controller
               control={control}
               name="gender"
@@ -191,10 +191,10 @@ export function AuthForm({
                         checked: field.value === option.value,
                       }}
                       onPress={() => field.onChange(option.value)}
-                      className={`min-h-12 flex-1 items-center justify-center rounded-xl border px-2 ${field.value === option.value ? 'border-[#F7C94B] bg-[#252117]' : 'border-white/10 bg-[#171620]'}`}
+                      className={`min-h-12 flex-1 items-center justify-center rounded-xl border px-2 ${field.value === option.value ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}
                     >
                       <Text
-                        className={`text-xs font-semibold ${field.value === option.value ? 'text-[#F7C94B]' : 'text-[#A6A0B2]'}`}
+                        className={`text-xs font-semibold ${field.value === option.value ? 'text-primary' : 'text-muted'}`}
                       >
                         {option.label}
                       </Text>
@@ -291,7 +291,7 @@ export function AuthForm({
         )}
       />
       {mode === 'login' ? (
-        <Link href="/(public)/forgot-password" className="-mt-2 text-right font-label text-sm font-semibold text-secondary">
+        <Link href="/(public)/forgot-password" className="-mt-2 text-right font-label text-sm font-semibold text-primary">
           Forgot password?
         </Link>
       ) : null}
@@ -324,7 +324,7 @@ export function AuthForm({
         onPress={handleSubmit(submit)}
       />
       <Text
-        className={`text-center text-xs leading-5 ${dark ? 'text-[#6F6A7E]' : 'text-muted'}`}
+        className="text-center text-xs leading-5 text-muted"
       >
         By continuing, you agree to use Soulmeet respectfully and honestly.
       </Text>
