@@ -27,6 +27,14 @@ const items = [
   ['/app/profile/coach', 'My Coach', Sparkles],
 ] as const;
 
+const messagesSeenKey = (userId: string) => `sm_messages_seen_at:${userId}`;
+
+function readMessagesSeenAt(userId?: string) {
+  if (!userId || typeof window === 'undefined') return null;
+  const stored = Number.parseInt(localStorage.getItem(messagesSeenKey(userId)) ?? '', 10);
+  return Number.isFinite(stored) && stored > 0 ? stored : null;
+}
+
 export function AppNav() {
   const router = useRouter();
   const pathname = usePathname();
@@ -35,21 +43,29 @@ export function AppNav() {
     conversationId: string;
     sender: string;
   } | null>(null);
-  const [messagesSeenAt, setMessagesSeenAt] = useState<number | null>(null);
+  const [messagesSeen, setMessagesSeen] = useState<{ userId: string; at: number } | null>(null);
   const previousUnread = useRef<Map<string, number> | null>(null);
   const me = useMeQuery();
   const conversations = useConversations();
   useChatSocketLifecycle(Boolean(me.data?.id));
+  const seenAt =
+    messagesSeen && messagesSeen.userId === me.data?.id
+      ? messagesSeen.at
+      : readMessagesSeenAt(me.data?.id);
   const unseenUnreadCount = (conversations.data ?? []).reduce((total, conversation) => {
     if (
-      messagesSeenAt !== null &&
-      (!conversation.lastMessageAt || new Date(conversation.lastMessageAt).getTime() <= messagesSeenAt)
+      seenAt !== null &&
+      (!conversation.lastMessageAt || new Date(conversation.lastMessageAt).getTime() <= seenAt)
     ) return total;
     return total + (conversation.unreadCount ?? 0);
   }, 0);
   const menuUnreadCount = pathname.startsWith('/app/messages') ? 0 : unseenUnreadCount;
   const openMessages = () => {
-    setMessagesSeenAt(Date.now());
+    const now = Date.now();
+    if (me.data?.id) {
+      setMessagesSeen({ userId: me.data.id, at: now });
+      localStorage.setItem(messagesSeenKey(me.data.id), String(now));
+    }
     setMessageNotice(null);
   };
 
