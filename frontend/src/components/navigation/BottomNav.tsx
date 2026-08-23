@@ -1,4 +1,5 @@
 import { router, usePathname, type Href } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,40 +8,41 @@ import { useConversations } from '@/features/chat/hooks/use-chat';
 import { useGrowth } from '@/features/growth/hooks/use-growth';
 import { useSoulprint } from '@/features/insights/hooks/use-soulprint';
 import { motionFadeIn } from '@/lib/motion';
+import { useThemePalette } from '@/store/theme.store';
 
 const items = [
   {
     label: 'Discover',
-    icon: '✦',
-    iconSize: 25,
+    icon: 'compass-outline',
+    activeIcon: 'compass',
     href: '/(app)/home',
     route: '/home',
   },
   {
     label: 'Soulprint',
-    icon: '✧',
-    iconSize: 28,
+    icon: 'fingerprint',
+    activeIcon: 'fingerprint',
     href: '/(app)/insights',
     route: '/insights',
   },
   {
     label: 'Growth',
-    icon: '↗',
-    iconSize: 27,
+    icon: 'trending-up',
+    activeIcon: 'trending-up',
     href: '/(app)/growth',
     route: '/growth',
   },
   {
-    label: 'Your matche',
-    icon: '♥',
-    iconSize: 24,
+    label: 'Your match',
+    icon: 'heart-outline',
+    activeIcon: 'heart',
     href: '/(app)/soul',
     route: '/soul',
   },
   {
     label: 'Messages',
-    icon: '✉',
-    iconSize: 24,
+    icon: 'email-outline',
+    activeIcon: 'email',
     href: '/(app)/messages',
     route: '/messages',
   },
@@ -49,6 +51,7 @@ const items = [
 export function BottomNav() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  const { colors } = useThemePalette();
   const insights = useSoulprint();
   const growth = useGrowth();
   const conversations = useConversations();
@@ -74,7 +77,7 @@ export function BottomNav() {
             pathname === item.route ||
             (item.label === 'Soulprint' && pathname.startsWith('/insights/')) ||
             (item.label === 'Messages' && pathname.startsWith('/conversation/')) ||
-            (item.label === 'Your matche' &&
+            (item.label === 'Your match' &&
               (pathname === '/profile' ||
                 pathname === '/settings' ||
                 pathname.startsWith('/connection/')));
@@ -89,12 +92,11 @@ export function BottomNav() {
               className="min-h-14 flex-1 items-center justify-center rounded-2xl active:bg-white/5"
             >
               <View className="h-8 w-8 items-center justify-center">
-                <Text
-                  style={{ fontSize: item.iconSize, lineHeight: 32 }}
-                  className={active ? 'text-secondary' : 'text-muted'}
-                >
-                  {item.icon}
-                </Text>
+                <MaterialCommunityIcons
+                  name={active ? item.activeIcon : item.icon}
+                  size={26}
+                  color={active ? colors.secondary : colors.muted}
+                />
                 {notificationCount > 0 ? (
                   <View className="absolute -right-3 -top-2 min-w-5 items-center justify-center rounded-full border-2 border-surface bg-danger px-1">
                     <Text className="font-label text-[10px] font-bold leading-4 text-white">
