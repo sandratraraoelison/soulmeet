@@ -11,6 +11,7 @@ import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { Screen } from '@/components/common/Screen';
 import { CoachFacePicker } from '@/features/coach/components/CoachFacePicker';
 import { CoachFaceAvatar } from '@/features/coach/components/CoachFaceAvatar';
+import { coachFace } from '@/features/coach/coach-faces';
 import type { CoachGender, CoachPersonality } from '@/types/models';
 
 const traits: { value: CoachPersonality; label: string }[] = [
@@ -22,6 +23,13 @@ const traits: { value: CoachPersonality; label: string }[] = [
   { value: 'SERIOUS', label: 'Serious' },
   { value: 'THERAPIST', label: 'Therapist-like' },
   { value: 'DATING_EXPERT', label: 'Dating expert' },
+  { value: 'CARING', label: 'Caring' },
+  { value: 'BRO_VIBE', label: 'Bro vibe' },
+  { value: 'SISTER_VIBE', label: 'Sister vibe' },
+  { value: 'PROTECTIVE', label: 'Protective' },
+  { value: 'SARCASTIC', label: 'Sarcastic' },
+  { value: 'MORE_DIRECTIVE', label: 'More directive' },
+  { value: 'LESS_DIRECTIVE', label: 'Less directive' },
 ];
 
 export default function CoachProfileScreen() {
@@ -63,7 +71,7 @@ export default function CoachProfileScreen() {
       </View>
       <View className="my-7 gap-5 rounded-[22px] border border-border bg-surface p-5">
         <Input label="Coach name" value={name} onChangeText={setName} maxLength={80} />
-        <CoachFacePicker compact value={appearance} onChange={(face, faceGender) => { setAppearance(face); setGender(faceGender); }} />
+        <CoachFacePicker compact value={appearance} onChange={(face, faceGender) => { const option = coachFace(face); setAppearance(face); setGender(faceGender); setSelected([...option.defaultTraits]); }} />
         <View className="gap-2">
           <Text className="font-label text-sm font-semibold text-ink">Personality traits</Text>
           <View className="flex-row flex-wrap gap-2">

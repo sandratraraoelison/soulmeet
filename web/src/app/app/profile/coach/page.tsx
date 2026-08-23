@@ -2,15 +2,17 @@
 import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, json } from '@/services/api';
-import type { Coach, CoachGender } from '@/types';
+import type { Coach, CoachGender, CoachPersonality } from '@/types';
 import { Failure, Loading } from '@/components/remote';
 import { CoachFacePicker } from '@/components/ui/coach-face-picker';
+import { coachFace } from '@/features/coach/coach-faces';
 import { COACH_TRAIT_OPTIONS } from '@/lib/constants';
 const traits = COACH_TRAIT_OPTIONS;
 export default function CoachSettings() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ['coach'], queryFn: () => api<Coach>('/coach') });
   const [saved, setSaved] = useState(false);
+  const [selectedTraits, setSelectedTraits] = useState<CoachPersonality[] | null>(null);
   const genderRef = useRef<HTMLInputElement>(null);
   const appearanceRef = useRef<HTMLInputElement>(null);
   const save = useMutation({
@@ -47,6 +49,7 @@ export default function CoachSettings() {
       </div>
     );
   const coach = q.data;
+  const activeTraits = selectedTraits ?? coach.traits;
   return (
     <div className="page">
       <div className="eyebrow">Coach information</div>
@@ -67,8 +70,10 @@ export default function CoachSettings() {
         <CoachFacePicker
           value={coach.appearance ?? 'neutral-ai'}
           onChange={(appearance, gender) => {
+            const option = coachFace(appearance);
             if (appearanceRef.current) appearanceRef.current.value = appearance;
             if (genderRef.current) genderRef.current.value = gender;
+            setSelectedTraits([...option.defaultTraits]);
           }}
         />
         <input type="hidden" name="gender" ref={genderRef} defaultValue={coach.gender} />
@@ -106,7 +111,8 @@ export default function CoachSettings() {
                   type="checkbox"
                   name="traits"
                   value={trait.value}
-                  defaultChecked={coach.traits.includes(trait.value)}
+                  checked={activeTraits.includes(trait.value)}
+                  onChange={() => setSelectedTraits((current) => { const values = current ?? coach.traits; return values.includes(trait.value) ? values.filter((value) => value !== trait.value) : [...values, trait.value]; })}
                   className="trait-check"
                   style={{ width: 22, height: 22, minHeight: 22 }}
                 />
