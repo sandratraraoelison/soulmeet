@@ -57,8 +57,8 @@ export function SocialButtons() {
         <Text className="text-xs font-semibold text-muted">OR</Text>
         <View className="h-px flex-1 bg-border" />
       </View>
-      <View className={appleAvailable ? 'flex-row gap-3' : undefined}>
-        <View className="flex-1">
+      <View className={appleAvailable ? 'flex-row gap-3' : 'w-full'}>
+        <View className={appleAvailable ? 'min-h-14 flex-1' : 'min-h-14 w-full'}>
           {googleConfigured ? (
             <GoogleButton compact={appleAvailable} />
           ) : (

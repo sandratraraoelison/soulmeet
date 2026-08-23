@@ -324,7 +324,7 @@ export function AuthForm({
         onPress={handleSubmit(submit)}
       />
       <SocialButtons />
-      <Text className="px-4 text-center text-xs leading-5 text-muted">
+      <Text className="mt-1 px-4 text-center text-xs leading-5 text-muted">
         By continuing, you agree to use Soulmeet respectfully and honestly.
       </Text>
     </View>
