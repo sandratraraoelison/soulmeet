@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
     password?: string;
     twoFactorToken?: string;
     code?: string;
+    identityToken?: string;
   } | null;
   const email = (body?.email ?? "").trim().toLowerCase();
   const key = `${ip}|${email}`;
@@ -110,10 +111,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const response = await fetch(`${base}/auth/login`, {
+  const googleSignIn = Boolean(body?.identityToken);
+  const response = await fetch(`${base}/auth/${googleSignIn ? "google" : "login"}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Forwarded-For": ip, "X-Device-Info": device.info },
-    body: JSON.stringify({ email, password: body?.password ?? "" }),
+    body: JSON.stringify(googleSignIn ? { identityToken: body?.identityToken } : { email, password: body?.password ?? "" }),
     cache: "no-store",
   });
   const data = await response.json().catch(() => null);

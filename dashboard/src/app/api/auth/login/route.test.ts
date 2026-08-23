@@ -51,6 +51,22 @@ describe('login route', () => {
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/auth/logout'), expect.any(Object));
   });
 
+  it('signs an administrator in with a Google identity token', async () => {
+    const fetchMock = vi.mocked(fetch);
+    const tokens = { accessToken: 'google-access', refreshToken: 'google-refresh' };
+    fetchMock
+      .mockResolvedValueOnce(json(tokens))
+      .mockResolvedValueOnce(json({ role: 'SUPER_ADMIN', email: 'admin@gmail.com' }));
+
+    const response = await POST(request({ identityToken: 'google-id-token' }));
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenNthCalledWith(1, expect.stringContaining('/auth/google'), expect.objectContaining({
+      body: JSON.stringify({ identityToken: 'google-id-token' }),
+    }));
+    expect(response.headers.get('set-cookie')).toContain('sm_access=google-access');
+  });
+
   it('returns requiresTwoFactor and completes the second step', async () => {
     const fetchMock = vi.mocked(fetch);
     const tokens = { accessToken: 'access-1', refreshToken: 'refresh-1' };

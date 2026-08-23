@@ -29,6 +29,8 @@ Backend defaults to `http://localhost:3000`; dashboard defaults to `http://local
 
 `API_URL` is server-only and should include `/api/v1`. `NEXT_PUBLIC_USE_MOCK_API` defaults to `false`; no current screen silently uses mock data.
 
+`NEXT_PUBLIC_GOOGLE_CLIENT_ID` enables Google sign-in on the login page. Use a Google OAuth web client whose authorized JavaScript origins include the dashboard URL (for local development, `http://localhost:3002`). The same client ID must be accepted by the backend through `GOOGLE_CLIENT_IDS`.
+
 ## Roles
 
 `SUPER_ADMIN`, `ADMIN`, `MODERATOR`, and `SUPPORT` can enter the dashboard. Role changes are limited to `SUPER_ADMIN`; moderation excludes `SUPPORT`; settings require `ADMIN` or `SUPER_ADMIN`.
