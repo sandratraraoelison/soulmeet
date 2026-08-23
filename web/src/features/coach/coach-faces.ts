@@ -1,36 +1,45 @@
-import type { CoachGender } from '@/types';
+import type { CoachGender, CoachPersonality } from '@/types';
 
 export interface CoachFaceOption {
-  id: string; title: string; description: string; gender: CoachGender; index: number;
-  category: 'Men' | 'Women' | 'Fun';
+  id: string; name: string; title: string; description: string; gender: CoachGender;
+  category: 'Men' | 'Women' | 'AI'; defaultTraits: CoachPersonality[];
 }
 
 export const COACH_FACES: CoachFaceOption[] = [
-  { id: 'malik', title: 'Warm & upbeat', description: 'Quick to help you see the good in yourself.', gender: 'MALE', index: 0, category: 'Men' },
-  { id: 'kenji', title: 'Calm & thoughtful', description: 'Has a talent for making things feel simpler.', gender: 'MALE', index: 1, category: 'Men' },
-  { id: 'arjun', title: 'Insightful & grounded', description: 'Uses gentle questions that help you go deeper.', gender: 'MALE', index: 2, category: 'Men' },
-  { id: 'theo', title: 'Friendly & honest', description: 'Reassuring when your mind starts racing.', gender: 'MALE', index: 3, category: 'Men' },
-  { id: 'sami', title: 'Patient & perceptive', description: 'A steady, caring presence that notices the details.', gender: 'MALE', index: 4, category: 'Men' },
-  { id: 'mateo', title: 'Relaxed & encouraging', description: 'Brings warmth and a little humor.', gender: 'MALE', index: 5, category: 'Men' },
-  { id: 'amara', title: 'Bright & uplifting', description: 'Always in your corner without judging.', gender: 'FEMALE', index: 6, category: 'Women' },
-  { id: 'mei', title: 'Serene & attentive', description: 'Helps you hear what you really feel.', gender: 'FEMALE', index: 7, category: 'Women' },
-  { id: 'priya', title: 'Curious & insightful', description: 'Gently notices the patterns you might miss.', gender: 'FEMALE', index: 8, category: 'Women' },
-  { id: 'clara', title: 'Kind & direct', description: 'Brings clarity without ever feeling cold.', gender: 'FEMALE', index: 9, category: 'Women' },
-  { id: 'layla', title: 'Confident & caring', description: 'Helps you trust your own boundaries.', gender: 'FEMALE', index: 10, category: 'Women' },
-  { id: 'sofia', title: 'Joyful & open-hearted', description: 'Offers a naturally optimistic energy.', gender: 'FEMALE', index: 11, category: 'Women' },
-  { id: 'nova', title: 'Cosmic guide', description: 'An intuitive visitor from somewhere kinder in the universe.', gender: 'NON_GENDERED', index: 12, category: 'Fun' },
-  { id: 'buddy', title: 'Loyal companion', description: 'Cheerful and always genuinely excited to listen.', gender: 'NON_GENDERED', index: 13, category: 'Fun' },
-  { id: 'miso', title: 'Curious observer', description: 'Quietly convinced that you deserve better.', gender: 'NON_GENDERED', index: 14, category: 'Fun' },
-  { id: 'lumen', title: 'Pure AI', description: 'A calm, neutral presence shaped by light and empathy.', gender: 'NON_GENDERED', index: 15, category: 'Fun' },
+  { id: 'jun-su', name: 'Jun-Su', title: 'Friendly & honest', description: 'Warm, direct and reassuring.', gender: 'MALE', category: 'Men', defaultTraits: ['FRIENDLY', 'DIRECT', 'EMPATHETIC'] },
+  { id: 'kenji', name: 'Kenji', title: 'Calm & confident', description: 'Sharp, composed guidance without detours.', gender: 'MALE', category: 'Men', defaultTraits: ['SERIOUS', 'DIRECT', 'DATING_EXPERT'] },
+  { id: 'haoran', name: 'Haoran', title: 'Funny & approachable', description: 'Big-hearted encouragement with useful humor.', gender: 'MALE', category: 'Men', defaultTraits: ['FUNNY', 'FRIENDLY', 'CARING'] },
+  { id: 'john', name: 'John', title: 'Honest & grounded', description: 'Practical perspective with a dry, knowing edge.', gender: 'MALE', category: 'Men', defaultTraits: ['DIRECT', 'SERIOUS', 'BRO_VIBE'] },
+  { id: 'giovanni', name: 'Giovanni', title: 'Open & encouraging', description: 'Positive energy and confident support.', gender: 'MALE', category: 'Men', defaultTraits: ['FRIENDLY', 'DATING_EXPERT', 'EMPATHETIC'] },
+  { id: 'kofi', name: 'Kofi', title: 'Warm & reassuring', description: 'Patient support that makes sharing feel easier.', gender: 'MALE', category: 'Men', defaultTraits: ['CARING', 'SOFT', 'EMPATHETIC'] },
+  { id: 'joao', name: 'João', title: 'Cool & perceptive', description: 'Calm observations and clear advice without pressure.', gender: 'MALE', category: 'Men', defaultTraits: ['DATING_EXPERT', 'DIRECT', 'LESS_DIRECTIVE'] },
+  { id: 'arjun', name: 'Arjun', title: 'Thoughtful & dignified', description: 'Gentle questions from a steady mentor.', gender: 'MALE', category: 'Men', defaultTraits: ['THERAPIST', 'EMPATHETIC', 'SOFT'] },
+  { id: 'chai', name: 'Chai', title: 'Playful & upbeat', description: 'Lively honesty for heavy moments.', gender: 'MALE', category: 'Men', defaultTraits: ['FUNNY', 'FRIENDLY', 'BRO_VIBE'] },
+  { id: 'sami', name: 'Sami', title: 'Wise & intense', description: 'Focused listening and thoughtful guidance.', gender: 'MALE', category: 'Men', defaultTraits: ['THERAPIST', 'SERIOUS', 'EMPATHETIC'] },
+  { id: 'seo-yeon', name: 'Seo-Yeon', title: 'Gentle & attentive', description: 'A patient presence that listens first.', gender: 'FEMALE', category: 'Women', defaultTraits: ['SOFT', 'EMPATHETIC', 'CARING'] },
+  { id: 'yuki', name: 'Yuki', title: 'Cheerful & playful', description: 'Bright energy and easy conversation.', gender: 'FEMALE', category: 'Women', defaultTraits: ['FUNNY', 'FRIENDLY', 'SISTER_VIBE'] },
+  { id: 'yuxin', name: 'Yuxin', title: 'Direct & composed', description: 'Clear-eyed feedback with confident boundaries.', gender: 'FEMALE', category: 'Women', defaultTraits: ['DIRECT', 'SERIOUS', 'MORE_DIRECTIVE'] },
+  { id: 'malee', name: 'Malee', title: 'Warm & maternal', description: 'Generous reassurance and grounded care.', gender: 'FEMALE', category: 'Women', defaultTraits: ['CARING', 'EMPATHETIC', 'SOFT'] },
+  { id: 'anna', name: 'Anna', title: 'Natural & balanced', description: 'Easygoing support with thoughtful perspective.', gender: 'FEMALE', category: 'Women', defaultTraits: ['FRIENDLY', 'EMPATHETIC', 'LESS_DIRECTIVE'] },
+  { id: 'lucia', name: 'Lucía', title: 'Lively & warm', description: 'Curious conversation with optimism and insight.', gender: 'FEMALE', category: 'Women', defaultTraits: ['FRIENDLY', 'FUNNY', 'EMPATHETIC'] },
+  { id: 'priya', name: 'Priya', title: 'Expressive & charming', description: 'Endearing honesty with forward energy.', gender: 'FEMALE', category: 'Women', defaultTraits: ['SISTER_VIBE', 'FUNNY', 'CARING'] },
+  { id: 'alia', name: 'Alia', title: 'Elegant & confident', description: 'Poised advice that supports your standards.', gender: 'FEMALE', category: 'Women', defaultTraits: ['DATING_EXPERT', 'DIRECT', 'PROTECTIVE'] },
+  { id: 'amara', name: 'Amara', title: 'Curious & attentive', description: 'Warm listening that notices deeper feelings.', gender: 'FEMALE', category: 'Women', defaultTraits: ['EMPATHETIC', 'THERAPIST', 'CARING'] },
+  { id: 'maya', name: 'Maya', title: 'Honest & reassuring', description: 'A modern, grounded presence with gentle clarity.', gender: 'FEMALE', category: 'Women', defaultTraits: ['FRIENDLY', 'DIRECT', 'SOFT'] },
+  { id: 'lumen', name: 'Lumen', title: 'Calm synthetic guide', description: 'A neutral presence shaped by light and empathy.', gender: 'NON_GENDERED', category: 'AI', defaultTraits: ['EMPATHETIC', 'SOFT', 'THERAPIST'] },
+  { id: 'nova', name: 'Nova', title: 'Curious synthetic guide', description: 'Elegant support with thoughtful questions.', gender: 'NON_GENDERED', category: 'AI', defaultTraits: ['THERAPIST', 'CARING', 'LESS_DIRECTIVE'] },
+  { id: 'orion', name: 'Orion', title: 'Direct synthetic mentor', description: 'Grounded intelligence with concrete direction.', gender: 'NON_GENDERED', category: 'AI', defaultTraits: ['DIRECT', 'SERIOUS', 'MORE_DIRECTIVE'] },
 ];
 
-const legacyFaces: Record<string, string> = { 'warm-male': 'theo', 'warm-female': 'amara', 'luminous-guide': 'mei', 'neutral-ai': 'lumen' };
+const legacyFaces: Record<string, string> = {
+  'warm-male': 'jun-su', 'warm-female': 'amara', 'luminous-guide': 'seo-yeon', 'neutral-ai': 'lumen',
+  malik: 'kofi', theo: 'jun-su', mateo: 'giovanni', mei: 'seo-yeon', clara: 'anna',
+  layla: 'alia', sofia: 'lucia', buddy: 'haoran', miso: 'yuki',
+};
 
 export const coachFace = (appearance?: string | null) => {
   const id = legacyFaces[appearance ?? ''] ?? appearance ?? 'lumen';
-  return COACH_FACES.find((face) => face.id === id) ?? COACH_FACES[15]!;
+  return COACH_FACES.find((face) => face.id === id) ?? COACH_FACES[20]!;
 };
 
-export const coachFacePosition = (face: CoachFaceOption) => ({
-  backgroundPosition: `${(face.index % 4) * (100 / 3)}% ${Math.floor(face.index / 4) * (100 / 3)}%`,
-});
+export const coachFaceImage = (face: CoachFaceOption) => `/coaches/faces/${face.id}.webp`;

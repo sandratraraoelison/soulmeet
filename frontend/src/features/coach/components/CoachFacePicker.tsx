@@ -1,8 +1,6 @@
 import { Image, Text, useWindowDimensions, View } from 'react-native';
 import { MotionPressable } from '@/components/motion/MotionPressable';
-import { coachFace, COACH_FACES } from '../coach-faces';
-
-const faceSheet = require('../../../../assets/coaches/coach-faces-v2.png');
+import { coachFace, COACH_FACE_IMAGES, COACH_FACES } from '../coach-faces';
 const genderLabel = { MALE: 'Male', FEMALE: 'Female', NON_GENDERED: 'Any' } as const;
 
 export function CoachFacePicker({ value, onChange, compact = false }: {
@@ -26,8 +24,6 @@ export function CoachFacePicker({ value, onChange, compact = false }: {
       <View style={{ width: pickerWidth, gap }} className="mt-3 self-center flex-row flex-wrap">
         {COACH_FACES.map((face) => {
           const active = selectedFace.id === face.id;
-          const column = face.index % 4;
-          const row = Math.floor(face.index / 4);
           return (
             <MotionPressable
               pressedScale={0.97}
@@ -39,7 +35,7 @@ export function CoachFacePicker({ value, onChange, compact = false }: {
               style={{ width: tileSize, height: tileSize, borderRadius: 14 }}
               className="relative overflow-hidden bg-[#100B1F]"
             >
-              <Image source={faceSheet} resizeMode="stretch" style={{ position: 'absolute', width: tileSize * 4, height: tileSize * 4, left: -column * tileSize, top: -row * tileSize }} />
+              <Image source={COACH_FACE_IMAGES[face.id]} resizeMode="cover" style={{ width: tileSize, height: tileSize }} />
               {active ? <View pointerEvents="none" className="absolute inset-0 rounded-[14px] border-[3px] border-secondary" /> : null}
               {active ? <View className="absolute right-1.5 top-1.5 h-6 w-6 items-center justify-center rounded-full bg-secondary"><Text className="font-bold text-canvas">✓</Text></View> : null}
             </MotionPressable>
@@ -48,7 +44,7 @@ export function CoachFacePicker({ value, onChange, compact = false }: {
       </View>
       <View className="mt-3 rounded-xl border border-border bg-surface-raised px-4 py-3">
         <View className="flex-row items-center justify-between">
-          <Text className="text-sm font-bold text-ink">{selectedFace.title}</Text>
+          <Text className="text-sm font-bold text-ink">{selectedFace.name} · {selectedFace.title}</Text>
           <Text className="text-[11px] font-bold uppercase tracking-wider text-secondary">{selectedFace.category}</Text>
         </View>
         <Text className="mt-1 text-xs leading-5 text-muted">{selectedFace.description}</Text>

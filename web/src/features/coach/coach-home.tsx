@@ -8,7 +8,7 @@ import { ApiError } from '@/services/api';
 import { guidanceService } from '@/services/guidance';
 import { profileService } from '@/services/profile';
 import { Failure, Loading } from '@/components/remote';
-import { coachFace, coachFacePosition } from '@/features/coach/coach-faces';
+import { coachFace, coachFaceImage } from '@/features/coach/coach-faces';
 
 export function CoachHome() {
   const router = useRouter();
@@ -52,8 +52,7 @@ export function CoachHome() {
         <div
           className="coach-avatar coach-avatar-face"
           style={{
-            backgroundImage: "url('/coach-faces-v2.png')",
-            ...coachFacePosition(face),
+            backgroundImage: `url('${coachFaceImage(face)}')`,
           }}
           aria-hidden="true"
         />

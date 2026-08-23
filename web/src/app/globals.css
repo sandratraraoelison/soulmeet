@@ -1882,9 +1882,9 @@ a {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 13px;
   background-color: #100b1f;
-  background-image: url('/coach-faces-v2.png');
   background-repeat: no-repeat;
-  background-size: 400% 400%;
+  background-position: center;
+  background-size: cover;
   cursor: pointer;
 }
 .coach-face:hover {
@@ -3320,7 +3320,8 @@ a {
   box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--pink), transparent 50%);
 }
 .coach-avatar-face {
-  background-size: 400% 400%;
+  background-position: center;
+  background-size: cover;
   background-repeat: no-repeat;
 }
 .coach-identity h2 {

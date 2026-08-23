@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Check } from 'lucide-react';
-import { COACH_FACES, coachFace, coachFacePosition } from '@/features/coach/coach-faces';
+import { COACH_FACES, coachFace, coachFaceImage } from '@/features/coach/coach-faces';
 import type { CoachGender } from '@/types';
 
 const genderLabel: Record<CoachGender, string> = {
@@ -34,7 +34,7 @@ export function CoachFacePicker({
               aria-label={`${face.title}, ${face.description}`}
               title={face.title}
               className={`coach-face ${active ? 'selected' : ''}`}
-              style={coachFacePosition(face)}
+              style={{ backgroundImage: `url('${coachFaceImage(face)}')` }}
               onClick={() => {
                 setSelectedId(face.id);
                 onChange(face.id, face.gender);
@@ -50,7 +50,7 @@ export function CoachFacePicker({
         })}
       </div>
       <div className="coach-picker-info" aria-live="polite">
-        <strong>{selected.title}</strong>
+        <strong>{selected.name} · {selected.title}</strong>
         <span>{selected.description}</span>
         <small>{selected.category} · Gender: {genderLabel[selected.gender]}</small>
       </div>

@@ -57,10 +57,10 @@ export default function Onboarding() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [datingGenderPreference, setDating] = useState<DatingGenderPreference | null>(null);
-  const [coachAppearance, setCoachAppearance] = useState('neutral-ai');
+  const [coachAppearance, setCoachAppearance] = useState('lumen');
   const coachGender = coachFace(coachAppearance).gender;
-  const [coachName, setName] = useState('Lumina');
-  const [selectedTraits, setTraits] = useState<CoachPersonality[]>([]);
+  const [coachName, setName] = useState('Lumen');
+  const [selectedTraits, setTraits] = useState<CoachPersonality[]>(['EMPATHETIC', 'SOFT', 'THERAPIST']);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
@@ -259,7 +259,7 @@ export default function Onboarding() {
               </div>
               <CoachFacePicker
                 value={coachAppearance}
-                onChange={(appearance) => setCoachAppearance(appearance)}
+                onChange={(appearance) => { const option = coachFace(appearance); setCoachAppearance(appearance); setName(option.name); setTraits(option.defaultTraits); }}
               />
             </>
           )}

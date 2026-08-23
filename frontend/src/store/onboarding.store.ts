@@ -11,6 +11,7 @@ interface OnboardingState {
   setCoachGender: (gender: CoachGender) => void;
   setCoachAppearance: (appearance: string) => void;
   setCoachName: (name: string) => void;
+  setCoachDefaults: (name: string, traits: CoachPersonality[]) => void;
   toggleCoachTrait: (trait: CoachPersonality) => void;
   reset: () => void;
 }
@@ -18,9 +19,9 @@ interface OnboardingState {
 const initialState = {
   interestedInGender: null,
   coachGender: null,
-  coachAppearance: 'neutral-ai',
-  coachName: '',
-  coachTraits: [] as CoachPersonality[],
+  coachAppearance: 'lumen',
+  coachName: 'Lumen',
+  coachTraits: ['EMPATHETIC', 'SOFT', 'THERAPIST'] as CoachPersonality[],
 };
 
 export const useOnboardingStore = create<OnboardingState>((set) => ({
@@ -29,6 +30,7 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
   setCoachGender: (coachGender) => set({ coachGender }),
   setCoachAppearance: (coachAppearance) => set({ coachAppearance }),
   setCoachName: (coachName) => set({ coachName }),
+  setCoachDefaults: (coachName, coachTraits) => set({ coachName, coachTraits }),
   toggleCoachTrait: (trait) =>
     set((state) => ({
       coachTraits: state.coachTraits.includes(trait)
