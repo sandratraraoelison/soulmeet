@@ -323,12 +323,10 @@ export function AuthForm({
         loading={mutation.isPending}
         onPress={handleSubmit(submit)}
       />
-      <Text
-        className="text-center text-xs leading-5 text-muted"
-      >
+      <SocialButtons />
+      <Text className="px-4 text-center text-xs leading-5 text-muted">
         By continuing, you agree to use Soulmeet respectfully and honestly.
       </Text>
-      <SocialButtons />
     </View>
   );
 }
