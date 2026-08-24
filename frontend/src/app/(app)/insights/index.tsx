@@ -25,7 +25,7 @@ export default function InsightsScreen() {
     if (extraction.data?.status === 'SUCCEEDED') void refetchSoulprint();
   }, [extraction.data?.completedAt, extraction.data?.status, refetchSoulprint]);
   return <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-canvas">
-    <ScrollView contentContainerClassName="px-2 pb-10" refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => query.refetch()} tintColor="#6366F1" />}>
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="px-2 pb-10" refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => query.refetch()} tintColor="#6366F1" />}>
       <PageHeader back={false} title={INSIGHTS_COPY.title} subtitle={INSIGHTS_COPY.subtitle} rightAction={<AccountButton />} />
       {query.isLoading ? <ActivityIndicator className="mt-16" color="#6366F1" /> : query.isError ? <StateCard message={getSoulprintErrorMessage(query.error)} action={<Button label={INSIGHTS_COPY.retry} onPress={() => query.refetch()} />} /> : data ? <>
         {extraction.data && ['PENDING', 'RUNNING', 'FAILED'].includes(extraction.data.status) ? <ExtractionStatusCard status={extraction.data.status as 'PENDING' | 'RUNNING' | 'FAILED'} attempts={extraction.data.attempts} /> : null}

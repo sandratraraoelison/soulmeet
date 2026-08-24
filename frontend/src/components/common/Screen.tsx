@@ -9,6 +9,7 @@ export function Screen({ children }: PropsWithChildren) {
     <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-canvas">
       <KeyboardAwareScrollView
         bottomOffset={32}
+        showsVerticalScrollIndicator={false}
         style={{ flex: 1, backgroundColor: colors.canvas }}
         contentContainerStyle={{
           flexGrow: 1,
