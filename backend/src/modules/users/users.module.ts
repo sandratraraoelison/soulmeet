@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersController } from './users.controller';
@@ -11,7 +11,9 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { MatchmakingSearchService } from './matchmaking-search.service';
 import { ChatModule } from '../chat/chat.module';
 @Module({
-  imports: [JwtModule.register({}), LlmModule, NotificationsModule, ChatModule],
+  // ChatModule imports AuthModule, which imports UsersModule for AuthController.
+  // Defer this edge so Nest can resolve the three-module cycle.
+  imports: [JwtModule.register({}), LlmModule, NotificationsModule, forwardRef(() => ChatModule)],
   controllers: [UsersController],
   providers: [
     UsersService,
