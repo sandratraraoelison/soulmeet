@@ -26,13 +26,14 @@ export default function Growth() {
   const savePreferences = (preferences: GrowthPreference) =>
     change.mutate({ path: '/growth/preferences', method: 'PATCH', body: preferences });
   return (
-    <div className="page">
+    <div className="page growth-page">
       <header className="page-head">
         <div>
           <div className="eyebrow">Growth</div>
           <h1>Small steps, meaningful change.</h1>
+          <p className="muted">Build gentle habits, reflect on your week, and see how far you have come.</p>
         </div>
-        {q.data.streak ? <strong>{q.data.streak} day rhythm</strong> : null}
+        {q.data.streak ? <strong className="growth-streak">{q.data.streak} day rhythm</strong> : null}
       </header>
       {message && <p role="status">{message}</p>}
       {change.isError && (
@@ -41,7 +42,7 @@ export default function Growth() {
         </p>
       )}
       <div className="growth">
-        <section className="growth-panel">
+        <section className="growth-panel growth-create-panel">
           <h2>Create a personal goal</h2>
           <form
             className="growth-form"
@@ -124,6 +125,7 @@ export default function Growth() {
                 </div>
               </article>
             ))}
+            {!q.data.activeGoals.length && <p className="growth-empty">No active goal yet. Create one above to get started.</p>}
           </div>
         </section>
         <section>
@@ -153,10 +155,11 @@ export default function Growth() {
                 </div>
               </article>
             ))}
+            {!q.data.suggestedGoals.length && <p className="growth-empty">New suggestions will appear here as your coach gets to know you.</p>}
           </div>
         </section>
         {q.data.todayExercise && (
-          <section className="growth-panel">
+          <section className="growth-panel growth-exercise-panel">
             <div className="eyebrow">Today&apos;s exercise</div>
             <h3>{q.data.todayExercise.title}</h3>
             <p className="meta">{q.data.todayExercise.description}</p>
@@ -277,7 +280,7 @@ export default function Growth() {
                     minWidth: 14,
                     maxWidth: 60,
                     borderRadius: '8px 8px 0 0',
-                    background: 'var(--pink)',
+                    background: 'var(--secondary)',
                   }}
                 />
               ))}
