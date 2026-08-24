@@ -7,12 +7,14 @@ interface OnboardingState {
   coachAppearance: string | null;
   coachName: string;
   coachTraits: CoachPersonality[];
+  matchingConsent: boolean;
   setInterestedInGender: (gender: InterestGender) => void;
   setCoachGender: (gender: CoachGender) => void;
   setCoachAppearance: (appearance: string) => void;
   setCoachName: (name: string) => void;
   setCoachDefaults: (name: string, traits: CoachPersonality[]) => void;
   toggleCoachTrait: (trait: CoachPersonality) => void;
+  setMatchingConsent: (consent: boolean) => void;
   reset: () => void;
 }
 
@@ -22,6 +24,7 @@ const initialState = {
   coachAppearance: 'lumen',
   coachName: 'Lumen',
   coachTraits: ['EMPATHETIC', 'SOFT', 'THERAPIST'] as CoachPersonality[],
+  matchingConsent: false,
 };
 
 export const useOnboardingStore = create<OnboardingState>((set) => ({
@@ -37,5 +40,6 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
         ? state.coachTraits.filter((item) => item !== trait)
         : [...state.coachTraits, trait],
     })),
+  setMatchingConsent: (matchingConsent) => set({ matchingConsent }),
   reset: () => set(initialState),
 }));

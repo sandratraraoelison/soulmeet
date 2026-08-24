@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useEffect } from 'react';
 import {
   notificationService,
@@ -28,6 +28,11 @@ export function useNotifications(isAuthenticated: boolean) {
       subscription = api.addNotificationResponseReceivedListener((response) => {
         const conversationId =
           response.notification.request.content.data?.conversationId;
+        const route = response.notification.request.content.data?.route;
+        if (typeof route === 'string') {
+          router.push(route as Href);
+          return;
+        }
         if (typeof conversationId === 'string')
           router.push(`/(app)/conversation/${conversationId}`);
       });

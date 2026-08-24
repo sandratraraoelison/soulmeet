@@ -145,6 +145,7 @@ export interface SoulMatch {
   compatibilityType: string;
   personalityDescription: string;
   physicalDescription: string;
+  reasons: string[];
   coachInsight: string;
 }
 export interface MatchDecision {
@@ -157,6 +158,21 @@ export interface MatchDecision {
   score: number;
   response: 'ACCEPTED' | 'REJECTED';
   respondedAt: string;
+}
+export type MatchmakingStatus =
+  | 'LEARNING'
+  | 'READY'
+  | 'SEARCHING'
+  | 'NO_MATCH_YET'
+  | 'MATCH_READY';
+export interface MatchmakingOverview {
+  status: MatchmakingStatus;
+  readiness: { ready: boolean; score: number; missing: string[] };
+  matches: SoulMatch[];
+}
+export interface MatchResponseResult {
+  mutual: boolean;
+  conversation: { id: string } | null;
 }
 export interface ChatMessage {
   id: string;

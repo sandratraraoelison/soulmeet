@@ -5,20 +5,23 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { profileApi } from '@/api/profile.api';
 import { useOnboardingStore } from '@/store/onboarding.store';
+import { soulApi } from '@/features/soul/api/soul.api';
 
 export default function GettingReadyScreen() {
   const queryClient = useQueryClient();
   const reset = useOnboardingStore((state) => state.reset);
+  const matchingConsent = useOnboardingStore((state) => state.matchingConsent);
   useEffect(() => {
     const timer = setTimeout(() => {
       void profileApi.complete().then(async (profile) => {
+        if (matchingConsent) await soulApi.activate();
         queryClient.setQueryData(['profile'], profile);
         reset();
         await queryClient.invalidateQueries({ queryKey: ['me'] });
       });
     }, 1800);
     return () => clearTimeout(timer);
-  }, [queryClient, reset]);
+  }, [matchingConsent, queryClient, reset]);
   return (
     <SafeAreaView className="flex-1 bg-canvas">
       <ThemedStatusBar />

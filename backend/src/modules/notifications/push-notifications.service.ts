@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 import { RegisterPushDeviceDto, UpdateNotificationPreferencesDto } from './dto/notifications.dto';
 
-type Category = 'newMessages' | 'coachReflections' | 'soulprintConfirmations' | 'growthReminders';
+type Category = 'newMessages' | 'coachReflections' | 'soulprintConfirmations' | 'growthReminders' | 'matchIntroductions';
 
 @Injectable()
 export class PushNotificationsService {
@@ -25,7 +25,8 @@ export class PushNotificationsService {
   }
   async send(userId: string, category: Category, message: { title: string; body: string; data?: Record<string, string> }) {
     const preferences = await this.preferences(userId);
-    if (!preferences[category] || this.isQuiet(preferences)) return;
+    const enabled = category === 'matchIntroductions' ? preferences.newMessages : preferences[category];
+    if (!enabled || this.isQuiet(preferences)) return;
     const devices = await this.prisma.pushDevice.findMany({ where: { userId, active: true } });
     await Promise.all(devices.map((device) => this.sendToDevice(device.id, device.token, message)));
   }

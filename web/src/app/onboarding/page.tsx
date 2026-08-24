@@ -57,6 +57,7 @@ export default function Onboarding() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [datingGenderPreference, setDating] = useState<DatingGenderPreference | null>(null);
+  const [matchingConsent, setMatchingConsent] = useState(false);
   const [coachAppearance, setCoachAppearance] = useState('lumen');
   const coachGender = coachFace(coachAppearance).gender;
   const [coachName, setName] = useState('Lumen');
@@ -119,6 +120,7 @@ export default function Onboarding() {
         if (!(e instanceof ApiError) || e.status !== 409) throw e;
         await api('/coach', json('PUT', coachInput));
       }
+      await api('/users/matches/activate', json('POST', {}));
       setReady(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unable to finish onboarding.');
@@ -287,6 +289,10 @@ export default function Onboarding() {
                   </span>
                 </button>
               ))}
+              <label className="trait-card">
+                <input type="checkbox" checked={matchingConsent} onChange={(event) => setMatchingConsent(event.target.checked)} />
+                <span><strong>Let my coach look for introductions</strong><small>I allow Soulmeet to use non-sensitive details I share now and later for matching. I can withdraw this in settings.</small></span>
+              </label>
             </div>
           )}
           {error && (
@@ -307,6 +313,7 @@ export default function Onboarding() {
                 busy ||
                 (contentStep === 0 && !datingGenderPreference) ||
                 (contentStep === 1 && !coachName.trim())
+                || (contentStep === 2 && !matchingConsent)
               }
               onClick={() => (step < steps.length - 1 ? continueOnboarding() : void finish())}
             >

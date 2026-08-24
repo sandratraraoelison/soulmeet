@@ -191,6 +191,29 @@ enum SoulprintExtractionJobStatus {
   FAILED
 }
 
+enum MatchmakingStatus {
+  LEARNING
+  READY
+  SEARCHING
+  NO_MATCH_YET
+  MATCH_READY
+}
+
+enum MatchPairStatus {
+  PROPOSED
+  RESERVED
+  INTRODUCED
+  MATCHED
+  CONNECTING
+  DATE_PLANNED
+  MET
+  CONTINUING
+  ENDED
+  DECLINED
+  EXPIRED
+  FADED
+}
+
 enum GrowthGoalStatus {
   SUGGESTED
   ACTIVE
@@ -256,6 +279,7 @@ model User {
   auditLogs              AuditLog[]                @relation("AuditActor")
   matchesCreated         Match[]                   @relation("MatchUser")
   matchesReceived        Match[]                   @relation("MatchMatchedUser")
+  matchmaking            MatchmakingState?
   twoFactorSecret        String?
   twoFactorEnabled       Boolean                   @default(false)
   twoFactorRecoveryCodes Json?
@@ -324,12 +348,18 @@ model Match {
   userId             String    @db.Uuid
   matchedUserId      String    @db.Uuid
   score              Int
+  scoreMin           Int       @default(0)
+  scoreMax           Int       @default(0)
   reciprocalScore    Int
+  reciprocalScoreMin Int       @default(0)
+  status             MatchPairStatus @default(PROPOSED)
   reasons            Json?
   createdAt          DateTime  @default(now())
   viewedAt           DateTime?
   respondedAt        DateTime?
   response           String?
+  introducedAt       DateTime?
+  expiresAt          DateTime?
   semanticScore      Int?
   semanticConfidence Float?
   semanticModel      String?
@@ -339,7 +369,25 @@ model Match {
 
   @@unique([userId, matchedUserId])
   @@index([userId, createdAt])
+  @@index([userId, status, scoreMin])
   @@index([matchedUserId, createdAt])
+}
+
+model MatchmakingState {
+  id                   String            @id @default(uuid()) @db.Uuid
+  userId               String            @unique @db.Uuid
+  status               MatchmakingStatus @default(LEARNING)
+  enabledAt            DateTime?
+  consentedAt          DateTime?
+  readinessAnnouncedAt DateTime?
+  lastSearchedAt       DateTime?
+  lastPresentedAt      DateTime?
+  lastNotifiedMatchId  String?           @db.Uuid
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  user                 User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, lastSearchedAt])
 }
 
 model Report {

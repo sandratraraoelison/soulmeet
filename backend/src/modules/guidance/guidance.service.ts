@@ -240,17 +240,24 @@ export class GuidanceService {
   private async contextMessages(userId: string, conversationId: string) {
     const recentLimit = this.config.get<number>('GUIDANCE_RECENT_MESSAGES', 12);
     const memoryCandidateLimit = this.config.get<number>('GUIDANCE_MEMORY_CANDIDATE_LIMIT', 50);
-    const [coach, profile, memoryCandidates, newestFirst] = await Promise.all([
+    const [coach, profile, memoryCandidates, newestFirst, matchmakingState, activeConnection] = await Promise.all([
       this.prisma.coach.findUnique({ where: { userId } }), this.prisma.profile.findUnique({ where: { userId } }),
       this.prisma.userMemory.findMany({ where: { userId }, orderBy: { updatedAt: 'desc' }, take: memoryCandidateLimit }),
       this.prisma.guidanceMessage.findMany({ where: { conversationId, isDeleted: false }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: recentLimit }),
+      this.prisma.matchmakingState?.findUnique({ where: { userId } }) ?? Promise.resolve(null),
+      this.prisma.match.findFirst({ where: { userId, status: { in: ['MATCHED', 'CONNECTING', 'DATE_PLANNED', 'MET', 'CONTINUING'] } }, select: { id: true } }),
     ]);
     if (!coach) throw new GuidanceException('COACH_REQUIRED', 'Create your coach before using Guidance', HttpStatus.CONFLICT);
     const history = newestFirst.reverse();
     const query = history.filter((item) => item.role === GuidanceMessageRole.USER && item.content).slice(-3).map((item) => item.content).join(' ');
     const soulprint = await (this.soulprintContext?.forGuidance(userId, query) ?? Promise.resolve({ confirmedFacts: [], declaredFacts: [], tentativeInsights: [] }));
     const memories = this.relevantMemories(memoryCandidates, query);
-    const messages = this.prompts.messages(this.prompts.buildSystemPrompt({ coach, profile, soulprint, memories }), history);
+    const announceReadiness = matchmakingState?.status === 'READY' && !matchmakingState.readinessAnnouncedAt;
+    if (announceReadiness) {
+      await this.prisma.matchmakingState.update({ where: { userId }, data: { readinessAnnouncedAt: new Date() } });
+    }
+    const matchmaking = matchmakingState ? { status: matchmakingState.status, announceReadiness, connecting: !!activeConnection } : null;
+    const messages = this.prompts.messages(this.prompts.buildSystemPrompt({ coach, profile, soulprint, memories, matchmaking }), history);
     const recalled = await this.recallEarlierConversation(userId, query);
     if (recalled.length) {
       messages.splice(1, 0, {

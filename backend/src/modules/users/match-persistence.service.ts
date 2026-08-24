@@ -4,7 +4,10 @@ import { PrismaService } from '../../database/prisma.service';
 export interface MatchResultToPersist {
   userId: string;
   score: number;
+  scoreMin: number;
+  scoreMax: number;
   reciprocalScore: number;
+  reciprocalScoreMin: number;
   reasons: string[];
   semanticScore?: number;
   semanticConfidence?: number;
@@ -36,7 +39,10 @@ export class MatchPersistenceService {
             userId,
             matchedUserId: result.userId,
             score: result.score,
+            scoreMin: result.scoreMin,
+            scoreMax: result.scoreMax,
             reciprocalScore: result.reciprocalScore,
+            reciprocalScoreMin: result.reciprocalScoreMin,
             reasons: result.reasons as never,
             semanticScore: result.semanticScore,
             semanticConfidence: result.semanticConfidence,
@@ -45,7 +51,10 @@ export class MatchPersistenceService {
           },
           update: {
             score: result.score,
+            scoreMin: result.scoreMin,
+            scoreMax: result.scoreMax,
             reciprocalScore: result.reciprocalScore,
+            reciprocalScoreMin: result.reciprocalScoreMin,
             reasons: result.reasons as never,
             semanticScore: result.semanticScore,
             semanticConfidence: result.semanticConfidence,

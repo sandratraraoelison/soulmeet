@@ -21,7 +21,7 @@ const items = [
   ['/app', 'Discover', MessageCircleHeart],
   ['/app/insights', 'Soulprint', Sparkles],
   ['/app/growth', 'Growth', TrendingUp],
-  ['/app/soul', 'Your matche', Heart],
+  ['/app/soul', 'Your match', Heart],
   ['/app/messages', 'Messages', MessageCircle],
   ['/app/profile', 'Profile', UserRound],
   ['/app/profile/coach', 'My Coach', Sparkles],

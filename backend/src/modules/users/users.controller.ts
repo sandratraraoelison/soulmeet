@@ -20,9 +20,15 @@ export class UsersController {
   }
 
   @Get('matches')
-  @ApiOperation({ summary: 'Return three reciprocal Soulprint-based compatibility recommendations' })
+  @ApiOperation({ summary: 'Return the matchmaking lifecycle and any presentation-ready recommendations' })
   matches(@CurrentUser() user: JwtPayload) {
     return this.users.matches(user.sub);
+  }
+
+  @Post('matches/activate')
+  @ApiOperation({ summary: 'Consent to matching with eligible Soulprint details and begin searching' })
+  activateMatches(@CurrentUser() user: JwtPayload) {
+    return this.users.activateMatchmaking(user.sub);
   }
 
   @Get('matches/history')

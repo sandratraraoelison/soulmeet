@@ -11,7 +11,7 @@ export interface SoulMatch {
   scoreMin: number;
   scoreMax: number;
   reciprocalScore: number;
-  mutualRecommendation: boolean;
+  reciprocalScoreMin: number;
   compatibilityType: CompatibilityType;
   physicalDescription: string;
   personalityDescription: string;
@@ -31,4 +31,23 @@ export interface MatchDecision {
   score: number;
   response: 'ACCEPTED' | 'REJECTED';
   respondedAt: string;
+}
+
+export type MatchmakingStatus = 'LEARNING' | 'READY' | 'SEARCHING' | 'NO_MATCH_YET' | 'MATCH_READY';
+
+export interface MatchmakingReadiness {
+  ready: boolean;
+  score: number;
+  missing: string[];
+}
+
+export interface MatchmakingOverview {
+  status: MatchmakingStatus;
+  readiness: MatchmakingReadiness;
+  matches: SoulMatch[];
+}
+
+export interface MatchResponseResult {
+  mutual: boolean;
+  conversation: { id: string } | null;
 }

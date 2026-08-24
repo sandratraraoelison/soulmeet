@@ -1,10 +1,10 @@
 'use client';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/services/api';
-import type { Coach, MatchDecision, SoulMatch } from '@/types';
+import { useRouter } from 'next/navigation';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api, json } from '@/services/api';
+import type { Coach, MatchDecision, MatchmakingOverview, MatchResponseResult } from '@/types';
 import { Failure, Loading } from '@/components/remote';
-import { useGenericMutation } from '@/lib/use-generic-mutation';
 
 const typeColors: Record<string, { pill: string; text: string }> = {
   'Safe Compatibility': {
@@ -29,14 +29,74 @@ const typeColors: Record<string, { pill: string; text: string }> = {
   },
 };
 
+function MatchmakingEmptyState({ overview, coachName, activating, error, onActivate }: {
+  overview: MatchmakingOverview;
+  coachName: string;
+  activating: boolean;
+  error: string | null;
+  onActivate: () => void;
+}) {
+  if (overview.status === 'READY') {
+    return (
+      <div className="panel card" style={{ borderStyle: 'solid' }}>
+        <div className="eyebrow">Ready when you are</div>
+        <h2>{coachName} knows enough to start looking</h2>
+        <p className="muted">
+          Your Soulprint will keep evolving. Starting the search allows the non-sensitive
+          details you shared with your coach to be used for compatible introductions.
+        </p>
+        {error && <p className="error" role="alert">{error}</p>}
+        <button className="button" disabled={activating} onClick={onActivate}>
+          {activating ? 'Starting the search...' : 'Start looking'}
+        </button>
+      </div>
+    );
+  }
+  if (overview.status === 'SEARCHING' || overview.status === 'NO_MATCH_YET' || overview.status === 'MATCH_READY') {
+    return (
+      <div className="panel card" style={{ borderStyle: 'dashed' }}>
+        <h2>{overview.status === 'SEARCHING' ? `${coachName} is looking` : 'No introduction yet'}</h2>
+        <p className="muted">
+          {overview.status === 'NO_MATCH_YET'
+            ? "I haven't found someone I feel good about introducing yet. I'd rather wait than force a match."
+            : 'You can keep talking with your coach while the search continues quietly.'}
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="panel card" style={{ borderStyle: 'dashed' }}>
+      <h2>Your Soulprint is still taking shape</h2>
+      <p className="muted">
+        Keep talking naturally with your coach. Matchmaking unlocks when there is enough
+        meaningful relationship context, not after a set amount of time.
+      </p>
+    </div>
+  );
+}
+
 export default function Soul() {
-  const q = useQuery({ queryKey: ['matches'], queryFn: () => api<SoulMatch[]>('/users/matches') });
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const q = useQuery({ queryKey: ['matches'], queryFn: () => api<MatchmakingOverview>('/users/matches') });
   const history = useQuery({
     queryKey: ['matches', 'history'],
     queryFn: () => api<MatchDecision[]>('/users/matches/history'),
   });
   const coach = useQuery({ queryKey: ['coach'], queryFn: () => api<Coach>('/coach') });
-  const decide = useGenericMutation([['matches'], ['matches', 'history']]);
+  const activate = useMutation({
+    mutationFn: () => api<MatchmakingOverview>('/users/matches/activate', json('POST', {})),
+    onSuccess: (overview) => queryClient.setQueryData(['matches'], overview),
+  });
+  const decide = useMutation({
+    mutationFn: ({ userId, response }: { userId: string; response: 'ACCEPTED' | 'REJECTED' }) =>
+      api<MatchResponseResult>(`/users/matches/${userId}/respond`, json('POST', { response })),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: ['matches'] });
+      void queryClient.invalidateQueries({ queryKey: ['matches', 'history'] });
+      if (result.mutual && result.conversation) router.push(`/app/messages/${result.conversation.id}`);
+    },
+  });
   if (q.isLoading || history.isLoading)
     return (
       <div className="page">
@@ -52,7 +112,8 @@ export default function Soul() {
   const coachName = coach.data?.name ?? 'Your coach';
   const peerVoice =
     coach.data?.traits.includes('BRO_VIBE') || coach.data?.traits.includes('SISTER_VIBE');
-  const count = q.data?.length ?? 0;
+  const suggestions = q.data?.matches ?? [];
+  const count = suggestions.length;
   const headline = q.isLoading
     ? 'Your recommendations are taking shape…'
     : peerVoice
@@ -84,30 +145,30 @@ export default function Soul() {
       )}
       <div className="soul-layout">
       <div className="soul-suggestions">
-      <div className="panel card soul-intro">
+      {suggestions.length > 0 && <div className="panel card soul-intro">
         <div className="soul-intro-main">
           <div className="eyebrow">{coachName} found something</div>
           <h2>{headline}</h2>
           <p className="muted">These profiles were chosen using what both people shared.</p>
         </div>
         <p className="soul-intro-check">Both profiles were checked.</p>
-      </div>
-      {!q.data?.length ? (
-        <div className="panel card" style={{ borderStyle: 'dashed' }}>
-          <h2>Your suggestions are still taking shape</h2>
-          <p className="muted">
-            Keep talking with your coach and allow selected Soulprint details for matching.
-            Recommendations appear when there is enough meaningful context.
-          </p>
-        </div>
+      </div>}
+      {!suggestions.length ? (
+        <MatchmakingEmptyState
+          overview={q.data!}
+          coachName={coachName}
+          activating={activate.isPending}
+          error={activate.isError ? activate.error.message : null}
+          onActivate={() => activate.mutate()}
+        />
       ) : (
         <div className="soul-grid">
-          {q.data.map((m, index) => (
+          {suggestions.map((m) => (
             <article className="panel card soul-card" key={m.userId}>
               <div className="soul-card-head">
                 <div>
                   <h2>
-                    {m.name}, {m.age} <span className="muted">#{index + 1}</span>
+                    {m.name}, {m.age}
                   </h2>
                   <p className="muted">
                     {m.job || 'Occupation not shared yet'} · {m.city}, {m.country}
@@ -130,50 +191,34 @@ export default function Soul() {
                   </span>
                 );
               })()}
-              <h3>Presence</h3>
+              <h3>Why you may connect</h3>
+              <ul>{m.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul>
+              <h3>A glimpse</h3>
               <p>{m.physicalDescription}</p>
-              <h3>Personality</h3>
-              <p>{m.personalityDescription}</p>
               <blockquote className="panel card">
                 <div className="eyebrow">{coachName}&apos;s take</div>
                 <p>{m.coachInsight}</p>
               </blockquote>
-              <div className="soul-checked">
-                <span aria-hidden="true">↔</span>
-                <span>
-                  <strong>Match checked both ways</strong>
-                  <small>This person can also be interested in your profile.</small>
-                </span>
-              </div>
               <div className="action-row">
                 <button
                   className="button secondary"
                   disabled={decide.isPending}
                   onClick={() =>
-                    decide.mutate({
-                      path: `/users/matches/${m.userId}/respond`,
-                      body: { response: 'REJECTED' },
-                    })
+                    decide.mutate({ userId: m.userId, response: 'REJECTED' })
                   }
                 >
-                  Not now
+                  Not for me
                 </button>
                 <button
                   className="button"
                   disabled={decide.isPending}
                   onClick={() =>
-                    decide.mutate({
-                      path: `/users/matches/${m.userId}/respond`,
-                      body: { response: 'ACCEPTED' },
-                    })
+                    decide.mutate({ userId: m.userId, response: 'ACCEPTED' })
                   }
                 >
-                  Accept
+                  Interested
                 </button>
               </div>
-              <Link className="soul-explore" href={`/app/people/${m.userId}`}>
-                Explore this connection →
-              </Link>
             </article>
           ))}
         </div>

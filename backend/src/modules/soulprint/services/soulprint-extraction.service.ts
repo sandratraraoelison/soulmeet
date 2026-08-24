@@ -20,6 +20,7 @@ import { SoulprintException } from '../soulprint.exception';
 import { SoulprintMergeService } from './soulprint-merge.service';
 import { SoulprintService } from './soulprint.service';
 import { SoulprintSummaryService } from './soulprint-summary.service';
+import { matchmakingReadiness } from '../../users/matchmaking-readiness';
 
 @Injectable()
 /**
@@ -68,6 +69,14 @@ export class SoulprintExtractionService {
         HttpStatus.CONFLICT,
       );
     try {
+      const matchingConsent = await this.prisma.matchmakingState.findUnique({
+        where: { userId },
+        select: { consentedAt: true },
+      });
+      const applyMatchingConsent = <T extends { sensitivity: SoulprintSensitivity; suggestedVisibility: SoulprintVisibility }>(entry: T): T =>
+        matchingConsent?.consentedAt && entry.sensitivity !== SoulprintSensitivity.HIGHLY_SENSITIVE
+          ? { ...entry, suggestedVisibility: SoulprintVisibility.MATCHING_ALLOWED }
+          : entry;
       const promptVersion = this.config.get<string>(
         'SOULPRINT_PROMPT_VERSION',
         SOULPRINT_EXTRACTION_PROMPT_VERSION,
@@ -118,7 +127,7 @@ export class SoulprintExtractionService {
       // the cursor remains pending so a later batch can still analyse nuance.
       const directInterests = this.extractDirectInterests(userMessages);
       for (const entry of directInterests)
-        await this.merge.merge(soulprint.id, entry, conversationId);
+        await this.merge.merge(soulprint.id, applyMatchingConsent(entry), conversationId);
       // Keep short fragments pending so a future message can provide enough
       // context. We intentionally do not advance the cursor in this branch.
       if (
@@ -204,7 +213,7 @@ export class SoulprintExtractionService {
         }
         await this.merge.merge(
           soulprint.id,
-          entry,
+          applyMatchingConsent(entry),
           evidence[0]?.conversationId,
         );
         changed++;
@@ -248,6 +257,19 @@ export class SoulprintExtractionService {
             this.config.get<number>('SOULPRINT_SUMMARY_CHANGE_THRESHOLD', 3))
       )
         await this.summaries.recalculate(soulprint.id);
+      try {
+        const readiness = await matchmakingReadiness(this.prisma, userId);
+        const matchmaking = await this.prisma.matchmakingState.findUnique({ where: { userId } });
+        if (!matchmaking?.enabledAt) {
+          await this.prisma.matchmakingState.upsert({
+            where: { userId },
+            create: { userId, status: readiness.ready ? 'READY' : 'LEARNING' },
+            update: { status: readiness.ready ? 'READY' : 'LEARNING' },
+          });
+        }
+      } catch (error) {
+        this.logger.warn(`Unable to refresh matchmaking readiness for ${userId}: ${error instanceof Error ? error.message : 'unknown error'}`);
+      }
       return {
         skipped: false,
         extracted: changed,

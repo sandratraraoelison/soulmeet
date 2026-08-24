@@ -9,11 +9,12 @@ type Context = {
   profile: Profile | null;
   soulprint: SoulprintGuidanceContext | null;
   memories: UserMemory[];
+  matchmaking?: { status: string; announceReadiness: boolean; connecting: boolean } | null;
 };
 
 @Injectable()
 export class GuidancePromptService {
-  buildSystemPrompt({ coach, profile, soulprint, memories }: Context): string {
+  buildSystemPrompt({ coach, profile, soulprint, memories, matchmaking }: Context): string {
     const behavior = this.buildBehaviorPolicy(coach);
     const identity = [
       `You are ${coach.name}, the user's personal dating and emotional guidance coach.`,
@@ -28,6 +29,16 @@ export class GuidancePromptService {
     const soul = soulprint && (soulprint.summary || soulprint.confirmedFacts.length || soulprint.declaredFacts.length || soulprint.tentativeInsights.length)
       ? `Relevant Soulprint context: ${JSON.stringify(soulprint)}` : '';
     const memory = memories.length ? `Relevant saved memories:\n${memories.map((item) => `- ${item.content}`).join('\n')}` : '';
+    const matching = matchmaking?.announceReadiness
+      ? 'MATCHMAKING TRANSITION: The user now has enough reliable relationship context. At the next natural pause, briefly restate the grounded relationship goals, values, communication needs, and boundaries you understood from the supplied Soulprint, then say once that you are beginning the search and will keep learning. Consent was already obtained during onboarding, so do not ask again. Do not interrupt distress or an important story. Do not claim that you already found someone.'
+      : matchmaking?.status === 'SEARCHING' || matchmaking?.status === 'NO_MATCH_YET'
+        ? 'MATCHMAKING STATUS: The search is active. Continue the conversation normally. Mention the search only if the user asks, and never promise that a match will be found.'
+        : matchmaking?.status === 'MATCH_READY'
+          ? 'MATCHMAKING STATUS: An introduction is ready. Do not interrupt the current topic. If the user asks about matches, naturally say that you found someone you would like them to meet and direct them to the Soul screen.'
+          : '';
+    const connectionPrivacy = matchmaking?.connecting
+      ? 'ACTIVE CONNECTION COACHING: You may use private context about the other person only to give broad behavioral advice directed at the user, using imperative language such as "be patient" or "ask open questions". Never state, quote, imply, or reveal a fact about the other person, what they said, what they want, or what happened to them. Advice must remain general enough that no private fact can be inferred.'
+      : '';
     return [
       identity,
       'BEHAVIOR POLICY - apply this to every response, not merely when describing yourself:',
@@ -44,7 +55,7 @@ export class GuidancePromptService {
       ].join('\n'),
       'RELATIONSHIP DISCOVERY - guide this naturally across conversations:',
       this.buildDiscoveryPolicy(),
-      user, soul, memory,
+      user, soul, memory, matching, connectionPrivacy,
       'Write like a real person having a normal conversation. Use common everyday English, familiar words, short sentences, and contractions when natural. Avoid academic, clinical, corporate, poetic, or complicated wording. Explain any necessary term in simple words.',
       'Do not use decorative characters, emojis, smart quotes, long dashes, double hyphens (--), icons, or ornamental formatting. Use simple, natural punctuation like a real person texting or talking. Never use -- as a pause or sentence separator. Do not use headings or bullet lists unless the user asks for them or a very short list is clearly easier to follow.',
       'Be direct and concise. Most replies should fit in 1 to 3 short paragraphs. Never pad the reply with generic introductions, repeated summaries, or artificial coaching phrases. Expand beyond that only for safety, a genuinely complex situation, or when the user explicitly asks for detail.',
