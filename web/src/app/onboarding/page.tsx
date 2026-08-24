@@ -289,9 +289,12 @@ export default function Onboarding() {
                   </span>
                 </button>
               ))}
-              <label className="trait-card">
+              <label className="trait-card matching-consent-card">
                 <input type="checkbox" checked={matchingConsent} onChange={(event) => setMatchingConsent(event.target.checked)} />
-                <span><strong>Let my coach look for introductions</strong><small>I allow Soulmeet to use non-sensitive details I share now and later for matching. I can withdraw this in settings.</small></span>
+                <span className="matching-consent-copy">
+                  <strong>Let my coach look for introductions</strong>
+                  <small>I allow Soulmeet to use non-sensitive details I share now and later for matching. I can withdraw this in settings.</small>
+                </span>
               </label>
             </div>
           )}

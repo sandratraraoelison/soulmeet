@@ -2029,6 +2029,26 @@ a {
   background: linear-gradient(135deg, var(--pink), var(--violet));
   color: #ffffff;
 }
+.matching-consent-card input {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--pink);
+}
+.matching-consent-copy {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+.matching-consent-copy strong,
+.matching-consent-copy small {
+  display: block;
+}
+.matching-consent-copy small {
+  line-height: 1.5;
+}
 .spinner {
   width: 34px;
   height: 34px;
