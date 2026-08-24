@@ -21,6 +21,7 @@
     "prisma:studio": "node ./node_modules/prisma/build/index.js studio",
     "admin:promote": "node ./node_modules/ts-node/dist/bin.js scripts/promote-admin.ts",
     "seed:soul-demo": "node -r ts-node/register scripts/seed-soul-demo.ts",
+    "seed:presentation-account": "node -r ts-node/register scripts/prepare-presentation-account.ts",
     "semantic:backfill": "node -r ts-node/register scripts/backfill-semantic-matches.ts"
   },
   "dependencies": {
