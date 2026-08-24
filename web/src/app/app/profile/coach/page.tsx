@@ -57,7 +57,7 @@ export default function CoachSettings() {
       <h1>Shape your Coach</h1>
       <p className="muted">Adjust the presence and communication style that supports you.</p>
       <form
-        className="panel card form-wide"
+        className="panel card form-wide coach-profile-form"
         onSubmit={(e) => {
           e.preventDefault();
           setSaved(false);
@@ -103,7 +103,10 @@ export default function CoachSettings() {
             }}
           >
             {traits.map((trait) => (
-              <label className="trait-card" key={trait.value}>
+              <label
+                className={`trait-card ${activeTraits.includes(trait.value) ? 'selected' : ''}`}
+                key={trait.value}
+              >
                 <span>
                   <strong>{trait.label}</strong>
                   <small>{trait.description}</small>
