@@ -445,7 +445,7 @@ export default function Insights() {
           )}
           <div className="insight-row">
             <h2 className="insight-title">Explore your Soulprint</h2>
-            <button className="text-link" onClick={goInsights}>
+            <button className="text-link insight-privacy-link" onClick={goInsights}>
               Privacy & visibility <ArrowRight size={16} />
             </button>
           </div>

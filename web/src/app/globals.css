@@ -2850,6 +2850,30 @@ a {
   font-family: var(--font-headline);
   font-size: 1.6rem;
 }
+.insight-privacy-link {
+  flex: none;
+  min-height: 38px;
+  padding: 0 13px;
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--secondary), transparent 58%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--secondary), transparent 90%);
+  color: var(--secondary);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.insight-privacy-link:hover {
+  border-color: color-mix(in srgb, var(--secondary), transparent 28%);
+  background: color-mix(in srgb, var(--secondary), transparent 82%);
+}
+.insight-privacy-link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--secondary), transparent 62%);
+  outline-offset: 2px;
+}
 .category-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
