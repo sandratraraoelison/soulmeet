@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { ChatGateway } from './chat.gateway';
 import { ChatRateLimiter } from './chat-rate-limiter.service';
@@ -13,7 +13,7 @@ import { ChatMediaController } from './chat-media.controller';
 import { SoulprintModule } from '../soulprint/soulprint.module';
 
 @Module({
-  imports: [AuthModule, NotificationsModule, SoulprintModule],
+  imports: [forwardRef(() => AuthModule), NotificationsModule, forwardRef(() => SoulprintModule)],
   controllers: [ConversationsController, MessagesController, ChatMediaController],
   providers: [ChatService, ChatGateway, ChatRateLimiter, ChatRealtimeService, ChatMediaService, WsJwtGuard],
   exports: [ChatService],

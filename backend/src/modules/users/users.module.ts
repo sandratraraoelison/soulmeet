@@ -13,7 +13,7 @@ import { ChatModule } from '../chat/chat.module';
 @Module({
   // ChatModule imports AuthModule, which imports UsersModule for AuthController.
   // Defer this edge so Nest can resolve the three-module cycle.
-  imports: [JwtModule.register({}), LlmModule, NotificationsModule, forwardRef(() => ChatModule)],
+  imports: [JwtModule.register({}), LlmModule, forwardRef(() => NotificationsModule), forwardRef(() => ChatModule)],
   controllers: [UsersController],
   providers: [
     UsersService,

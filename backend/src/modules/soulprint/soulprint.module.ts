@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { LlmModule } from '../llm/llm.module';
 import { SoulprintController } from './soulprint.controller';
@@ -12,7 +12,7 @@ import { SoulprintSummaryService } from './services/soulprint-summary.service';
 import { SoulprintConsentService } from './services/soulprint-consent.service';
 import { PeerConversationAnalysisService } from './services/peer-conversation-analysis.service';
 @Module({
-  imports: [AuthModule, LlmModule], controllers: [SoulprintController],
+  imports: [forwardRef(() => AuthModule), LlmModule], controllers: [SoulprintController],
   providers: [SoulprintService, SoulprintMergeService, SoulprintSummaryService, SoulprintContextService, SoulprintExtractionService, SoulprintExtractionQueueService, SoulprintMatchingAdapterService, SoulprintConsentService, PeerConversationAnalysisService],
   exports: [SoulprintService, SoulprintContextService, SoulprintExtractionService, SoulprintExtractionQueueService, SoulprintMatchingAdapterService, SoulprintConsentService, PeerConversationAnalysisService],
 })
