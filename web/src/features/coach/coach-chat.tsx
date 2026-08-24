@@ -7,7 +7,6 @@ import { ApiError } from '@/services/api';
 import { guidanceService, streamCoachReply } from '@/services/guidance';
 import { profileService } from '@/services/profile';
 import { useGenericMutation } from '@/lib/use-generic-mutation';
-import { ConfirmButton } from '@/components/ui/confirm-button';
 import { Failure, Loading } from '@/components/remote';
 import { BackButton } from '@/components/ui/back-button';
 import type { GuidanceMessage } from '@/types';
@@ -228,20 +227,22 @@ export function CoachChat() {
                         <RotateCw size={16} />
                       </button>
                     )}
-                    <ConfirmButton
-                      icon={<Trash2 size={16} />}
-                      confirmIcon={<Check size={16} />}
-                      label="Delete message"
-                      ariaLabel="Delete message"
+                    <button
+                      type="button"
                       className="button ghost icon-button chat-message-action chat-message-delete"
                       disabled={messageAction.isPending}
-                      onConfirm={() =>
+                      aria-label="Delete message"
+                      title="Delete message"
+                      onClick={() => {
+                        if (!window.confirm('Delete this message?')) return;
                         messageAction.mutate({
                           path: `/guidance/messages/${m.id}`,
                           method: 'DELETE',
-                        })
-                      }
-                    />
+                        });
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
             </article>
           ))}

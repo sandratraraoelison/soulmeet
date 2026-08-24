@@ -9,10 +9,10 @@ export function useGenericMutation(
   const qc = useQueryClient();
   return useMutation({
     meta: { successMessage: 'Changes saved.', errorMessage: true },
-    mutationFn: ({ path, method = 'POST', body = {} }: { path: string; method?: string; body?: unknown }) =>
+    mutationFn: ({ path, method = 'POST', body }: { path: string; method?: string; body?: unknown }) =>
       api(path, json(method, body)),
-    onSuccess: () => {
-      queryKeys.forEach((key) => void qc.invalidateQueries({ queryKey: key }));
+    onSuccess: async () => {
+      await Promise.all(queryKeys.map((key) => qc.invalidateQueries({ queryKey: key })));
       options.onSuccess?.();
     },
   });
