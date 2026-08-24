@@ -1319,6 +1319,71 @@ a {
   margin: 10px 0 0;
   font-size: 0.98rem;
 }
+.messages-list-section {
+  display: grid;
+  gap: 14px;
+}
+.messages-list-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+.messages-list-head h2 {
+  margin: 0 0 3px;
+  font-family: var(--font-headline);
+  font-size: 1.35rem;
+}
+.conversation-search {
+  display: flex;
+  width: min(320px, 100%);
+  min-height: 42px;
+  align-items: center;
+  gap: 9px;
+  padding: 0 13px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface);
+  color: var(--muted);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.conversation-search:focus-within {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--secondary), transparent 84%);
+}
+.conversation-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+}
+.conversation-search input::placeholder {
+  color: var(--muted);
+}
+.messages-empty {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  text-align: center;
+}
+.messages-empty p {
+  margin: 0;
+}
+.messages-empty-icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 4px;
+  place-items: center;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--secondary), transparent 87%);
+  color: var(--secondary);
+}
 .conversations {
   display: grid;
   overflow: hidden;
@@ -1343,6 +1408,9 @@ a {
 .conversation-row:hover {
   background: var(--raised);
   padding-left: 22px;
+}
+.conversation-row.unread {
+  background: color-mix(in srgb, var(--secondary), transparent 95%);
 }
 .conversation-row .avatar {
   width: 46px;
@@ -1372,8 +1440,18 @@ a {
   gap: 1px;
 }
 .conversation-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-weight: 700;
   font-size: 1rem;
+}
+.conversation-name small {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--secondary), transparent 82%);
+  color: var(--secondary);
+  font-size: 0.65rem;
 }
 .conversation-preview {
   overflow: hidden;
@@ -1389,6 +1467,14 @@ a {
   margin-left: auto;
   color: var(--muted);
   font-size: 0.78rem;
+}
+.conversation-meta > svg {
+  opacity: 0.55;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.conversation-row:hover .conversation-meta > svg {
+  opacity: 1;
+  transform: translateX(2px);
 }
 .unread-dot {
   width: 8px;
@@ -1545,6 +1631,19 @@ a {
   font-size: 0.82rem;
 }
 @media (max-width: 760px) {
+  .messages-list-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .conversation-search {
+    width: 100%;
+  }
+  .conversation-row {
+    padding-inline: 14px;
+  }
+  .conversation-row:hover {
+    padding-left: 14px;
+  }
   .discover-heading {
     display: block;
   }

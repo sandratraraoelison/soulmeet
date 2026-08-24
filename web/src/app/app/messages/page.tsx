@@ -8,8 +8,10 @@ import {
   BriefcaseBusiness,
   ChevronLeft,
   ChevronRight,
+  Inbox,
   MapPin,
   MessageCircle,
+  Search,
 } from 'lucide-react';
 import { api, json } from '@/services/api';
 import type { Conversation, DiscoverableUser } from '@/types';
@@ -44,6 +46,7 @@ export default function Messages() {
   const router = useRouter();
   const me = useMeQuery();
   const [discoverPage, setDiscoverPage] = useState(0);
+  const [conversationSearch, setConversationSearch] = useState('');
   const q = useConversations();
   const discover = useQuery({
     queryKey: ['discover', discoverPage],
@@ -72,6 +75,13 @@ export default function Messages() {
     );
   const people = (discover.data ?? []).slice(0, PAGE_SIZE);
   const hasNextPage = (discover.data?.length ?? 0) > PAGE_SIZE;
+  const filteredConversations = (q.data ?? []).filter((conversation) => {
+    const other = conversation.participants.find((participant) => participant.userId !== me.data?.id);
+    const name = other?.user?.profile?.firstName ?? 'Connection';
+    const preview = conversation.messages?.[0]?.content ?? '';
+    const query = conversationSearch.trim().toLocaleLowerCase();
+    return !query || `${name} ${preview}`.toLocaleLowerCase().includes(query);
+  });
   return (
     <div className="page messages-page">
       <header className="page-head messages-head">
@@ -86,36 +96,68 @@ export default function Messages() {
           {start.error.message}
         </p>
       )}
-      {!q.data?.length ? (
-        <div className="panel card">
-          <p className="muted">Accepted connections will appear here.</p>
+      <section className="messages-list-section" aria-labelledby="conversations-title">
+        <div className="messages-list-head">
+          <div>
+            <h2 id="conversations-title">Conversations</h2>
+            <span className="muted">{q.data?.length ?? 0} connection{q.data?.length === 1 ? '' : 's'}</span>
+          </div>
+          {!!q.data?.length && (
+            <label className="conversation-search">
+              <Search size={17} aria-hidden="true" />
+              <input
+                type="search"
+                value={conversationSearch}
+                onChange={(event) => setConversationSearch(event.target.value)}
+                placeholder="Search conversations"
+                aria-label="Search conversations"
+              />
+            </label>
+          )}
         </div>
-      ) : (
-        <div className="conversations">
-          {q.data.map((c) => {
+        {!q.data?.length ? (
+          <div className="messages-empty panel card">
+            <span className="messages-empty-icon"><Inbox size={24} aria-hidden="true" /></span>
+            <strong>No conversations yet</strong>
+            <p className="muted">Accepted connections will appear here.</p>
+          </div>
+        ) : !filteredConversations.length ? (
+          <div className="messages-empty panel card">
+            <span className="messages-empty-icon"><Search size={24} aria-hidden="true" /></span>
+            <strong>No matching conversation</strong>
+            <p className="muted">Try another name or message keyword.</p>
+          </div>
+        ) : (
+          <div className="conversations">
+          {filteredConversations.map((c) => {
             const other = c.participants.find((p) => p.userId !== me.data?.id);
             const name = other?.user?.profile?.firstName ?? 'Connection';
             const last = c.messages?.[0];
             const unread =
               last && last.senderId !== me.data?.id && last.status !== 'READ';
             return (
-              <Link className="conversation-row" key={c.id} href={`/app/messages/${c.id}`}>
+              <Link className={`conversation-row ${unread ? 'unread' : ''}`} key={c.id} href={`/app/messages/${c.id}`}>
                 <span className="avatar">{initials(name)}</span>
                 <span className="conversation-body">
-                  <span className="conversation-name">{name}</span>
+                  <span className="conversation-name">
+                    {name}
+                    {unread && <small>New</small>}
+                  </span>
                   <span className="conversation-preview">
-                    {last?.content ?? 'Open conversation'}
+                    {last?.senderId === me.data?.id ? 'You: ' : ''}{last?.content ?? 'Open conversation'}
                   </span>
                 </span>
                 <span className="conversation-meta">
                   {last && <small>{timeLabel(last.createdAt)}</small>}
                   {unread && <span className="unread-dot" aria-label="Unread" />}
+                  <ChevronRight size={17} aria-hidden="true" />
                 </span>
               </Link>
             );
           })}
-        </div>
-      )}
+          </div>
+        )}
+      </section>
       <section className="discover-section">
         <div className="discover-heading">
           <div>
