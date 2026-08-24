@@ -35,17 +35,24 @@ export function useEmailAuth(mode: 'login' | 'register') {
 
 export function useSocialAuth(provider: 'google' | 'apple') {
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
+  const resetOnboarding = useOnboardingStore((state) => state.reset);
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (identityToken: string) => authApi[provider](identityToken),
     onSuccess: async (tokens) => {
+      // Profile and coach queries are keyed globally, so invalidating them can
+      // leave the previous account's data available when a new social account
+      // has no profile yet (the refetch then fails with 404). Remove that data
+      // before exposing the new authenticated session to Navigation.
+      queryClient.removeQueries({ queryKey: ['me'] });
+      queryClient.removeQueries({ queryKey: ['profile'] });
+      queryClient.removeQueries({ queryKey: ['coach'] });
+      resetOnboarding();
       await tokenStorage.save(tokens);
       const user = await queryClient.fetchQuery({
         queryKey: ['me'],
         queryFn: authApi.me,
       });
-      await queryClient.invalidateQueries({ queryKey: ['profile'] });
-      await queryClient.invalidateQueries({ queryKey: ['coach'] });
       setAuthenticated(Boolean(user));
     },
   });
