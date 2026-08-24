@@ -90,6 +90,8 @@ export default function PersonalityScreen() {
   const name = useOnboardingStore((state) => state.coachName);
   const selected = useOnboardingStore((state) => state.coachTraits);
   const toggle = useOnboardingStore((state) => state.toggleCoachTrait);
+  const matchingConsent = useOnboardingStore((state) => state.matchingConsent);
+  const setMatchingConsent = useOnboardingStore((state) => state.setMatchingConsent);
   const create = useMutation({
     mutationFn: () =>
       coachApi.create({ name: name.trim(), gender: gender!, traits: selected, appearance: appearance ?? undefined }),
@@ -155,6 +157,31 @@ export default function PersonalityScreen() {
             );
           })}
         </View>
+        <Pressable
+          accessibilityRole="checkbox"
+          accessibilityLabel="Let my coach look for introductions"
+          accessibilityState={{ checked: matchingConsent }}
+          onPress={() => setMatchingConsent(!matchingConsent)}
+          className={`mt-4 flex-row items-start rounded-xl border p-4 ${matchingConsent ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}
+        >
+          <View
+            className={`mr-4 h-7 w-7 items-center justify-center rounded-md border-2 ${matchingConsent ? 'border-[#F7C94B] bg-[#F7C94B]' : 'border-[#8E8A9A] bg-canvas'}`}
+          >
+            {matchingConsent ? (
+              <Text className="text-lg font-bold leading-5 text-[#111016]">
+                {'\u2713'}
+              </Text>
+            ) : null}
+          </View>
+          <View className="flex-1">
+            <Text className="text-base font-bold leading-5 text-ink">
+              Let my coach look for introductions
+            </Text>
+            <Text className="mt-2 text-sm leading-5 text-muted">
+              I allow Soulmeet to use non-sensitive details I share now and later for matching. I can withdraw this in settings.
+            </Text>
+          </View>
+        </Pressable>
         <ErrorMessage
           message={create.error ? getErrorMessage(create.error) : null}
         />
@@ -162,7 +189,7 @@ export default function PersonalityScreen() {
           <Button
             label="Create my coach"
             variant="light"
-            disabled={!selected.length || !gender || !name.trim()}
+            disabled={!selected.length || !gender || !name.trim() || !matchingConsent}
             loading={create.isPending}
             onPress={() => create.mutate()}
           />

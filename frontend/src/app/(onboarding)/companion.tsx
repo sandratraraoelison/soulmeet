@@ -41,8 +41,6 @@ export default function CompanionScreen() {
   const queryClient = useQueryClient();
   const gender = useOnboardingStore((state) => state.interestedInGender);
   const setGender = useOnboardingStore((state) => state.setInterestedInGender);
-  const matchingConsent = useOnboardingStore((state) => state.matchingConsent);
-  const setMatchingConsent = useOnboardingStore((state) => state.setMatchingConsent);
   const resetSelection = useOnboardingStore((state) => state.reset);
   const logout = useLogout();
   const saveInterest = useMutation({
@@ -131,23 +129,10 @@ export default function CompanionScreen() {
           })}
         </View>
         <View className="mt-7">
-          <Pressable
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: matchingConsent }}
-            onPress={() => setMatchingConsent(!matchingConsent)}
-            className="mb-4 flex-row rounded-2xl border border-white/10 bg-surface-raised p-4"
-          >
-            <View className={`mr-3 mt-0.5 h-5 w-5 items-center justify-center rounded border ${matchingConsent ? 'border-[#F7C94B] bg-[#F7C94B]' : 'border-border'}`}>
-              {matchingConsent ? <Text className="font-bold text-[#111016]">✓</Text> : null}
-            </View>
-            <Text className="flex-1 text-sm leading-5 text-muted">
-              I allow Soulmeet to use the non-sensitive details I share now and later with my coach to look for compatible introductions. I can withdraw this in settings.
-            </Text>
-          </Pressable>
           <Button
             label="Continue"
             variant="light"
-            disabled={!gender || !matchingConsent}
+            disabled={!gender}
             loading={saveInterest.isPending}
             onPress={() => saveInterest.mutate()}
           />
