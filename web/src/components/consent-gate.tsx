@@ -9,7 +9,7 @@ export function ConsentGate() {
   const client = useQueryClient();
   const panel = useRef<HTMLDivElement>(null);
   const query = useQuery({ queryKey: consentKey, queryFn: consentService.get, retry: false, staleTime: Infinity });
-  const save = useMutation({ mutationFn: consentService.update, onSuccess: (data) => client.setQueryData(consentKey, data) });
+  const save = useMutation({ meta: { successMessage: 'Privacy choice saved.', errorMessage: true }, mutationFn: consentService.update, onSuccess: (data) => client.setQueryData(consentKey, data) });
   const open = query.isError || (!query.isPending && !query.data?.hasChoice);
   useEffect(() => {
     if (!open) return;

@@ -8,6 +8,7 @@ export function useGenericMutation(
 ) {
   const qc = useQueryClient();
   return useMutation({
+    meta: { successMessage: 'Changes saved.', errorMessage: true },
     mutationFn: ({ path, method = 'POST', body = {} }: { path: string; method?: string; body?: unknown }) =>
       api(path, json(method, body)),
     onSuccess: () => {

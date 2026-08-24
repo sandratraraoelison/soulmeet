@@ -18,7 +18,7 @@ export default function CoachArchivePage() {
   const [query, setQuery] = useState('');
   const client = useQueryClient();
   const archive = useInfiniteQuery({ queryKey: ['guidance', 'archive', query.trim()], initialPageParam: undefined as string | undefined, queryFn: ({ pageParam }) => guidanceService.archive(query.trim(), pageParam), getNextPageParam: (page) => page.nextCursor ?? undefined });
-  const remove = useMutation({ mutationFn: guidanceService.deleteConversation, onSuccess: () => client.invalidateQueries({ queryKey: ['guidance', 'archive'] }) });
+  const remove = useMutation({ meta: { successMessage: 'Conversation deleted.', errorMessage: true }, mutationFn: guidanceService.deleteConversation, onSuccess: () => client.invalidateQueries({ queryKey: ['guidance', 'archive'] }) });
   const messages = useMemo(() => (archive.data?.pages.flatMap((page) => page.messages) ?? []).filter((message) => message.content).reverse(), [archive.data]);
   const deleteConversation = (id: string) => { if (window.confirm('Delete this conversation from your Coach archive permanently?')) remove.mutate(id); };
   return <section className="page coach-archive">

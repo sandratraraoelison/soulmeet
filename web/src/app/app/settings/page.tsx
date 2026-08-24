@@ -55,11 +55,12 @@ export default function Settings() {
     queryFn: () => api<Preferences>('/notifications/preferences'),
   });
   const consent = useQuery({ queryKey: consentKey, queryFn: consentService.get });
-  const saveConsent = useMutation({ mutationFn: consentService.update, onSuccess: (next) => queryClient.setQueryData(consentKey, next) });
+  const saveConsent = useMutation({ meta: { successMessage: 'Privacy settings updated.', errorMessage: true }, mutationFn: consentService.update, onSuccess: (next) => queryClient.setQueryData(consentKey, next) });
   const turnOffConsent = (remove: boolean) => {
     saveConsent.mutate(false, { onSuccess: async () => { setConfirmTurnOff(false); if (remove) { await consentService.removeInsights(); await queryClient.invalidateQueries({ queryKey: ['soulprint'] }); } } });
   };
   const save = useMutation({
+    meta: { successMessage: 'Notification preferences saved.', errorMessage: true },
     mutationFn: (next: Preferences) =>
       api<Preferences>('/notifications/preferences', json('PATCH', next)),
     onMutate: async (next) => {

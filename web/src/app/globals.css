@@ -4114,3 +4114,36 @@ a {
 .soulprint-story-points p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.72; }
 @media (max-width: 860px) { .soulprint-story-layout { grid-template-columns: 1fr; } .soulprint-story-screen { width: min(82vw, 420px); } .soulprint-story-intro { margin-bottom: 48px; } }
 @media (max-width: 520px) { .soulprint-story { padding-inline: 18px; } .soulprint-story-intro h2 { font-size: clamp(44px, 16vw, 72px); } .soulprint-story-points article { grid-template-columns: 30px 1fr; gap: 12px; padding: 24px 0; } }
+.toast-viewport {
+  position: fixed;
+  z-index: 1000;
+  top: 20px;
+  right: 20px;
+  display: grid;
+  gap: 10px;
+  width: min(390px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.app-toast {
+  display: grid;
+  grid-template-columns: 22px 1fr 26px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 14px 16px;
+  border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 14px;
+  color: var(--text, #f7f7fb);
+  background: color-mix(in srgb, var(--panel, #12182a) 94%, transparent);
+  box-shadow: 0 16px 45px rgba(0, 0, 0, .28);
+  backdrop-filter: blur(16px);
+  pointer-events: auto;
+  animation: toast-in .22s ease-out;
+}
+.app-toast.success { border-left: 4px solid #45c98a; }
+.app-toast.error { border-left: 4px solid #f06b72; }
+.app-toast > svg { color: #45c98a; width: 21px; }
+.app-toast.error > svg { color: #f06b72; }
+.app-toast button { display: grid; place-items: center; border: 0; padding: 3px; color: inherit; background: transparent; cursor: pointer; }
+.app-toast button svg { width: 18px; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } }
+@media (max-width: 600px) { .toast-viewport { top: 12px; right: 16px; } }

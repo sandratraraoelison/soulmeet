@@ -18,6 +18,7 @@ export default function ProfilePage() {
   const profile = useQuery({ queryKey: ['profile'], queryFn: profileService.get });
   const [saved, setSaved] = useState(false);
   const save = useMutation({
+    meta: { successMessage: 'Profile updated.', errorMessage: true },
     mutationFn: (form: FormData) =>
       profileService.update({
         firstName: String(form.get('firstName')),

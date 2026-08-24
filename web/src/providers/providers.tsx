@@ -1,13 +1,25 @@
 'use client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { listenUnauthorized } from '@/lib/auth-client';
+import { showToast, ToastViewport } from '@/components/ui/toast';
 export function Providers({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [client] = useState(
     () =>
       new QueryClient({
+        mutationCache: new MutationCache({
+          onSuccess: (_data, _variables, _context, mutation) => {
+            const message = mutation.meta?.successMessage;
+            if (typeof message === 'string') showToast('success', message);
+          },
+          onError: (error, _variables, _context, mutation) => {
+            if (!mutation.meta?.errorMessage) return;
+            const fallback = typeof mutation.meta.errorMessage === 'string' ? mutation.meta.errorMessage : 'Something went wrong. Please try again.';
+            showToast('error', error instanceof Error && error.message ? error.message : fallback);
+          },
+        }),
         defaultOptions: {
           queries: {
             staleTime: 30_000,
@@ -38,5 +50,5 @@ export function Providers({ children }: { children: ReactNode }) {
     });
     return off;
   }, [router]);
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  return <QueryClientProvider client={client}>{children}<ToastViewport /></QueryClientProvider>;
 }

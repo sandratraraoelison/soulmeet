@@ -16,6 +16,7 @@ export default function CoachSettings() {
   const genderRef = useRef<HTMLInputElement>(null);
   const appearanceRef = useRef<HTMLInputElement>(null);
   const save = useMutation({
+    meta: { successMessage: 'Coach updated.', errorMessage: true },
     mutationFn: (form: FormData) =>
       api(
         '/coach',
