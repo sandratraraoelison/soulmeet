@@ -93,15 +93,10 @@ export default function CoachSettings() {
             defaultValue={coach.customInstructions ?? ''}
           />
         </div>
-        <fieldset>
+        <fieldset className="coach-traits-fieldset">
           <legend>Personality traits</legend>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
-              gap: 10,
-            }}
-          >
+          <p className="coach-traits-hint">Choose the qualities that shape how your coach talks and supports you.</p>
+          <div className="coach-traits-grid">
             {traits.map((trait) => (
               <label
                 className={`trait-card ${activeTraits.includes(trait.value) ? 'selected' : ''}`}
@@ -118,7 +113,6 @@ export default function CoachSettings() {
                   checked={activeTraits.includes(trait.value)}
                   onChange={() => setSelectedTraits((current) => { const values = current ?? coach.traits; return values.includes(trait.value) ? values.filter((value) => value !== trait.value) : [...values, trait.value]; })}
                   className="trait-check"
-                  style={{ width: 22, height: 22, minHeight: 22 }}
                 />
               </label>
             ))}

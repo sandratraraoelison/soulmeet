@@ -2220,6 +2220,8 @@ a {
 }
 .coach-profile-form .trait-card:hover {
   border-color: color-mix(in srgb, var(--secondary), transparent 28%);
+  background: color-mix(in srgb, var(--secondary), transparent 96%);
+  transform: translateY(-1px);
 }
 .coach-profile-form .trait-card.selected {
   border-color: var(--secondary);
@@ -2230,6 +2232,72 @@ a {
 .coach-profile-form input[type='range'] {
   accent-color: var(--secondary);
 }
+.coach-traits-fieldset {
+  min-width: 0;
+  margin: 4px 0 0;
+  padding: 0;
+  border: 0;
+}
+.coach-traits-fieldset legend {
+  padding: 0;
+  font-family: var(--font-headline);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.coach-traits-hint {
+  margin: 5px 0 16px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.coach-traits-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.coach-profile-form .trait-card {
+  min-height: 106px;
+  padding: 17px 18px;
+  border-radius: 18px;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+.coach-profile-form .trait-card:focus-within {
+  outline: 3px solid color-mix(in srgb, var(--secondary), transparent 62%);
+  outline-offset: 2px;
+}
+.coach-profile-form .trait-card strong {
+  font-size: 1rem;
+}
+.coach-profile-form .trait-card small {
+  max-width: 30ch;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+.coach-profile-form .trait-check {
+  position: relative;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  margin: 0;
+  appearance: none;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--muted), transparent 25%);
+  border-radius: 7px;
+  background: var(--raised);
+  cursor: pointer;
+}
+.coach-profile-form .trait-check:checked::after {
+  width: 10px;
+  height: 6px;
+  border-bottom: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  content: '';
+  transform: translateY(-1px) rotate(-45deg);
+}
 .coach-profile-form .trait-card.selected .trait-check {
   border-color: var(--secondary);
   background: var(--secondary);
@@ -2237,6 +2305,16 @@ a {
 .coach-profile-form input[type='range']:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--secondary), transparent 62%);
   outline-offset: 4px;
+}
+@media (max-width: 940px) {
+  .coach-traits-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .coach-traits-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .matching-consent-card input {
   width: 16px;
