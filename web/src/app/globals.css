@@ -3542,6 +3542,87 @@ a {
   max-width: none;
   gap: 17px;
 }
+.profile-settings-page {
+  width: min(1120px, 100%);
+}
+.profile-settings-page .page-head {
+  align-items: center;
+}
+.profile-settings-page .page-head .muted {
+  max-width: 560px;
+  margin: 8px 0 0;
+}
+.profile-header-actions {
+  flex-wrap: nowrap;
+}
+.profile-header-actions .button {
+  min-width: max-content;
+  flex: none;
+  gap: 8px;
+  white-space: nowrap;
+}
+.profile-settings-form {
+  gap: 22px;
+  padding: clamp(22px, 3vw, 32px);
+}
+.profile-settings-form .grid {
+  gap: 20px 18px;
+}
+.profile-settings-form .field input,
+.profile-settings-form .field select {
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.profile-settings-form .field input:hover,
+.profile-settings-form .field select:hover {
+  border-color: color-mix(in srgb, var(--secondary), transparent 58%);
+}
+.profile-settings-form .field input:focus,
+.profile-settings-form .field select:focus {
+  outline: none;
+  border-color: var(--secondary);
+  background: color-mix(in srgb, var(--surface), var(--secondary) 3%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--secondary), transparent 82%);
+}
+.profile-form-footer {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding-top: 2px;
+}
+.profile-form-footer [role='status'] {
+  margin: 0 auto 0 0;
+  color: var(--muted);
+}
+.profile-save-button {
+  min-width: 220px;
+}
+@media (max-width: 760px) {
+  .profile-settings-page .page-head {
+    align-items: stretch;
+  }
+  .profile-header-actions,
+  .profile-header-actions .button {
+    width: 100%;
+  }
+  .profile-header-actions {
+    flex-direction: column;
+  }
+  .profile-header-actions .button {
+    min-width: 0;
+  }
+  .profile-form-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .profile-save-button {
+    width: 100%;
+  }
+}
 .section-gap {
   margin-top: 20px;
 }

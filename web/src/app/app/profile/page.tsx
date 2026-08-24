@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Settings, Sparkles } from 'lucide-react';
 import { Failure, Loading } from '@/components/remote';
 import { FormField, FormSelect } from '@/components/ui/form-controls';
 import { CountryCityFields } from '@/components/ui/country-city';
@@ -49,20 +50,25 @@ export default function ProfilePage() {
     );
   const data = profile.data;
   const actions = (
-    <div className="action-row">
+    <div className="action-row profile-header-actions">
       <Link className="button secondary" href="/app/profile/coach">
-        Customize Coach
+        <Sparkles size={17} aria-hidden="true" /> Customize Coach
       </Link>
       <Link className="button secondary" href="/app/settings">
-        Settings
+        <Settings size={17} aria-hidden="true" /> Settings
       </Link>
     </div>
   );
   return (
-    <div className="page">
-      <PageHeader eyebrow="Profile" title="Your space" actions={actions} />
+    <div className="page profile-settings-page">
+      <PageHeader
+        eyebrow="Profile"
+        title="Your space"
+        description="Keep the details that shape your Soulmeet experience up to date."
+        actions={actions}
+      />
       <form
-        className="panel card form-wide"
+        className="panel card form-wide profile-settings-form"
         onSubmit={(event) => {
           event.preventDefault();
           setSaved(false);
@@ -118,10 +124,12 @@ export default function ProfilePage() {
             {save.error.message}
           </p>
         )}
-        {saved && <p role="status">Changes saved.</p>}
-        <button className="button" disabled={save.isPending}>
-          {save.isPending ? 'Saving…' : 'Save changes'}
-        </button>
+        <div className="profile-form-footer">
+          {saved && <p role="status">Changes saved.</p>}
+          <button className="button profile-save-button" disabled={save.isPending}>
+            {save.isPending ? 'Saving…' : 'Save changes'}
+          </button>
+        </div>
       </form>
     </div>
   );
