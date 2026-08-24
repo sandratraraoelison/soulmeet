@@ -3418,8 +3418,8 @@ a {
   padding: 10px 0;
 }
 .marketing {
-  --pink: #7c5cff;
-  --secondary: #7c5cff;
+  --pink: #e9694f;
+  --secondary: #e9694f;
   overflow: hidden;
   background:
     radial-gradient(
@@ -3782,7 +3782,7 @@ a {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--pink), var(--secondary), var(--violet));
+  background: linear-gradient(90deg, var(--pink), var(--secondary), #7c5cff);
 }
 .privacy-inner {
   display: grid;
