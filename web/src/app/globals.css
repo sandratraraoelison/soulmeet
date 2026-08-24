@@ -2470,8 +2470,48 @@ a {
   justify-content: space-between;
   gap: 15px;
 }
+.soul-person {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+.soul-match-avatar {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: none;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--secondary), transparent 55%);
+  border-radius: 15px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--pink), transparent 82%), color-mix(in srgb, var(--secondary), transparent 82%));
+  color: var(--ink);
+  font-family: var(--font-headline);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
 .soul-card-head h2 {
   margin: 0;
+}
+.soul-score {
+  display: grid;
+  flex: none;
+  justify-items: end;
+  gap: 2px;
+  padding: 9px 11px;
+  border: 1px solid color-mix(in srgb, var(--secondary), transparent 62%);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--secondary), transparent 90%);
+}
+.soul-score strong {
+  color: var(--secondary);
+  line-height: 1;
+}
+.soul-score small {
+  color: var(--muted);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 .soul-type-pill {
   align-self: flex-start;
@@ -2568,6 +2608,63 @@ a {
 .soul-history-section .card {
   padding: 18px;
   border-radius: 18px;
+}
+.soul-history-card {
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+.soul-history-card:hover {
+  border-color: color-mix(in srgb, var(--secondary), transparent 58%);
+  transform: translateY(-1px);
+}
+.soul-history-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.soul-history-status {
+  align-self: start;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.soul-history-status.accepted {
+  background: color-mix(in srgb, var(--secondary), transparent 84%);
+  color: var(--secondary);
+}
+.soul-history-status.passed {
+  background: var(--raised);
+  color: var(--muted);
+}
+.matchmaking-state {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: clamp(24px, 4vw, 38px);
+  border-style: dashed;
+}
+.matchmaking-state.ready {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--secondary), transparent 58%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--secondary), transparent 92%), transparent 65%), var(--surface);
+}
+.matchmaking-state h2,
+.matchmaking-state p {
+  margin: 0;
+}
+.matchmaking-state .button {
+  margin-top: 8px;
+}
+.matchmaking-state-icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 5px;
+  place-items: center;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--secondary), transparent 86%);
+  color: var(--secondary);
 }
 .soul-history-page {
   width: min(1180px, 100%);
@@ -2676,6 +2773,20 @@ a {
   }
   .soul-history-page-grid {
     grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .soul-card-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .soul-score {
+    width: fit-content;
+    justify-items: start;
+  }
+  .soul-card .action-row {
+    align-items: stretch;
+    flex-direction: column-reverse;
   }
 }
 .history-day {

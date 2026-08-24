@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Heart, Search, Sparkles, X } from 'lucide-react';
 import { api, json } from '@/services/api';
 import type { Coach, MatchDecision, MatchmakingOverview, MatchResponseResult } from '@/types';
 import { Failure, Loading } from '@/components/remote';
@@ -38,7 +39,8 @@ function MatchmakingEmptyState({ overview, coachName, activating, error, onActiv
 }) {
   if (overview.status === 'READY') {
     return (
-      <div className="panel card" style={{ borderStyle: 'solid' }}>
+      <div className="panel card matchmaking-state ready">
+        <span className="matchmaking-state-icon"><Sparkles size={24} aria-hidden="true" /></span>
         <div className="eyebrow">Ready when you are</div>
         <h2>{coachName} knows enough to start looking</h2>
         <p className="muted">
@@ -54,7 +56,8 @@ function MatchmakingEmptyState({ overview, coachName, activating, error, onActiv
   }
   if (overview.status === 'SEARCHING' || overview.status === 'NO_MATCH_YET' || overview.status === 'MATCH_READY') {
     return (
-      <div className="panel card" style={{ borderStyle: 'dashed' }}>
+      <div className="panel card matchmaking-state searching">
+        <span className="matchmaking-state-icon"><Search size={24} aria-hidden="true" /></span>
         <h2>{overview.status === 'SEARCHING' ? `${coachName} is looking` : 'No introduction yet'}</h2>
         <p className="muted">
           {overview.status === 'NO_MATCH_YET'
@@ -65,7 +68,8 @@ function MatchmakingEmptyState({ overview, coachName, activating, error, onActiv
     );
   }
   return (
-    <div className="panel card" style={{ borderStyle: 'dashed' }}>
+    <div className="panel card matchmaking-state shaping">
+      <span className="matchmaking-state-icon"><Heart size={24} aria-hidden="true" /></span>
       <h2>Your Soulprint is still taking shape</h2>
       <p className="muted">
         Keep talking naturally with your coach. Matchmaking unlocks when there is enough
@@ -166,21 +170,22 @@ export default function Soul() {
           {suggestions.map((m) => (
             <article className="panel card soul-card" key={m.userId}>
               <div className="soul-card-head">
-                <div>
+                <div className="soul-person">
+                  <span className="soul-match-avatar" aria-hidden="true">{m.name.slice(0, 1).toUpperCase()}</span>
+                  <div>
                   <h2>
                     {m.name}, {m.age}
                   </h2>
                   <p className="muted">
                     {m.job || 'Occupation not shared yet'} · {m.city}, {m.country}
                   </p>
+                  </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
+                <div className="soul-score">
                   <strong>
                     {m.scoreMin}%–{m.scoreMax}%
                   </strong>
-                  <div className="muted" style={{ fontSize: '0.68rem', maxWidth: 110 }}>
-                    Compatibility estimate
-                  </div>
+                  <small>Compatibility</small>
                 </div>
               </div>
               {(() => {
@@ -207,7 +212,7 @@ export default function Soul() {
                     decide.mutate({ userId: m.userId, response: 'REJECTED' })
                   }
                 >
-                  Not for me
+                  <X size={17} aria-hidden="true" /> Not for me
                 </button>
                 <button
                   className="button"
@@ -216,7 +221,7 @@ export default function Soul() {
                     decide.mutate({ userId: m.userId, response: 'ACCEPTED' })
                   }
                 >
-                  Interested
+                  <Heart size={17} aria-hidden="true" /> Interested
                 </button>
               </div>
             </article>
@@ -235,8 +240,8 @@ export default function Soul() {
         ) : (
           <div className="stack">
             {accepted.slice(0, 3).map((item) => (
-              <article className="panel card" key={`${item.userId}-${item.respondedAt}`}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+              <article className="panel card soul-history-card" key={`${item.userId}-${item.respondedAt}`}>
+                <div className="soul-history-card-head">
                   <div>
                     <strong>
                       {item.name}, {item.age}
@@ -245,7 +250,7 @@ export default function Soul() {
                       {item.job || 'Occupation not shared'} · {item.city}, {item.country}
                     </div>
                   </div>
-                  <span className="eyebrow">Accepted</span>
+                  <span className="soul-history-status accepted">Accepted</span>
                 </div>
                 <small>{new Date(item.respondedAt).toLocaleDateString()}</small>
               </article>
@@ -263,8 +268,8 @@ export default function Soul() {
         ) : (
           <div className="stack">
             {passed.slice(0, 3).map((item) => (
-              <article className="panel card" key={`${item.userId}-${item.respondedAt}`}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+              <article className="panel card soul-history-card" key={`${item.userId}-${item.respondedAt}`}>
+                <div className="soul-history-card-head">
                   <div>
                     <strong>
                       {item.name}, {item.age}
@@ -273,7 +278,7 @@ export default function Soul() {
                       {item.job || 'Occupation not shared'} · {item.city}, {item.country}
                     </div>
                   </div>
-                  <span className="eyebrow">Passed</span>
+                  <span className="soul-history-status passed">Passed</span>
                 </div>
                 <small>{new Date(item.respondedAt).toLocaleDateString()}</small>
               </article>
