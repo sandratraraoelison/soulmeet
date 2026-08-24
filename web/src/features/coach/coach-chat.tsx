@@ -2,7 +2,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Check, Pencil, RotateCw, Send, Square, Trash2, X } from 'lucide-react';
+import { Check, Copy, RotateCw, Send, Square, Trash2 } from 'lucide-react';
 import { ApiError } from '@/services/api';
 import { guidanceService, streamCoachReply } from '@/services/guidance';
 import { profileService } from '@/services/profile';
@@ -18,8 +18,7 @@ export function CoachChat() {
   const [stream, setStream] = useState('');
   const [failedMessage, setFailedMessage] = useState('');
   const [pendingDraft, setPendingDraft] = useState<{ id: string; content: string } | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState('');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [earlier, setEarlier] = useState<GuidanceMessage[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
@@ -124,15 +123,10 @@ export function CoachChat() {
   });
   const sendFailed = send.isError && send.error.name !== 'AbortError';
   const messageAction = useGenericMutation([['guidance', 'messages', conversation.data?.id]]);
-  const saveEdit = (id: string, content: string) => {
-    const value = content.trim();
-    if (!value) return;
-    setEditingId(null);
-    void guidanceService
-      .mutateMessage(id, 'PATCH', { content: value })
-      .then(() =>
-        qc.invalidateQueries({ queryKey: ['guidance', 'messages', conversation.data?.id] }),
-      );
+  const copyMessage = async (id: string, content: string) => {
+    await navigator.clipboard.writeText(content);
+    setCopiedId(id);
+    window.setTimeout(() => setCopiedId((current) => (current === id ? null : current)), 1600);
   };
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,62 +198,23 @@ export function CoachChat() {
           .filter((m) => !m.isDeleted && m.content)
           .map((m) => (
             <article key={m.id} className={`bubble ${m.role === 'USER' ? 'user' : 'assistant'}`}>
-              {editingId === m.id ? (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    saveEdit(m.id, editDraft);
-                  }}
-                >
-                  <textarea
-                    aria-label="Edit message"
-                    value={editDraft}
-                    onChange={(e) => setEditDraft(e.target.value)}
-                    maxLength={8000}
-                  />
-                  <div className="bubble-actions">
-                    <button
-                      className="button icon-button"
-                      aria-label="Save message"
-                      title="Save"
-                      disabled={!editDraft.trim()}
-                    >
-                      <Check size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      className="button ghost icon-button"
-                      aria-label="Cancel editing"
-                      title="Cancel"
-                      onClick={() => setEditingId(null)}
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <>
-                  <div>{m.content}</div>
-                  <div className="bubble-actions">
-                    {m.role === 'USER' && (
+              <div>{m.content}</div>
+              <div className="bubble-actions">
+                    {m.role === 'USER' && m.content && (
                       <button
                         type="button"
-                        className="button ghost icon-button"
-                        aria-label="Edit message"
-                        title="Edit"
-                        disabled={messageAction.isPending}
-                        onClick={() => {
-                          setEditingId(m.id);
-                          setEditDraft(m.content ?? '');
-                        }}
+                        className="button ghost icon-button chat-message-action"
+                        aria-label={copiedId === m.id ? 'Message copied' : 'Copy message'}
+                        title={copiedId === m.id ? 'Copied' : 'Copy'}
+                        onClick={() => void copyMessage(m.id, m.content!)}
                       >
-                        <Pencil size={16} />
+                        {copiedId === m.id ? <Check size={16} /> : <Copy size={16} />}
                       </button>
                     )}
                     {m.role === 'ASSISTANT' && (
                       <button
                         type="button"
-                        className="button ghost icon-button"
+                        className="button ghost icon-button chat-message-action"
                         aria-label="Regenerate reply"
                         title="Regenerate"
                         disabled={messageAction.isPending}
@@ -278,7 +233,7 @@ export function CoachChat() {
                       confirmIcon={<Check size={16} />}
                       label="Delete message"
                       ariaLabel="Delete message"
-                      className="button ghost icon-button"
+                      className="button ghost icon-button chat-message-action chat-message-delete"
                       disabled={messageAction.isPending}
                       onConfirm={() =>
                         messageAction.mutate({
@@ -288,8 +243,6 @@ export function CoachChat() {
                       }
                     />
                   </div>
-                </>
-              )}
             </article>
           ))}
         {pendingDraft && <article className="bubble user">{pendingDraft.content}</article>}

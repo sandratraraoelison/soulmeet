@@ -1054,13 +1054,50 @@ a {
 .bubble .bubble-actions {
   display: flex;
   gap: 6px;
-  margin-top: 8px;
-  opacity: 0.45;
+  margin: 10px -3px -2px;
+  opacity: 0.78;
   transition: opacity 0.15s ease;
 }
 .bubble:hover .bubble-actions,
 .bubble:focus-within .bubble-actions {
   opacity: 1;
+}
+.chat-message-action {
+  width: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 15%);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--surface), transparent 40%);
+  color: var(--muted);
+}
+.chat-message-action:hover:not(:disabled),
+.chat-message-action:focus-visible {
+  border-color: color-mix(in srgb, var(--pink), transparent 42%);
+  background: color-mix(in srgb, var(--pink), transparent 86%);
+  color: var(--pink);
+}
+.chat-message-delete:hover:not(:disabled),
+.chat-message-delete:focus-visible {
+  border-color: color-mix(in srgb, var(--danger), transparent 38%);
+  background: color-mix(in srgb, var(--danger), transparent 84%);
+  color: var(--danger);
+}
+.bubble.user .chat-message-action {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
+}
+.bubble.user .chat-message-action:hover:not(:disabled),
+.bubble.user .chat-message-action:focus-visible {
+  border-color: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.26);
+  color: #ffffff;
+}
+.bubble.user .chat-message-delete:hover:not(:disabled),
+.bubble.user .chat-message-delete:focus-visible {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: color-mix(in srgb, var(--danger), #000000 8%);
 }
 .chat-footer {
   display: grid;
