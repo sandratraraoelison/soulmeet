@@ -106,7 +106,6 @@ export function CoachChat() {
         signal: abort.current.signal,
         onToken: (token) => setStream((current) => current + token),
       });
-      setStream('');
     },
     onSuccess: () =>
       qc
@@ -114,10 +113,14 @@ export function CoachChat() {
           queryKey: ['guidance', 'messages', conversation.data?.id],
         })
         .then(() => {
+          setStream('');
           setFailedMessage('');
           setPendingDraft(null);
         }),
-    onError: () => setPendingDraft(null),
+    onError: () => {
+      setStream('');
+      setPendingDraft(null);
+    },
   });
   const sendFailed = send.isError && send.error.name !== 'AbortError';
   const messageAction = useGenericMutation([['guidance', 'messages', conversation.data?.id]]);
@@ -290,10 +293,17 @@ export function CoachChat() {
             </article>
           ))}
         {pendingDraft && <article className="bubble user">{pendingDraft.content}</article>}
+        {send.isPending && !stream && (
+          <article className="bubble assistant coach-reply coach-thinking" aria-label="Coach is thinking">
+            <span />
+            <span />
+            <span />
+          </article>
+        )}
         {stream && (
-          <article className="bubble assistant">
+          <article className="bubble assistant coach-reply">
             {stream}
-            <span aria-label="Generating"> ▍</span>
+            <span className="stream-cursor" aria-label="Generating"> ▍</span>
           </article>
         )}
         {sendFailed && (

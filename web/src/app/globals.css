@@ -922,6 +922,59 @@ a {
   background: var(--raised);
   border: 1px solid var(--border);
 }
+.coach-reply {
+  transform-origin: bottom left;
+  animation: coach-reply-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.coach-thinking {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 58px;
+  min-height: 42px;
+}
+.coach-thinking span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: coach-thinking-dot 1.2s ease-in-out infinite;
+}
+.coach-thinking span:nth-child(2) {
+  animation-delay: 140ms;
+}
+.coach-thinking span:nth-child(3) {
+  animation-delay: 280ms;
+}
+.stream-cursor {
+  color: var(--pink);
+  animation: pulse 0.8s ease-in-out infinite;
+}
+@keyframes coach-reply-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+@keyframes coach-thinking-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coach-reply,
+  .coach-thinking span,
+  .stream-cursor {
+    animation: none;
+  }
+}
 .bubble.image-bubble {
   width: min(420px, 78%);
   overflow: hidden;
