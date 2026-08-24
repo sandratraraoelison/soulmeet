@@ -1793,18 +1793,18 @@ a {
   color: var(--pink);
 }
 .title-gold {
-  color: var(--gold);
+  color: var(--pink);
   font-style: normal;
 }
 .onboarding-eyebrow {
   color: #afa9e8;
 }
 .button-gold {
-  background: var(--gold);
+  background: var(--pink);
   color: #171621;
 }
 .button-gold:hover:not(:disabled) {
-  box-shadow: 0 10px 26px -8px rgba(247, 201, 75, 0.55);
+  box-shadow: 0 10px 26px -8px rgba(233, 105, 79, 0.55);
 }
 .choice-list {
   display: grid;

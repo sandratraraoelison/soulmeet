@@ -52,10 +52,10 @@ export default function CoachNameScreen() {
           <Text className="text-xs text-muted">Coach identity</Text>
         </View>
         <View className="mt-4 h-[3px] rounded-full bg-surface-raised">
-          <View className="h-[3px] w-2/3 rounded-full bg-[#F7C94B]" />
+          <View className="h-[3px] w-2/3 rounded-full bg-[#E9694F]" />
         </View>
         <Text className="mt-10 text-center text-[30px] font-bold text-ink">
-          Name your <Text className="text-[#F7C94B]">coach</Text>
+          Name your <Text className="text-[#E9694F]">coach</Text>
         </Text>
         <Text className="mx-3 mb-8 mt-3 text-center text-base leading-6 text-muted">
           Choose a suggested name or create one that feels personal to you.
@@ -79,7 +79,7 @@ export default function CoachNameScreen() {
               className={`rounded-full border px-5 py-3 ${name === suggestion ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}
             >
               <Text
-                className={`font-semibold ${name === suggestion ? 'text-[#F7C94B]' : 'text-[#A6A0B2]'}`}
+                className={`font-semibold ${name === suggestion ? 'text-[#E9694F]' : 'text-[#A6A0B2]'}`}
               >
                 {suggestion}
               </Text>

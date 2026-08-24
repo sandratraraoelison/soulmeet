@@ -104,10 +104,10 @@ export default function ProfileOnboardingScreen() {
           YOUR PROFILE
         </Text>
         <View className="mt-4 h-[3px] rounded-full bg-surface-raised">
-          <View className="h-[3px] w-full rounded-full bg-[#F7C94B]" />
+          <View className="h-[3px] w-full rounded-full bg-[#E9694F]" />
         </View>
         <Text className="mt-8 text-center text-[30px] font-bold text-ink">
-          Tell us about <Text className="text-[#F7C94B]">you</Text>
+          Tell us about <Text className="text-[#E9694F]">you</Text>
         </Text>
         <Text className="mx-3 mb-8 mt-3 text-center text-base leading-6 text-muted">
           Complete your profile before choosing who you are interested in.
@@ -171,7 +171,7 @@ export default function ProfileOnboardingScreen() {
                       {Platform.OS === 'ios' ? (
                         <Pressable
                           onPress={() => setShowDatePicker(false)}
-                          className="items-center rounded-xl bg-[#F7C94B] py-3"
+                          className="items-center rounded-xl bg-[#E9694F] py-3"
                         >
                           <Text className="font-semibold text-[#111016]">
                             Done
@@ -203,10 +203,10 @@ export default function ProfileOnboardingScreen() {
                       checked: field.value === item.value,
                     }}
                     onPress={() => field.onChange(item.value)}
-                    className={`min-h-14 flex-1 items-center justify-center rounded-xl border px-2 ${field.value === item.value ? 'border-[#F7C94B] bg-[#252117]' : 'border-white/10 bg-[#171620]'}`}
+                    className={`min-h-14 flex-1 items-center justify-center rounded-xl border px-2 ${field.value === item.value ? 'border-[#E9694F] bg-[#252117]' : 'border-white/10 bg-[#171620]'}`}
                   >
                     <Text
-                      className={`text-xs font-semibold ${field.value === item.value ? 'text-[#F7C94B]' : 'text-[#A6A0B2]'}`}
+                      className={`text-xs font-semibold ${field.value === item.value ? 'text-[#E9694F]' : 'text-[#A6A0B2]'}`}
                     >
                       {item.label}
                     </Text>

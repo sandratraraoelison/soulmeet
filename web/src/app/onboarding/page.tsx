@@ -186,7 +186,7 @@ export default function Onboarding() {
               style={{
                 width: `${((step + 1) / steps.length) * 100}%`,
                 height: '100%',
-                background: 'var(--gold)',
+                background: 'var(--pink)',
                 borderRadius: 4,
               }}
             />

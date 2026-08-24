@@ -118,10 +118,10 @@ export default function PersonalityScreen() {
           <Text className="text-xs text-muted">Coach personality</Text>
         </View>
         <View className="mt-4 h-[3px] rounded-full bg-surface-raised">
-          <View className="h-[3px] w-full rounded-full bg-[#F7C94B]" />
+          <View className="h-[3px] w-full rounded-full bg-[#E9694F]" />
         </View>
         <Text className="mt-8 text-center text-[30px] font-bold text-ink">
-          Shape their <Text className="text-[#F7C94B]">personality</Text>
+          Shape their <Text className="text-[#E9694F]">personality</Text>
         </Text>
         <Text className="mx-3 mb-8 mt-3 text-center text-base leading-6 text-muted">
           Choose as many traits as you like. They can be combined and refined
@@ -147,7 +147,7 @@ export default function PersonalityScreen() {
                   </Text>
                 </View>
                 <View
-                  className={`ml-3 h-6 w-6 items-center justify-center rounded-md border-2 ${active ? 'border-[#F7C94B] bg-[#F7C94B]' : 'border-border'}`}
+                  className={`ml-3 h-6 w-6 items-center justify-center rounded-md border-2 ${active ? 'border-[#E9694F] bg-[#E9694F]' : 'border-border'}`}
                 >
                   {active ? (
                     <Text className="font-bold text-[#171621]">✓</Text>
@@ -165,7 +165,7 @@ export default function PersonalityScreen() {
           className={`mt-4 flex-row items-start rounded-xl border p-4 ${matchingConsent ? 'border-primary bg-primary/10' : 'border-border bg-surface'}`}
         >
           <View
-            className={`mr-4 h-7 w-7 items-center justify-center rounded-md border-2 ${matchingConsent ? 'border-[#F7C94B] bg-[#F7C94B]' : 'border-[#8E8A9A] bg-canvas'}`}
+            className={`mr-4 h-7 w-7 items-center justify-center rounded-md border-2 ${matchingConsent ? 'border-[#E9694F] bg-[#E9694F]' : 'border-[#8E8A9A] bg-canvas'}`}
           >
             {matchingConsent ? (
               <Text className="text-lg font-bold leading-5 text-[#111016]">

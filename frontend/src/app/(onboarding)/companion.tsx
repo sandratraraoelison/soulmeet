@@ -72,7 +72,7 @@ export default function CompanionScreen() {
             disabled={logout.isPending}
             className="rounded-full border border-white/10 px-4 py-2"
           >
-            <Text className="text-xs font-semibold text-[#F7C94B]">
+            <Text className="text-xs font-semibold text-[#E9694F]">
               {logout.isPending ? 'Resetting...' : 'Restart test'}
             </Text>
           </Pressable>
@@ -84,7 +84,7 @@ export default function CompanionScreen() {
         </View>
         <Text className="mt-8 text-center text-[30px] font-bold leading-9 tracking-[-1px] text-ink">
           Who are you{`\n`}
-          <Text className="text-[#F7C94B]">interested in?</Text>
+          <Text className="text-[#E9694F]">interested in?</Text>
         </Text>
         <Text className="mx-2 mb-7 mt-3 text-center text-base leading-6 text-muted">
           Choose the gender you are interested in. This helps Soulmeet
@@ -106,7 +106,7 @@ export default function CompanionScreen() {
                 className={`min-h-[170px] items-center justify-center rounded-xl border px-7 py-6 ${selected ? 'border-primary bg-primary/10' : 'border-border bg-surface'} ${!option.available ? 'opacity-50' : 'active:opacity-80'}`}
               >
                 <View
-                  className={`h-14 w-14 items-center justify-center rounded-full ${selected ? 'bg-[#F7C94B]' : 'bg-surface-raised'}`}
+                  className={`h-14 w-14 items-center justify-center rounded-full ${selected ? 'bg-[#E9694F]' : 'bg-surface-raised'}`}
                 >
                   <Text
                     className={`text-3xl ${selected ? 'text-[#171621]' : 'text-muted'}`}
@@ -118,10 +118,10 @@ export default function CompanionScreen() {
                   {option.title}
                 </Text>
                 <View
-                  className={`mt-5 h-5 w-5 items-center justify-center rounded-full border-2 ${selected ? 'border-[#F7C94B]' : 'border-border'}`}
+                  className={`mt-5 h-5 w-5 items-center justify-center rounded-full border-2 ${selected ? 'border-[#E9694F]' : 'border-border'}`}
                 >
                   {selected ? (
-                    <View className="h-2.5 w-2.5 rounded-full bg-[#F7C94B]" />
+                    <View className="h-2.5 w-2.5 rounded-full bg-[#E9694F]" />
                   ) : null}
                 </View>
               </Pressable>
