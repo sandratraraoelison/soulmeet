@@ -38,7 +38,8 @@ function Navigation() {
     retry: false,
   });
   const isLoadingAccount =
-    isAuthenticated && (profile.isPending || coach.isPending);
+    isAuthenticated &&
+    ((profile.isPending && !profile.isError) || coach.isPending);
   if (isRestoring || isLoadingAccount) return <LoadingScreen />;
   const complete = Boolean(profile.data?.onboardingCompleted && coach.data);
   return (
