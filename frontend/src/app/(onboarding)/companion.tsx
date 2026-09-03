@@ -1,5 +1,6 @@
+import { useEffect } from 'react';
 import { router } from 'expo-router';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ThemedStatusBar } from '@/components/common/ThemedStatusBar';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -43,6 +44,19 @@ export default function CompanionScreen() {
   const setGender = useOnboardingStore((state) => state.setInterestedInGender);
   const resetSelection = useOnboardingStore((state) => state.reset);
   const logout = useLogout();
+
+  const existingProfile = useQuery({
+    queryKey: ['profile'],
+    queryFn: profileApi.get,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!existingProfile.isPending && !existingProfile.data) {
+      router.replace('/(onboarding)/profile');
+    }
+  }, [existingProfile.isPending, existingProfile.data]);
+
   const saveInterest = useMutation({
     mutationFn: () => profileApi.save({ interestedInGender: gender! }),
     onSuccess: (profile) => {

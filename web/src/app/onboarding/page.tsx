@@ -78,10 +78,14 @@ export default function Onboarding() {
     api('/profile')
       .then(() => setNeedsProfile(false))
       .catch((error) => {
-        if (error instanceof ApiError && error.status === 404) setNeedsProfile(true);
-        else {
+        if (error instanceof ApiError && error.status === 404) {
+          setNeedsProfile(true);
+        } else if (error instanceof ApiError) {
+          setError(error.message);
+          setNeedsProfile(true);
+        } else {
           setError(error instanceof Error ? error.message : 'Unable to load your profile.');
-          setNeedsProfile(false);
+          setNeedsProfile(true);
         }
       });
   }, []);
