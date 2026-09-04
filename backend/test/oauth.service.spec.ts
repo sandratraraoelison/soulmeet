@@ -62,4 +62,36 @@ describe('OAuthService account linking', () => {
 
     expect(prisma.user.create).not.toHaveBeenCalled();
   });
+
+  it('creates a new Apple account with a placeholder email when Apple omits the email', async () => {
+    const createdUser = {
+      id: '22222222-2222-4222-8222-222222222222',
+      email: 'apple-new-subject@apple.privacynull.soulmeet',
+      passwordHash: null,
+      authProvider: AuthProvider.APPLE,
+      providerId: 'apple-new-subject',
+      emailVerified: true,
+      isActive: true,
+      role: Role.USER,
+    };
+    prisma.authIdentity.findUnique.mockResolvedValue(null);
+    prisma.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+    prisma.user.create.mockResolvedValue(createdUser);
+    prisma.authIdentity.upsert.mockResolvedValue({});
+    prisma.user.update.mockResolvedValue(createdUser);
+
+    await expect((service as any).finishExternalAuth(
+      AuthProvider.APPLE,
+      'apple-new-subject',
+      undefined,
+    )).resolves.toHaveProperty('accessToken');
+
+    expect(prisma.user.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        email: 'apple-new-subject@apple.privacynull.soulmeet',
+        authProvider: AuthProvider.APPLE,
+        providerId: 'apple-new-subject',
+      }),
+    }));
+  });
 });

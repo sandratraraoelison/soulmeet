@@ -38,8 +38,8 @@ export function useSocialAuth(provider: 'google' | 'apple') {
   const resetOnboarding = useOnboardingStore((state) => state.reset);
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (identityToken: string) => authApi[provider](identityToken),
-    onSuccess: async (tokens) => {
+    mutationFn: async (identityToken: string) => {
+      const tokens = await authApi[provider](identityToken);
       // Profile and coach queries are keyed globally, so invalidating them can
       // leave the previous account's data available when a new social account
       // has no profile yet (the refetch then fails with 404). Remove that data
@@ -49,12 +49,9 @@ export function useSocialAuth(provider: 'google' | 'apple') {
       queryClient.removeQueries({ queryKey: ['coach'] });
       resetOnboarding();
       await tokenStorage.save(tokens);
-      const user = await queryClient.fetchQuery({
-        queryKey: ['me'],
-        queryFn: authApi.me,
-      });
-      setAuthenticated(Boolean(user));
+      return authApi.me();
     },
+    onSuccess: (user) => setAuthenticated(Boolean(user)),
   });
 }
 export function useLogout() {

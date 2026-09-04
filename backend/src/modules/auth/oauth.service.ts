@@ -94,11 +94,23 @@ export class OAuthService {
       where: { authProvider_providerId: { authProvider: provider, providerId } },
     });
     if (!user) {
-      if (!email) throw new UnauthorizedException('Apple did not provide an email for this new account');
-      const existing = await this.prisma.user.findUnique({ where: { email } });
+      // Apple only delivers the user's email on the first authorization and
+      // sometimes uses a private relay. When it is missing for a brand new
+      // account, fall back to a deterministic placeholder so sign-up never
+      // breaks. The placeholder is keyed off the provider id and is stable.
+      const resolvedEmail =
+        email ??
+        (provider === AuthProvider.APPLE
+          ? `${providerId}@apple.privacynull.soulmeet`
+          : undefined);
+      if (!resolvedEmail)
+        throw new UnauthorizedException('Provider did not provide an email for this new account');
+      const existing = await this.prisma.user.findUnique({
+        where: { email: resolvedEmail },
+      });
       user = existing ?? await this.prisma.user.create({
             data: {
-              email,
+              email: resolvedEmail,
               authProvider: provider,
               providerId,
               emailVerified: true,

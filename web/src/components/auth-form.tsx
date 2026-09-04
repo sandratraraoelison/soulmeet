@@ -158,7 +158,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       window.AppleID.auth.init({
         clientId: appleId,
         scope: 'name email',
-        redirectURI: `${location.origin}/login`,
+        redirectURI: `${location.origin}/${mode === 'login' ? 'login' : 'register'}`,
         usePopup: true,
       });
       const result = await window.AppleID.auth.signIn();
