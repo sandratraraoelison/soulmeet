@@ -100,6 +100,7 @@ export class AuthController {
     @Body() dto: ExternalAuthDto,
     @Headers('user-agent') device?: string,
   ) {
+    console.log('[AUTH-DIAG] controller /auth/apple entering, tokenLen=', dto.identityToken?.length ?? 0);
     return this.auth.apple(dto.identityToken, device);
   }
   @Post('refresh')

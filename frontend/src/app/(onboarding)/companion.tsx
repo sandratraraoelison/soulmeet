@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Redirect, router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ThemedStatusBar } from '@/components/common/ThemedStatusBar';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -9,6 +9,7 @@ import { getErrorMessage } from '@/api/client';
 import { profileApi } from '@/api/profile.api';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { BackButton } from '@/components/navigation/BackButton';
+import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { useLogout } from '@/hooks/use-auth';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import type { InterestGender } from '@/types/models';
@@ -40,6 +41,7 @@ const options: {
 ];
 export default function CompanionScreen() {
   const queryClient = useQueryClient();
+  const [profileLoadTimedOut, setProfileLoadTimedOut] = useState(false);
   const gender = useOnboardingStore((state) => state.interestedInGender);
   const setGender = useOnboardingStore((state) => state.setInterestedInGender);
   const resetSelection = useOnboardingStore((state) => state.reset);
@@ -50,12 +52,12 @@ export default function CompanionScreen() {
     queryFn: profileApi.get,
     retry: false,
   });
-
   useEffect(() => {
-    if (!existingProfile.isPending && !existingProfile.data) {
-      router.replace('/(onboarding)/profile');
-    }
-  }, [existingProfile.isPending, existingProfile.data]);
+    setProfileLoadTimedOut(false);
+    if (!existingProfile.isPending) return;
+    const timer = setTimeout(() => setProfileLoadTimedOut(true), 15_000);
+    return () => clearTimeout(timer);
+  }, [existingProfile.isPending]);
 
   const saveInterest = useMutation({
     mutationFn: () => profileApi.save({ interestedInGender: gender! }),
@@ -68,6 +70,16 @@ export default function CompanionScreen() {
     resetSelection();
     logout.mutate();
   };
+
+  // Social sign-in creates the account before the user has filled their
+  // profile. Expo Router can restore this screen after an app restart, so do
+  // not let a partial `interestedInGender` update try to create that profile.
+  if (existingProfile.isPending && !profileLoadTimedOut)
+    return <LoadingScreen />;
+  if (!existingProfile.data) {
+    return <Redirect href="/(onboarding)/profile" />;
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-canvas">
       <ThemedStatusBar />

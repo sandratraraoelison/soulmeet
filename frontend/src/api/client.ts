@@ -4,6 +4,7 @@ import {
   InternalAxiosRequestConfig,
   isAxiosError,
 } from 'axios';
+import { diag } from '@/lib/diag';
 import { tokenStorage } from '@/services/token-storage.service';
 import { useAuthStore } from '@/store/auth.store';
 import type { Tokens } from '@/types/models';
@@ -15,9 +16,14 @@ export const apiClient = create({ baseURL: API_URL, timeout: 12_000 });
 const refreshClient = create({ baseURL: API_URL, timeout: 12_000 });
 let refreshPromise: Promise<string> | null = null;
 
+const isTracked = (url?: string) =>
+  Boolean(url && /^\/(auth|profile|coach)/.test(url));
+
 apiClient.interceptors.request.use(async (config) => {
   const { accessToken } = await tokenStorage.get();
   if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+  if (isTracked(config.url))
+    diag.log(`REQ ${config.method?.toUpperCase()} ${config.url} token=${Boolean(accessToken)}`);
   return config;
 });
 
@@ -25,9 +31,15 @@ interface RetryConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (isTracked(response.config?.url))
+      diag.log(`RESP ${response.config.method?.toUpperCase()} ${response.config?.url} status=${response.status}`);
+    return response;
+  },
   async (error: AxiosError) => {
     const request = error.config as RetryConfig | undefined;
+    if (isTracked(request?.url))
+      diag.error(`RESP-ERROR ${request?.method?.toUpperCase()} ${request?.url} status=${error.response?.status} code=${error.code} msg=${error.message}`);
     if (
       error.response?.status !== 401 ||
       !request ||
@@ -36,6 +48,7 @@ apiClient.interceptors.response.use(
     )
       return Promise.reject(error);
     request._retry = true;
+    diag.log('REFRESH start (401 on', request.url, ')');
     try {
       refreshPromise ??= (async () => {
         const { refreshToken } = await tokenStorage.get();
@@ -48,9 +61,11 @@ apiClient.interceptors.response.use(
       })().finally(() => {
         refreshPromise = null;
       });
+      diag.log('REFRESH OK, retrying', request.url);
       request.headers.Authorization = `Bearer ${await refreshPromise}`;
       return apiClient.request(request);
     } catch (refreshError) {
+      diag.error('REFRESH FAILED', refreshError);
       // A network error while refreshing must not destroy the stored session:
       // the tokens are still valid server-side, so keep them for a later retry
       // and let the caller surface the transient failure.

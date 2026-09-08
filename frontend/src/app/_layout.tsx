@@ -13,6 +13,7 @@ import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { useChatSocketLifecycle } from '@/features/chat/hooks/use-chat';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useSessionRestore } from '@/hooks/use-session-restore';
+import { diag } from '@/lib/diag';
 import { queryClient } from '@/lib/query-client';
 import { useAuthStore } from '@/store/auth.store';
 import { NotificationPermissionPrompt } from '@/components/notifications/NotificationPermissionPrompt';
@@ -22,6 +23,7 @@ import { SoulprintConsentPrompt } from '@/features/consent/consent';
 function Navigation() {
   const { isAuthenticated, isRestoring } = useAuthStore();
   const { colors } = useThemePalette();
+  const [accountLoadTimedOut, setAccountLoadTimedOut] = useState(false);
   useChatSocketLifecycle(isAuthenticated);
   useNotifications(isAuthenticated);
   useSessionRestore();
@@ -37,9 +39,61 @@ function Navigation() {
     enabled: isAuthenticated,
     retry: false,
   });
+  const hasPendingAccountRequest =
+    (profile.isPending && !profile.isError) || coach.isPending;
+  useEffect(() => {
+    setAccountLoadTimedOut(false);
+    if (!isAuthenticated || !hasPendingAccountRequest) return;
+
+    // The account bootstrap must never keep a new OAuth user behind the
+    // splash indefinitely. Both API calls have their own request timeout;
+    // this is a final guard for a stalled native/network request.
+    const timer = setTimeout(() => setAccountLoadTimedOut(true), 15_000);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, hasPendingAccountRequest]);
+
   const isLoadingAccount =
-    isAuthenticated &&
-    ((profile.isPending && !profile.isError) || coach.isPending);
+    isAuthenticated && hasPendingAccountRequest && !accountLoadTimedOut;
+
+  const showLoading = isRestoring || isLoadingAccount;
+  useEffect(() => {
+    diag.log('NAV-render', JSON.stringify({
+      isRestoring,
+      isAuthenticated,
+      profileStatus: profile.status,
+      profileError: profile.isError,
+      coachStatus: coach.status,
+      coachError: coach.isError,
+      isLoadingAccount,
+      showLoading,
+      complete: Boolean(profile.data?.onboardingCompleted && coach.data),
+    }));
+  }, [isRestoring, isAuthenticated, profile.status, profile.isError, coach.status, coach.isError, isLoadingAccount, showLoading, profile.data, coach.data]);
+
+  useEffect(() => {
+    if (!showLoading) return;
+    const timer = setTimeout(() => {
+      diag.error('STUCK-on-LoadingScreen-8s', JSON.stringify({
+        isRestoring,
+        isAuthenticated,
+        profile: {
+          status: profile.status,
+          isFetching: profile.isFetching,
+          error: profile.error ? String(profile.error) : null,
+        },
+        coach: {
+          status: coach.status,
+          isFetching: coach.isFetching,
+          error: coach.error ? String(coach.error) : null,
+        },
+        meCached: Boolean(queryClient.getQueryData(['me'])),
+        profileCached: Boolean(queryClient.getQueryData(['profile'])),
+        coachCached: Boolean(queryClient.getQueryData(['coach'])),
+      }));
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [showLoading, isRestoring, isAuthenticated, profile.status, profile.isFetching, profile.error, coach.status, coach.isFetching, coach.error]);
+
   if (isRestoring || isLoadingAccount) return <LoadingScreen />;
   const complete = Boolean(profile.data?.onboardingCompleted && coach.data);
   return (

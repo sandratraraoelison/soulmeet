@@ -44,6 +44,7 @@ export class OAuthService {
   }
 
   async apple(identityToken: string, deviceInfo?: string) {
+    console.log('[AUTH-DIAG] B1 /auth/apple received, tokenLen=', identityToken?.length ?? 0);
     try {
       const audiences = this.providerIds('APPLE_CLIENT_IDS');
       const decoded = jsonwebtoken.decode(identityToken, { complete: true });
@@ -57,13 +58,17 @@ export class OAuthService {
       }) as jsonwebtoken.JwtPayload;
       if (!payload.sub)
         throw new Error('Missing Apple identity');
-      return this.finishExternalAuth(
+      console.log('[AUTH-DIAG] B2 Apple JWT verified sub=', payload.sub, 'email=', payload.email ?? '(none)', 'aud=', Array.isArray(payload.aud) ? payload.aud.join(',') : payload.aud);
+      const result = await this.finishExternalAuth(
         AuthProvider.APPLE,
         payload.sub,
         typeof payload.email === 'string' ? payload.email : undefined,
         deviceInfo,
       );
-    } catch {
+      console.log('[AUTH-DIAG] B3 /auth/apple success accessTokenLen=', result.accessToken?.length ?? 0);
+      return result;
+    } catch (error) {
+      console.error('[AUTH-DIAG] B2 FAILED /auth/apple', error);
       throw new UnauthorizedException('Invalid Apple identity token');
     }
   }
@@ -85,6 +90,7 @@ export class OAuthService {
     rawEmail?: string,
     deviceInfo?: string,
   ) {
+    console.log('[AUTH-DIAG] B4 finishExternalAuth provider=', provider, 'providerId=', providerId, 'rawEmail=', rawEmail ?? '(none)');
     const email = rawEmail?.trim().toLowerCase();
     const identity = await this.prisma.authIdentity.findUnique({
       where: { provider_providerId: { provider, providerId } },
@@ -108,6 +114,7 @@ export class OAuthService {
       const existing = await this.prisma.user.findUnique({
         where: { email: resolvedEmail },
       });
+      console.log('[AUTH-DIAG] B5 NEW account, resolvedEmail=', resolvedEmail, 'existing=', existing?.id ?? '(none)');
       user = existing ?? await this.prisma.user.create({
             data: {
               email: resolvedEmail,
@@ -116,6 +123,8 @@ export class OAuthService {
               emailVerified: true,
             },
           });
+    } else {
+      console.log('[AUTH-DIAG] B5 EXISTING account userId=', user?.id, 'email=', user?.email);
     }
     await this.prisma.authIdentity.upsert({
       where: { provider_providerId: { provider, providerId } },
@@ -131,6 +140,9 @@ export class OAuthService {
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
     });
-    return this.session.issueSession(user, deviceInfo);
+    console.log('[AUTH-DIAG] B6 issueSession for userId=', user.id);
+    const session = await this.session.issueSession(user, deviceInfo);
+    console.log('[AUTH-DIAG] B7 tokens issued accessLen=', session.accessToken.length);
+    return session;
   }
 }

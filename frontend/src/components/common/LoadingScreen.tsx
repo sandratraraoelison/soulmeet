@@ -1,11 +1,29 @@
+import { useEffect } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { ThemedStatusBar } from '@/components/common/ThemedStatusBar';
 import Animated from 'react-native-reanimated';
 import { motionFadeIn } from '@/lib/motion';
+import { diag } from '@/lib/diag';
+import { queryClient } from '@/lib/query-client';
+import { useAuthStore } from '@/store/auth.store';
 import { useThemePalette } from '@/store/theme.store';
 
 export function LoadingScreen() {
   const { colors } = useThemePalette();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      diag.error('LoadingScreen-visible-8s', JSON.stringify({
+        isAuthenticated: useAuthStore.getState().isAuthenticated,
+        isRestoring: useAuthStore.getState().isRestoring,
+        meCached: Boolean(queryClient.getQueryData(['me'])),
+        profileCached: Boolean(queryClient.getQueryData(['profile'])),
+        profileError: Boolean(queryClient.getQueryState(['profile'])?.error),
+        coachCached: Boolean(queryClient.getQueryData(['coach'])),
+        coachError: Boolean(queryClient.getQueryState(['coach'])?.error),
+      }));
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, []);
   return (
     <View className="flex-1 items-center justify-center overflow-hidden bg-canvas px-8">
       <ThemedStatusBar />

@@ -5,6 +5,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { Platform, Text, View } from 'react-native';
 import { getErrorMessage } from '@/api/client';
 import { useSocialAuth } from '@/hooks/use-auth';
+import { diag } from '@/lib/diag';
 import { Button } from './Button';
 import { ErrorMessage } from './ErrorMessage';
 
@@ -32,16 +33,23 @@ export function SocialButtons() {
   const signInWithApple = async () => {
     try {
       setProviderError(null);
+      diag.log('STEP1 Apple signInAsync() start');
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       });
+      diag.log('STEP2 Apple signInAsync() resolved');
+      diag.log(`STEP3 credential.user present=${Boolean(credential.user)} ${credential.user ?? '(none)'}`);
+      diag.log(`STEP4 credential.email present=${Boolean(credential.email)} ${credential.email ?? '(none)'}`);
+      diag.log(`STEP4b identityToken present=${Boolean(credential.identityToken)} len=${credential.identityToken?.length ?? 0}`);
       if (!credential.identityToken)
         throw new Error('Apple did not return an identity token.');
+      diag.log('STEP4c identityToken OK, calling apple.mutate()');
       apple.mutate(credential.identityToken);
     } catch (error) {
+      diag.error('APPLE signInAsync error', error);
       if ((error as { code?: string }).code !== 'ERR_REQUEST_CANCELED') {
         setProviderError(
           error instanceof Error ? error.message : 'Apple sign-in failed.',
