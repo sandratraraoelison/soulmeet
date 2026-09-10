@@ -80,6 +80,7 @@ export function useSocialAuth(provider: 'google' | 'apple') {
     },
     onSuccess: (user) => {
       diag.log(`STEP11 setAuthenticated(${Boolean(user)})`);
+      queryClient.setQueryData(['me'], user);
       setAuthenticated(Boolean(user));
     },
     onError: (error) => {

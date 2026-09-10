@@ -8,6 +8,7 @@ import { vars } from 'nativewind';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { coachApi } from '@/api/coach.api';
+import { authApi } from '@/api/auth.api';
 import { profileApi } from '@/api/profile.api';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { useChatSocketLifecycle } from '@/features/chat/hooks/use-chat';
@@ -27,20 +28,28 @@ function Navigation() {
   useChatSocketLifecycle(isAuthenticated);
   useNotifications(isAuthenticated);
   useSessionRestore();
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: authApi.me,
+    enabled: isAuthenticated,
+    retry: false,
+  });
+  const complete = Boolean(
+    me.data?.onboardingCompleted && me.data?.hasCoach,
+  );
   const profile = useQuery({
     queryKey: ['profile'],
     queryFn: profileApi.get,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && complete,
     retry: false,
   });
   const coach = useQuery({
     queryKey: ['coach'],
     queryFn: coachApi.get,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && complete,
     retry: false,
   });
-  const hasPendingAccountRequest =
-    (profile.isPending && !profile.isError) || coach.isPending;
+  const hasPendingAccountRequest = me.isPending;
   useEffect(() => {
     setAccountLoadTimedOut(false);
     if (!isAuthenticated || !hasPendingAccountRequest) return;
@@ -66,9 +75,9 @@ function Navigation() {
       coachError: coach.isError,
       isLoadingAccount,
       showLoading,
-      complete: Boolean(profile.data?.onboardingCompleted && coach.data),
+      complete,
     }));
-  }, [isRestoring, isAuthenticated, profile.status, profile.isError, coach.status, coach.isError, isLoadingAccount, showLoading, profile.data, coach.data]);
+  }, [isRestoring, isAuthenticated, profile.status, profile.isError, coach.status, coach.isError, isLoadingAccount, showLoading, complete]);
 
   useEffect(() => {
     if (!showLoading) return;
@@ -95,7 +104,6 @@ function Navigation() {
   }, [showLoading, isRestoring, isAuthenticated, profile.status, profile.isFetching, profile.error, coach.status, coach.isFetching, coach.error]);
 
   if (isRestoring || isLoadingAccount) return <LoadingScreen />;
-  const complete = Boolean(profile.data?.onboardingCompleted && coach.data);
   return (
     <>
     <NotificationPermissionPrompt enabled={isAuthenticated && complete} />

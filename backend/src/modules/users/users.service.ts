@@ -26,6 +26,8 @@ const publicUserSelect = {
   updatedAt: true,
   lastLoginAt: true,
   twoFactorEnabled: true,
+  profile: { select: { onboardingCompleted: true } },
+  coach: { select: { id: true } },
 } as const;
 
 export interface CompatibilityResult {
@@ -76,7 +78,12 @@ export class UsersService {
       select: publicUserSelect,
     });
     if (!user) throw new NotFoundException('User not found');
-    return user;
+    const { profile, coach, ...publicUser } = user;
+    return {
+      ...publicUser,
+      onboardingCompleted: Boolean(profile?.onboardingCompleted),
+      hasCoach: Boolean(coach),
+    };
   }
 
   async discover(_currentUserId: string, _limit = 12, _offset = 0) {

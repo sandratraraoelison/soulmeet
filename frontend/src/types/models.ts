@@ -38,6 +38,8 @@ export interface User {
   role: 'USER' | 'ADMIN';
   isActive: boolean;
   emailVerified: boolean;
+  onboardingCompleted: boolean;
+  hasCoach: boolean;
 }
 export interface Profile {
   id: string;

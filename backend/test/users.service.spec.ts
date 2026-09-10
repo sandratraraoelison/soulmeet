@@ -21,6 +21,28 @@ describe('UsersService matchmaking', () => {
     { category: 'OTHER', key: 'appearance', normalizedValue: 'bright smile', value: 'A bright smile and calm presence', matchingWeight: 50, confidence: 1 },
   ];
 
+  it('returns the navigation state with the authenticated user', async () => {
+    const prisma = {
+      user: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'new-apple-user',
+          email: 'private@privaterelay.appleid.com',
+          authProvider: 'APPLE',
+          profile: null,
+          coach: null,
+        }),
+      },
+    };
+
+    await expect(buildService(prisma).findPublicById('new-apple-user'))
+      .resolves.toMatchObject({
+        id: 'new-apple-user',
+        authProvider: 'APPLE',
+        onboardingCompleted: false,
+        hasCoach: false,
+      });
+  });
+
   it('presents only the best qualified recommendation and keeps the rest reserved', async () => {
     const candidates = ['Julia', 'Caro', 'Tiphaine', 'Maya'].map((name, index) => ({
       id: `candidate-${index}`,
