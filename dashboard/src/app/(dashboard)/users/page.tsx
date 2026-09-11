@@ -8,6 +8,7 @@ import { useToast } from "@/components/toast";
 import { Pagination, PermissionGate, StatusBadge } from "@/components/ui";
 import { Empty, ErrorState, Loading } from "@/components/page-state";
 import { api } from "@/lib/api";
+import { invalidateAdmin } from "@/lib/invalidate";
 import { useDebouncedValue } from "@/lib/hooks";
 import type { Page, SessionUser, User } from "@/lib/types";
 
@@ -45,8 +46,8 @@ export default function UsersPage() {
     ...(filters.completed && { completed: filters.completed }),
   });
   const users = useQuery({
-    queryKey: ["users", filters, page, debouncedSearch],
-    queryFn: () => api<Page<User>>(`admin/users?${params}`),
+    queryKey: ["users", filters.status, filters.role, filters.completed, page, debouncedSearch],
+    queryFn: ({ signal }) => api<Page<User>>(`admin/users?${params}`, { signal }),
   });
   const status = useMutation({
     mutationFn: ({ id, next, reason, suspendedUntil }: { id: string; next: User["accountStatus"]; reason: string; suspendedUntil?: string }) =>
@@ -59,7 +60,7 @@ export default function UsersPage() {
         }),
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      await invalidateAdmin(queryClient);
       notify("success", "The account status was updated successfully.");
       setPendingStatusChange(null);
     },
@@ -69,7 +70,7 @@ export default function UsersPage() {
     mutationFn: (id: string) => api<{ deleted: boolean }>(`admin/users/${id}`, { method: "DELETE" }),
     onSuccess: async () => {
       setPendingDelete(null);
-      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      await invalidateAdmin(queryClient);
       notify("success", "The account and its associated data were permanently deleted.");
     },
     onError: (error) => notify("error", error.message),
@@ -193,7 +194,7 @@ export default function UsersPage() {
                         <PermissionGate role={session.data?.role} permission="moderate">
                           <button
                             className={t.tone === "success" ? "button success" : "button danger"}
-                            disabled={(status.isPending && status.variables?.id === user.id) || session.data?.id === user.id}
+                            disabled={status.isPending || deleteUser.isPending || session.data?.id === user.id}
                             title={session.data?.id === user.id ? "You cannot moderate your own account" : undefined}
                             onClick={() => requestStatus(user, user.accountStatus === "ACTIVE" ? "SUSPENDED" : "ACTIVE")}
                           >
@@ -202,7 +203,7 @@ export default function UsersPage() {
                           {canDelete && (
                             <button
                               className="button danger"
-                              disabled={(status.isPending && status.variables?.id === user.id) || session.data?.id === user.id}
+                              disabled={status.isPending || deleteUser.isPending || session.data?.id === user.id}
                               title={session.data?.id === user.id ? "You cannot moderate your own account" : undefined}
                               onClick={() => { deleteUser.reset(); setPendingDelete(user); }}
                             >
@@ -223,9 +224,9 @@ export default function UsersPage() {
       )}
       <ConfirmDialog
         open={Boolean(pendingStatusChange)}
-        title={pendingStatusChange ? (pendingStatusChange.next === "BANNED" ? deleteTransition.confirm : transition[pendingStatusChange.next].confirm) : ""}
-        description={pendingStatusChange ? (pendingStatusChange.next === "BANNED" ? deleteTransition.description : transition[pendingStatusChange.next].description) : ""}
-        confirmLabel={pendingStatusChange ? (pendingStatusChange.next === "BANNED" ? deleteTransition.confirm : transition[pendingStatusChange.next].confirm) : ""}
+        title={pendingStatusChange ? (pendingStatusChange.next === "BANNED" ? deleteTransition.confirm : transition[pendingStatusChange.next === "ACTIVE" ? "SUSPENDED" : "ACTIVE"].confirm) : ""}
+        description={pendingStatusChange ? (pendingStatusChange.next === "BANNED" ? deleteTransition.description : transition[pendingStatusChange.next === "ACTIVE" ? "SUSPENDED" : "ACTIVE"].description) : ""}
+        confirmLabel={pendingStatusChange ? (pendingStatusChange.next === "BANNED" ? deleteTransition.confirm : transition[pendingStatusChange.next === "ACTIVE" ? "SUSPENDED" : "ACTIVE"].confirm) : ""}
         pending={status.isPending}
         tone={pendingStatusChange?.next === "ACTIVE" ? "success" : "danger"}
         error={status.error?.message}

@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ErrorState, Loading } from "@/components/page-state";
 import { StatusBadge } from "@/components/ui";
 import { useToast } from "@/components/toast";
+import { invalidateAdmin } from "@/lib/invalidate";
 import { api } from "@/lib/api";
 import type { SessionUser } from "@/lib/types";
 
@@ -89,17 +90,17 @@ export default function UserDetailPage() {
           ...(next === "SUSPENDED" && suspendedUntil ? { suspendedUntil: new Date(suspendedUntil).toISOString() } : {}),
         }),
       }),
-    onSuccess: async () => { notify("success", "The account status was updated."); setPendingStatus(null); await queryClient.invalidateQueries({ queryKey: ["user", id] }); },
+    onSuccess: async () => { notify("success", "The account status was updated."); setPendingStatus(null); await invalidateAdmin(queryClient); },
     onError: (error) => notify("error", error.message),
   });
   const deleteUser = useMutation({
     mutationFn: () => api<{ deleted: boolean }>(`admin/users/${id}`, { method: "DELETE" }),
-    onSuccess: async () => { notify("success", "The account and its associated data were permanently deleted."); await queryClient.invalidateQueries({ queryKey: ["users"] }); router.replace("/users"); },
+    onSuccess: async () => { notify("success", "The account and its associated data were permanently deleted."); await invalidateAdmin(queryClient); router.replace("/users"); },
     onError: (error) => notify("error", error.message),
   });
   const session = useQuery({ queryKey: ["session"], queryFn: () => api<SessionUser>("auth/me") });
   const sessions = useQuery({ queryKey: ["user-sessions", id], queryFn: () => api<{ id: string; deviceInfo?: string; createdAt: string; expiresAt: string }[]>(`admin/users/${id}/sessions`), enabled: session.data?.role === "SUPER_ADMIN" && session.data.id !== id });
-  const changeRole = useMutation({ mutationFn: (role: string) => api(`admin/users/${id}/role`, { method: "PATCH", body: JSON.stringify({ role }) }), onSuccess: async () => { notify("success", "User role updated successfully."); await queryClient.invalidateQueries({ queryKey: ["user", id] }); }, onError: (error) => notify("error", error.message) });
+  const changeRole = useMutation({ mutationFn: (role: string) => api(`admin/users/${id}/role`, { method: "PATCH", body: JSON.stringify({ role }) }), onSuccess: async () => { notify("success", "User role updated successfully."); await invalidateAdmin(queryClient); }, onError: (error) => notify("error", error.message) });
   const revokeSessions = useMutation({ mutationFn: () => api<{ revoked: number }>(`admin/users/${id}/sessions`, { method: "DELETE" }), onSuccess: async (result) => { notify("success", `${result.revoked} session(s) revoked.`); await queryClient.invalidateQueries({ queryKey: ["user-sessions", id] }); }, onError: (error) => notify("error", error.message) });
   const history = useQuery({
     queryKey: ["user-history", id],

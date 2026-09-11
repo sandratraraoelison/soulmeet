@@ -1,6 +1,6 @@
 import { AccountStatus, ReportPriority, ReportStatus, Role } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsDateString, IsEnum, IsInt, IsObject, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsDateString, IsEnum, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class PageQueryDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page = 1;
@@ -21,6 +21,9 @@ export class UpdateUserStatusDto {
 export class UpdateUserRoleDto { @IsEnum(Role) role!: Role; }
 export class AdminNoteDto { @IsString() @MinLength(2) @MaxLength(2000) content!: string; }
 export class ReportQueryDto extends PageQueryDto {
+  @IsOptional() @IsUUID() reportId?: string;
+  @IsOptional() @IsIn(['pending', 'urgent', 'unassigned', 'old']) queue?: string;
+  @IsOptional() @IsIn(['priority', 'oldest', 'newest']) sort?: string;
   @IsOptional() @IsEnum(ReportStatus) status?: ReportStatus;
   @IsOptional() @IsEnum(ReportPriority) priority?: ReportPriority;
   @IsOptional() @IsUUID() assignedModeratorId?: string;
@@ -31,8 +34,12 @@ export class ConversationAccessDto {
 export class UpdateReportDto {
   @IsOptional() @IsEnum(ReportStatus) status?: ReportStatus;
   @IsOptional() @IsEnum(ReportPriority) priority?: ReportPriority;
-  @IsOptional() @IsUUID() assignedModeratorId?: string;
+  @IsOptional() @IsUUID() assignedModeratorId?: string | null;
   @IsOptional() @IsString() @MaxLength(2000) resolution?: string;
+}
+export class InsightsQueryDto {
+  @IsOptional() @Type(() => Number) @IsIn([1, 7, 30, 90]) days = 30;
+  @IsOptional() @IsString() @MaxLength(120) country?: string;
 }
 export class SettingDto {
   @IsObject() value!: Record<string, unknown>;

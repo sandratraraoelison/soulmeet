@@ -8,6 +8,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { RolesGuard } from '../auth/roles.guard';
 import { AdminService } from './admin.service';
+import { InsightsQueryDto } from './dto/admin.dto';
 import { AdminNoteDto, AuditQueryDto, ConversationAccessDto, PageQueryDto, ReportQueryDto, SettingDto, UpdateReportDto, UpdateUserRoleDto, UpdateUserStatusDto, UserQueryDto } from './dto/admin.dto';
 
 const adminRoles = [Role.SUPER_ADMIN, Role.ADMIN, Role.MODERATOR, Role.SUPPORT];
@@ -24,7 +25,8 @@ export class AdminController {
   @Delete('users/:id/sessions') @Roles(Role.SUPER_ADMIN)
   revokeUserSessions(@CurrentUser() actor: JwtPayload, @Param('id') id: string, @Req() req: Request) { return this.admin.revokeUserSessions(actor.sub, id, this.ip(req)); }
   @Get('overview') overview() { return this.admin.overview(); }
-  @Get('analytics') analytics(@Query('days') days?: string) { return this.admin.analytics(days ? Number(days) : 30); }
+  @Get('analytics') analytics(@Query() query: InsightsQueryDto) { return this.admin.analytics(query.days); }
+  @Get('insights') insights(@Query() query: InsightsQueryDto) { return this.admin.insights(query.days, query.country); }
   @Get('moderators') moderators() { return this.admin.moderators(); }
   @Get('matches') matches(@Query() query: PageQueryDto) { return this.admin.matches(query); }
   @Post('conversations/:id/access')
@@ -48,9 +50,10 @@ export class AdminController {
   @Get('conversations') conversations(@Query() query: PageQueryDto) { return this.admin.conversations(query); }
   @Get('guidance-conversations') guidance(@Query() query: PageQueryDto) { return this.admin.guidance(query); }
   @Get('reports') reports(@Query() query: ReportQueryDto) { return this.admin.reports(query); }
+  @Get('reports/:id') reportDetail(@Param('id') id: string) { return this.admin.reportDetail(id); }
   @Patch('reports/:id') @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MODERATOR)
   report(@CurrentUser() actor: JwtPayload, @Param('id') id: string, @Body() dto: UpdateReportDto, @Req() req: Request) { return this.admin.updateReport(actor.sub, id, dto, this.ip(req)); }
-  @Get('ai-usage') aiUsage() { return this.admin.aiUsage(); }
+  @Get('ai-usage') aiUsage(@Query() query: InsightsQueryDto) { return this.admin.aiUsage(query.days); }
   @Get('settings') settings() { return this.admin.settings(); }
   @Patch('settings/:key') @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   setting(@CurrentUser() actor: JwtPayload, @Param('key') key: string, @Body() dto: SettingDto, @Req() req: Request) { return this.admin.updateSetting(actor.sub, actor.role as Role, key, dto, this.ip(req)); }

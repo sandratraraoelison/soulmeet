@@ -41,7 +41,7 @@ describe('AdminService safety and search', () => {
     const results = await new AdminService(prisma as never).search('ja');
     expect(results).toEqual([
       expect.objectContaining({ type: 'user', href: '/users/u1' }),
-      expect.objectContaining({ type: 'report', href: '/reports?report=r1' }),
+      expect.objectContaining({ type: 'report', href: '/reports/r1' }),
     ]);
   });
 

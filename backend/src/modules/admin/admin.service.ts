@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { AccountStatus, Prisma, ReportStatus, Role } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
+import { engagementSql, Engagement, period } from './insights';
 import {
   AdminNoteDto,
   AuditQueryDto,
@@ -162,7 +163,7 @@ export class AdminService {
         completedProfiles: profiles,
         soulprints,
         coachConversations,
-        matches: null,
+        matches: await this.prisma.match.count(),
         conversations,
         pendingReports,
         suspendedUsers,
@@ -174,9 +175,7 @@ export class AdminService {
   }
   async analytics(rawDays = 30) {
     const days = [1, 7, 30, 90].includes(rawDays) ? rawDays : 30;
-    const end = new Date();
-    const start = new Date(end.getTime() - days * 86400000);
-    const previousStart = new Date(start.getTime() - days * 86400000);
+    const { start, end, previousStart, previousEnd } = period(days);
     const [
       users,
       reports,
@@ -192,31 +191,31 @@ export class AdminService {
       pendingReports,
     ] = await Promise.all([
       this.prisma.user.findMany({
-        where: { createdAt: { gte: start } },
+        where: { createdAt: { gte: start, lte: end } },
         select: { createdAt: true },
       }),
       this.prisma.report.findMany({
-        where: { createdAt: { gte: start } },
+        where: { createdAt: { gte: start, lte: end } },
         select: { createdAt: true },
       }),
       this.prisma.soulprint.findMany({
-        where: { createdAt: { gte: start }, deletedAt: null },
+        where: { createdAt: { gte: start, lte: end }, deletedAt: null },
         select: { createdAt: true },
       }),
       this.prisma.conversation.findMany({
-        where: { createdAt: { gte: start } },
+        where: { createdAt: { gte: start, lte: end } },
         select: { createdAt: true },
       }),
       this.prisma.guidanceConversation.findMany({
-        where: { createdAt: { gte: start } },
+        where: { createdAt: { gte: start, lte: end } },
         select: { createdAt: true },
       }),
       this.prisma.llmUsage.findMany({
-        where: { createdAt: { gte: start } },
+        where: { createdAt: { gte: start, lte: end } },
         select: { createdAt: true },
       }),
       this.prisma.user.count({
-        where: { createdAt: { gte: previousStart, lt: start } },
+        where: { createdAt: { gte: previousStart, lte: previousEnd } },
       }),
       this.prisma.user.count(),
       this.prisma.user.count({ where: { isActive: true } }),
@@ -230,7 +229,7 @@ export class AdminService {
     ]);
     const aiRequests = usage.length;
     const buckets = Array.from({ length: days }, (_, index) => {
-      const date = new Date(start.getTime() + (index + 1) * 86400000);
+      const date = new Date(start.getTime() + index * 86400000);
       return {
         date: date.toISOString().slice(0, 10),
         users: 0,
@@ -286,7 +285,7 @@ export class AdminService {
         pendingReports,
         suspendedUsers,
         aiRequests,
-        matches: null,
+        matches: await this.prisma.match.count(),
       },
       series: buckets,
     };
@@ -373,7 +372,7 @@ export class AdminService {
         id: report.id,
         title: report.reason,
         subtitle: `${report.reportedUser.email} · ${report.status}`,
-        href: `/reports?report=${report.id}`,
+        href: `/reports/${report.id}`,
       })),
     ];
   }
@@ -632,15 +631,20 @@ export class AdminService {
   }
   async reports(query: ReportQueryDto) {
     const where: Prisma.ReportWhereInput = {
+      id: query.reportId,
       status: query.status,
       priority: query.priority,
       assignedModeratorId: query.assignedModeratorId,
+      ...(query.queue ? { status: { in: [ReportStatus.OPEN, ReportStatus.IN_REVIEW] } } : {}),
+      ...(query.queue === 'urgent' ? { priority: 'URGENT' } : {}),
+      ...(query.queue === 'unassigned' ? { assignedModeratorId: null } : {}),
+      ...(query.queue === 'old' ? { createdAt: { lte: new Date(Date.now() - 48 * 3600000) } } : {}),
     };
     const [items, total] = await this.prisma.$transaction([
       this.prisma.report.findMany({
         where,
         ...this.page(query),
-        orderBy: { createdAt: 'desc' },
+        orderBy: query.sort === 'newest' ? [{ createdAt: 'desc' }, { id: 'asc' }] : query.sort === 'oldest' ? [{ createdAt: 'asc' }, { id: 'asc' }] : [{ priority: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
         include: {
           reporter: { select: { id: true, email: true, profile: true } },
           reportedUser: { select: { id: true, email: true, profile: true } },
@@ -662,17 +666,23 @@ export class AdminService {
     const resolved =
       dto.status === ReportStatus.RESOLVED ||
       dto.status === ReportStatus.DISMISSED;
+    if (resolved && (!dto.resolution || dto.resolution.trim().length < 3))
+      throw new BadRequestException('A resolution note of at least 3 characters is required');
+    if (dto.assignedModeratorId) {
+      const moderator = await this.prisma.user.findFirst({ where: { id: dto.assignedModeratorId, isActive: true, role: { in: [Role.SUPER_ADMIN, Role.ADMIN, Role.MODERATOR] } } });
+      if (!moderator) throw new BadRequestException('Select an active moderator');
+    }
     const next = await this.prisma.report.update({
       where: { id },
-      data: { ...dto, resolvedAt: resolved ? new Date() : undefined },
+      data: { ...dto, resolvedAt: resolved ? new Date() : dto.status ? null : undefined, resolution: dto.resolution?.trim() ?? (dto.status && !resolved ? null : undefined) },
     });
     await this.audit(
       actorId,
       'REPORT_UPDATED',
       'Report',
       id,
-      { status: old.status, priority: old.priority },
-      { status: next.status, priority: next.priority },
+      { status: old.status, priority: old.priority, assignedModeratorId: old.assignedModeratorId, resolution: old.resolution },
+      { status: next.status, priority: next.priority, assignedModeratorId: next.assignedModeratorId, resolution: next.resolution },
       ip,
     );
     return next;
@@ -681,7 +691,7 @@ export class AdminService {
     return this.prisma.user.findMany({
       where: {
         role: {
-          in: [Role.SUPER_ADMIN, Role.ADMIN, Role.MODERATOR, Role.SUPPORT],
+          in: [Role.SUPER_ADMIN, Role.ADMIN, Role.MODERATOR],
         },
         isActive: true,
       },
@@ -826,9 +836,47 @@ export class AdminService {
     );
     return { conversationId, messages };
   }
-  async aiUsage() {
+  async reportDetail(id: string) {
+    const report = await this.prisma.report.findUnique({ where: { id }, include: {
+      reporter: { select: { id: true, email: true } }, reportedUser: { select: { id: true, email: true } },
+      assignedModerator: { select: { id: true, email: true } },
+    } });
+    if (!report) throw new NotFoundException('Report not found');
+    const history = await this.prisma.auditLog.findMany({ where: { resource: 'Report', resourceId: id }, orderBy: { createdAt: 'desc' }, take: 100,
+      select: { id: true, createdAt: true, oldValue: true, newValue: true, actor: { select: { email: true } } } });
+    return { ...report, history };
+  }
+
+  async insights(days = 30, country?: string) {
+    const { start, end, previousStart, previousEnd } = period(days);
+    const pending = { status: { in: [ReportStatus.OPEN, ReportStatus.IN_REVIEW] } };
+    const [current, previous, countries, urgent, unassigned, old, queue, replies, geography] = await Promise.all([
+      this.prisma.$queryRaw<Engagement[]>(engagementSql(start, end, country)),
+      this.prisma.$queryRaw<Engagement[]>(engagementSql(previousStart, previousEnd, country)),
+      this.prisma.profile.findMany({ distinct: ['country'], select: { country: true }, orderBy: { country: 'asc' } }),
+      this.prisma.report.count({ where: { ...pending, priority: 'URGENT' } }),
+      this.prisma.report.count({ where: { ...pending, assignedModeratorId: null } }),
+      this.prisma.report.count({ where: { ...pending, createdAt: { lte: new Date(end.getTime() - 48 * 3600000) } } }),
+      this.prisma.report.findMany({ where: pending, take: 5, orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }], select: { id: true, reason: true, priority: true, createdAt: true } }),
+      this.prisma.$queryRaw<{ started: number; replied: number }[]>(Prisma.sql`
+        SELECT count(*)::int AS started, count(*) FILTER (WHERE senders > 1)::int AS replied FROM (
+          SELECT c.id, count(DISTINCT m."senderId") AS senders FROM "Conversation" c
+          JOIN "Message" m ON m."conversationId" = c.id AND m."isDeleted" = false AND m."createdAt" <= ${end}
+          WHERE c."createdAt" >= ${start} AND c."createdAt" <= ${end}
+          ${country ? Prisma.sql`AND EXISTS (SELECT 1 FROM "ConversationParticipant" cp JOIN "Profile" p ON p."userId" = cp."userId" WHERE cp."conversationId" = c.id AND p.country = ${country})` : Prisma.empty}
+          GROUP BY c.id
+        ) conversations`),
+      this.prisma.profile.groupBy({ by: ['country'], where: { user: { role: Role.USER, createdAt: { gte: start, lte: end } }, ...(country ? { country } : {}) }, _count: true, orderBy: { _count: { country: 'desc' } }, take: 15 }),
+    ]);
+    return { days, generatedAt: end, current: current[0], previous: previous[0], countries: countries.map(p => p.country).filter(Boolean), moderation: { urgent, unassigned, old, queue }, replies: replies[0], geography: geography.map(row => ({ country: row.country, users: row._count })) };
+  }
+
+  async aiUsage(days = 30) {
+    const { start, end } = period(days);
+    const where = { createdAt: { gte: start, lte: end } };
     const [aggregate, byFeature, byModel] = await Promise.all([
       this.prisma.llmUsage.aggregate({
+        where,
         _count: true,
         _sum: {
           inputTokens: true,
@@ -839,6 +887,7 @@ export class AdminService {
         _avg: { latencyMs: true },
       }),
       this.prisma.llmUsage.groupBy({
+        where,
         by: ['feature'],
         _count: true,
         _sum: { inputTokens: true, outputTokens: true, estimatedCost: true },
@@ -846,6 +895,7 @@ export class AdminService {
         orderBy: { feature: 'asc' },
       }),
       this.prisma.llmUsage.groupBy({
+        where,
         by: ['provider', 'model'],
         _count: true,
         _sum: { inputTokens: true, outputTokens: true, estimatedCost: true },
@@ -853,7 +903,21 @@ export class AdminService {
         orderBy: { provider: 'asc' },
       }),
     ]);
-    return { ...aggregate, byFeature, byModel };
+    const monthStart = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
+    const [daily, errors, month, budget, unpriced] = await Promise.all([
+      this.prisma.$queryRaw<{ date: string; cost: number; requests: number; errors: number }[]>(Prisma.sql`
+        SELECT to_char(d.day, 'YYYY-MM-DD') AS date, coalesce(sum(u."estimatedCost"), 0)::float8 AS cost,
+          count(u.id)::int AS requests, count(u.id) FILTER (WHERE u.success = false)::int AS errors
+        FROM generate_series(${start}::timestamp, ${end}::timestamp, interval '1 day') d(day)
+        LEFT JOIN "LlmUsage" u ON u."createdAt" >= d.day AND u."createdAt" < d.day + interval '1 day' AND u."createdAt" <= ${end}
+        GROUP BY d.day ORDER BY d.day`),
+      this.prisma.llmUsage.groupBy({ by: ['errorCode'], where: { ...where, success: false }, _count: true }),
+      this.prisma.llmUsage.aggregate({ where: { createdAt: { gte: monthStart, lte: end } }, _sum: { estimatedCost: true } }),
+      this.prisma.appSetting.findUnique({ where: { key: 'ai.monthlyBudget' } }),
+      this.prisma.llmUsage.count({ where: { ...where, estimatedCost: null } }),
+    ]);
+    const amount = budget?.value && typeof budget.value === 'object' && !Array.isArray(budget.value) ? budget.value.amount : null;
+    return { ...aggregate, byFeature, byModel, daily, errors, unpriced, monthCost: month._sum.estimatedCost, monthlyBudget: typeof amount === 'number' ? amount : null };
   }
   settings() {
     return this.prisma.appSetting.findMany({ orderBy: { key: 'asc' } });
@@ -865,6 +929,8 @@ export class AdminService {
     dto: SettingDto,
     ip?: string,
   ) {
+    if (key === 'ai.monthlyBudget' && (typeof dto.value.amount !== 'number' || !Number.isFinite(dto.value.amount) || dto.value.amount <= 0))
+      throw new BadRequestException('Monthly budget must be a positive USD amount');
     const critical =
       /^(security|auth|admin|roles|permissions|2fa)\b[._-]?/i.test(key);
     if (critical && actorRole !== Role.SUPER_ADMIN)
