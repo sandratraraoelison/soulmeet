@@ -101,6 +101,7 @@ describe('SoulprintExtractionService validation', () => {
       content: 'I love travel, can you help me write a first message?', createdAt: new Date(),
     };
     const prisma = {
+      matchmakingState: { findUnique: jest.fn().mockResolvedValue(null) },
       soulprint: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), update: jest.fn().mockResolvedValue({}) },
       guidanceMessage: { findMany: jest.fn().mockResolvedValue([message]) },
     };
@@ -140,6 +141,7 @@ describe('SoulprintExtractionService validation', () => {
   });
   it('does not invoke the provider when only assistant context is new and releases the lock', async () => {
     const prisma = {
+      matchmakingState: { findUnique: jest.fn().mockResolvedValue(null) },
       soulprint: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), update: jest.fn().mockResolvedValue({}) },
       guidanceMessage: { findMany: jest.fn().mockResolvedValue([{ id: 'assistant-id', conversationId: 'conversation-id', role: 'ASSISTANT', content: 'The user values honesty.', createdAt: new Date() }]) },
     };
@@ -151,12 +153,15 @@ describe('SoulprintExtractionService validation', () => {
   });
   it('clears the extraction lock and returns a safe error when the provider is unavailable', async () => {
     const prisma = {
+      soulprintEntry: { findMany: jest.fn().mockResolvedValue([]) },
+      matchmakingState: { findUnique: jest.fn().mockResolvedValue(null) },
       soulprint: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), update: jest.fn().mockResolvedValue({}) },
       guidanceMessage: { findMany: jest.fn().mockResolvedValue([{ id: 'message-id', conversationId: 'conversation-id', role: 'USER', content: 'Honesty is deeply important to me.', createdAt: new Date() }]) },
     };
     const llm = { complete: jest.fn().mockRejectedValue(new Error('secret upstream details')) };
     const extraction = new SoulprintExtractionService(prisma as never, new ConfigService(), { ensure: jest.fn().mockResolvedValue({ id: 'soulprint-id', lastAnalyzedMessageId: null }) } as never, {} as never, {} as never, llm as never);
     await expect(extraction.extract('user-a', 'conversation-id', true)).rejects.toMatchObject({ code: 'SOULPRINT_EXTRACTION_FAILED' });
+    expect(llm.complete).toHaveBeenCalledTimes(1);
     expect(prisma.soulprint.update).toHaveBeenCalledWith(expect.objectContaining({ data: { extractionRunningAt: null } }));
   });
 });

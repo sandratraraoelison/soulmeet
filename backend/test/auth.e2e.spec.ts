@@ -7,6 +7,7 @@ import { GlobalExceptionFilter } from '../src/common/filters/http-exception.filt
 import { PrismaService } from '../src/database/prisma.service';
 import { DailyCoachCheckInService } from '../src/modules/guidance/daily-coach-check-in.service';
 import { SoulprintExtractionQueueService } from '../src/modules/soulprint/services/soulprint-extraction-queue.service';
+import { MatchmakingSearchService } from '../src/modules/users/matchmaking-search.service';
 import { AppModule } from '../src/app.module';
 
 /**
@@ -78,6 +79,8 @@ describe('Auth (e2e)', () => {
       .overrideProvider(SoulprintExtractionQueueService)
       .useValue({})
       .overrideProvider(DailyCoachCheckInService)
+      .useValue({})
+      .overrideProvider(MatchmakingSearchService)
       .useValue({})
       .compile();
 

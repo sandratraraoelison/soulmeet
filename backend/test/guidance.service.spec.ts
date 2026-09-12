@@ -22,6 +22,8 @@ describe('GuidanceService', () => {
       coachDailyCheckIn: { update: jest.fn() },
     };
     prisma = {
+      match: { findFirst: jest.fn().mockResolvedValue(null) },
+      matchmakingState: { findUnique: jest.fn().mockResolvedValue(null) },
       guidanceConversation: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn() },
       guidanceMessage: { findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
       coach: { findUnique: jest.fn().mockResolvedValue(coach) },
