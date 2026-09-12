@@ -1,28 +1,16 @@
 import { useEffect, useState } from 'react';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import * as Google from 'expo-auth-session/providers/google';
-import * as WebBrowser from 'expo-web-browser';
 import { Platform, Text, View } from 'react-native';
 import { getErrorMessage } from '@/api/client';
 import { useSocialAuth } from '@/hooks/use-auth';
 import { diag } from '@/lib/diag';
-import { Button } from './Button';
+import { GoogleButton } from './GoogleButton';
 import { ErrorMessage } from './ErrorMessage';
-
-WebBrowser.maybeCompleteAuthSession();
 
 export function SocialButtons() {
   const apple = useSocialAuth('apple');
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [providerError, setProviderError] = useState<string | null>(null);
-  const googleConfigured = Boolean(
-    Platform.select({
-      android: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-      ios: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-      web: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-      default: undefined,
-    }),
-  );
 
   useEffect(() => {
     if (Platform.OS === 'ios') {
@@ -41,9 +29,15 @@ export function SocialButtons() {
         ],
       });
       diag.log('STEP2 Apple signInAsync() resolved');
-      diag.log(`STEP3 credential.user present=${Boolean(credential.user)} ${credential.user ?? '(none)'}`);
-      diag.log(`STEP4 credential.email present=${Boolean(credential.email)} ${credential.email ?? '(none)'}`);
-      diag.log(`STEP4b identityToken present=${Boolean(credential.identityToken)} len=${credential.identityToken?.length ?? 0}`);
+      diag.log(
+        `STEP3 credential.user present=${Boolean(credential.user)} ${credential.user ?? '(none)'}`,
+      );
+      diag.log(
+        `STEP4 credential.email present=${Boolean(credential.email)} ${credential.email ?? '(none)'}`,
+      );
+      diag.log(
+        `STEP4b identityToken present=${Boolean(credential.identityToken)} len=${credential.identityToken?.length ?? 0}`,
+      );
       if (!credential.identityToken)
         throw new Error('Apple did not return an identity token.');
       diag.log('STEP4c identityToken OK, calling apple.mutate()');
@@ -66,22 +60,20 @@ export function SocialButtons() {
         <View className="h-px flex-1 bg-border" />
       </View>
       <View className={appleAvailable ? 'flex-row gap-3' : 'w-full'}>
-        <View className={appleAvailable ? 'min-h-14 flex-1' : 'min-h-14 w-full'}>
-          {googleConfigured ? (
-            <GoogleButton compact={appleAvailable} />
-          ) : (
-            <Button
-              label={appleAvailable ? 'Google' : 'Continue with Google'}
-              variant="secondary"
-              disabled
-            />
-          )}
+        <View
+          className={appleAvailable ? 'min-h-14 flex-1' : 'min-h-14 w-full'}
+        >
+          <GoogleButton compact={appleAvailable} />
         </View>
         {appleAvailable ? (
           <View className="flex-1">
             <AppleAuthentication.AppleAuthenticationButton
-              buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+              buttonType={
+                AppleAuthentication.AppleAuthenticationButtonType.CONTINUE
+              }
+              buttonStyle={
+                AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+              }
               cornerRadius={14}
               style={{ width: '100%', height: 56 }}
               onPress={() => void signInWithApple()}
@@ -91,37 +83,6 @@ export function SocialButtons() {
       </View>
       <ErrorMessage
         message={apple.error ? getErrorMessage(apple.error) : providerError}
-      />
-    </View>
-  );
-}
-
-function GoogleButton({ compact = false }: { compact?: boolean }) {
-  const google = useSocialAuth('google');
-  const [request, response, promptGoogle] = Google.useIdTokenAuthRequest({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    selectAccount: true,
-  });
-
-  useEffect(() => {
-    if (response?.type === 'success' && response.params.id_token) {
-      google.mutate(response.params.id_token);
-    }
-  }, [response]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return (
-    <View className="gap-2">
-      <Button
-        label={compact ? 'Google' : 'Continue with Google'}
-        variant="secondary"
-        loading={google.isPending}
-        disabled={!request}
-        onPress={() => void promptGoogle()}
-      />
-      <ErrorMessage
-        message={google.error ? getErrorMessage(google.error) : null}
       />
     </View>
   );

@@ -17,6 +17,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
     "@react-native-community/datetimepicker": "8.4.4",
+    "@react-native-google-signin/google-signin": "^16.1.5",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.9.10",
     "@react-navigation/native": "^7.1.8",
