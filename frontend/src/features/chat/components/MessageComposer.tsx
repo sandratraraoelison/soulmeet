@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Linking, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Crypto from 'expo-crypto';
+import { getErrorMessage } from '@/api/client';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import EmojiPicker, { fr as emojiFrench } from 'rn-emoji-keyboard';
@@ -41,6 +43,7 @@ export function MessageComposer({
   const [sendingAttachments, setSendingAttachments] = useState(false);
   const [imageSourceVisible, setImageSourceVisible] = useState(false);
   const [emojiVisible, setEmojiVisible] = useState(false);
+  const recordingBusy = useRef(false);
   const typing = useRef(false);
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
@@ -74,7 +77,7 @@ export function MessageComposer({
       Alert.alert('Image too large', 'Choose an image smaller than 10 MB.');
       return null;
     }
-    return { uri: asset.uri, name: asset.fileName || `photo-${Date.now()}.jpg`, mimeType: asset.mimeType || 'image/jpeg', type: 'IMAGE' };
+    return { clientMessageId: Crypto.randomUUID(), uri: asset.uri, name: asset.fileName || `photo-${Date.now()}.jpg`, mimeType: asset.mimeType || 'image/jpeg', type: 'IMAGE' };
   };
   const pickFromLibrary = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8, allowsMultipleSelection: true, selectionLimit: 10 });
@@ -97,24 +100,39 @@ export function MessageComposer({
   const chooseImageSource = () => setImageSourceVisible(true);
   const chooseSource = (source: 'camera' | 'library') => {
     setImageSourceVisible(false);
-    setTimeout(() => void (source === 'camera' ? takePhoto() : pickFromLibrary()), 150);
+    setTimeout(() => void (source === 'camera' ? takePhoto() : pickFromLibrary()).catch(() => Alert.alert('Photo unavailable', 'Could not open the photo source. Please try again.')), 150);
   };
   const toggleRecording = async () => {
-    if (recorderState.isRecording) {
-      const durationMs = recorderState.durationMillis;
-      await recorder.stop();
-      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
-      if (recorder.uri) setPendingAttachments([{ uri: recorder.uri, name: `voice-${Date.now()}.m4a`, mimeType: 'audio/mp4', type: 'AUDIO', durationMs }]);
-      return;
+    if (recordingBusy.current) return;
+    recordingBusy.current = true;
+    try {
+      if (recorder.isRecording) {
+        const durationMs = Math.round(recorder.currentTime * 1000);
+        await recorder.stop();
+        await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+        if (recorder.uri) setPendingAttachments([{ clientMessageId: Crypto.randomUUID(), uri: recorder.uri, name: `voice-${Date.now()}.m4a`, mimeType: 'audio/mp4', type: 'AUDIO', durationMs }]);
+        return;
+      }
+      let permission = await AudioModule.getRecordingPermissionsAsync();
+      if (!permission.granted && permission.canAskAgain) {
+        permission = await AudioModule.requestRecordingPermissionsAsync();
+      }
+      if (!permission.granted) {
+        Alert.alert('Microphone permission required', 'Allow microphone access in Settings to send a voice message.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => { void Linking.openSettings().catch(() => Alert.alert('Settings unavailable', 'Open your device settings and allow microphone access for Soulmeet.')); } },
+        ]);
+        return;
+      }
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+    } catch {
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
+      Alert.alert('Recording unavailable', 'Could not record your voice message. Please try again.');
+    } finally {
+      recordingBusy.current = false;
     }
-    const permission = await AudioModule.requestRecordingPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Microphone permission required', 'Allow microphone access to send a voice message.');
-      return;
-    }
-    await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-    await recorder.prepareToRecordAsync();
-    recorder.record();
   };
   return (
     <View className="border-t border-border bg-canvas px-3 py-3">
@@ -127,11 +145,12 @@ export function MessageComposer({
           onSend={async () => {
             setSendingAttachments(true);
             try {
-              const groupId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-              for (const [index, attachment] of pendingAttachments.entries()) {
-                await onAttachment({ ...attachment, clientMessageId: `${groupId}:${index}` });
+              for (const attachment of pendingAttachments) {
+                await onAttachment(attachment);
                 setPendingAttachments((current) => current.filter((item) => item !== attachment));
               }
+            } catch (error) {
+              Alert.alert('Attachment not sent', getErrorMessage(error));
             } finally {
               setSendingAttachments(false);
             }

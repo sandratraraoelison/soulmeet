@@ -43,7 +43,7 @@
         {
           "photosPermission": "Allow Soulmeet to access your photos so you can share them in conversations.",
           "cameraPermission": "Allow Soulmeet to use your camera so you can share photos in conversations.",
-          "microphonePermission": false
+          "microphonePermission": "Allow Soulmeet to use your microphone so you can send voice messages."
         }
       ],
       [

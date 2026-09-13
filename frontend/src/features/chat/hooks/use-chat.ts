@@ -297,5 +297,6 @@ export function useDeleteMessage(conversationId: string) {
       return { previous };
     },
     onError: (_error, _id, context) => queryClient.setQueryData(chatKeys.messages(conversationId), context?.previous),
+    onSettled: () => { void queryClient.invalidateQueries({ queryKey: chatKeys.conversations }); },
   });
 }

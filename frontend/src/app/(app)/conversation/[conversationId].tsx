@@ -4,6 +4,7 @@ import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { ThemedStatusBar } from '@/components/common/ThemedStatusBar';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   Modal,
@@ -18,6 +19,7 @@ import { BackButton } from '@/components/navigation/BackButton';
 import { CopySelectionModal } from '@/components/common/CopySelectionModal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { getErrorMessage } from '@/api/client';
 import { authApi } from '@/api/auth.api';
 import { mediaUrl, MessageBubble } from '@/features/chat/components/MessageBubble';
 import { MessageComposer } from '@/features/chat/components/MessageComposer';
@@ -119,7 +121,7 @@ export default function ConversationScreen() {
   };
   const confirmDelete = () => {
     if (!selected) return;
-    deleteMessage.mutate(selected.id);
+    deleteMessage.mutate(selected.id, { onError: (error) => Alert.alert('Could not delete attachment or message', getErrorMessage(error)) });
     setConfirmingDelete(false);
     setSelected(null);
   };
@@ -172,6 +174,7 @@ export default function ConversationScreen() {
               <PhotoGroup
                 items={item.items}
                 mine={item.senderId === senderId}
+                onActions={openActions}
                 onOpen={(index) => setGallery({ urls: item.items.map((message) => mediaUrl(message.mediaUrl!)), index })}
               />
             ) : (
@@ -316,7 +319,7 @@ export default function ConversationScreen() {
   );
 }
 
-function PhotoGroup({ items, mine, onOpen }: { items: Message[]; mine: boolean; onOpen: (index: number) => void }) {
+function PhotoGroup({ items, mine, onOpen, onActions }: { items: Message[]; mine: boolean; onOpen: (index: number) => void; onActions: (message: Message) => void }) {
   const { width } = useWindowDimensions();
   const groupWidth = Math.min(340, width * 0.78);
   const visible = items.slice(0, 4);
@@ -326,6 +329,7 @@ function PhotoGroup({ items, mine, onOpen }: { items: Message[]; mine: boolean; 
       style={{ height: tall ? 268 : items.length === 2 ? 180 : 132 }}
       accessibilityRole="button"
       accessibilityLabel={`Open photo ${index + 1}`}
+      onLongPress={() => onActions(message)}
       onPress={() => onOpen(index)}
       className="relative flex-1 overflow-hidden bg-surface-raised"
     >
@@ -350,6 +354,12 @@ function PhotoGroup({ items, mine, onOpen }: { items: Message[]; mine: boolean; 
           </>
         )}
       </View>
+      {mine ? items.map((message, index) => (
+        <Pressable key={message.id} accessibilityRole="button" accessibilityLabel={`Actions for photo ${index + 1}`} onPress={() => onActions(message)} className="min-h-11 flex-row items-center justify-end px-2">
+          <Text className="text-white">Photo {index + 1}</Text>
+          <MaterialCommunityIcons name="dots-horizontal" size={22} color="#FFFFFF" />
+        </Pressable>
+      )) : null}
       <Text className={`px-2 pb-1 pt-2 text-right font-label text-[10px] ${mine ? 'text-indigo-100' : 'text-muted'}`}>{new Date(items.at(-1)!.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
     </View>
   );

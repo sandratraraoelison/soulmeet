@@ -69,7 +69,7 @@ export const MessageBubble = memo(function MessageBubble({
       accessibilityRole="text"
       accessibilityLabel={label}
       onLongPress={!deleted ? onLongPress : undefined}
-      onPress={message.status === 'FAILED' ? onRetry : message.type === 'IMAGE' ? onImagePress : undefined}
+      onPress={message.status === 'FAILED' ? onRetry : !deleted && message.type === 'IMAGE' ? onImagePress : undefined}
       className={`mb-2 max-w-[82%] overflow-hidden rounded-2xl border px-3 py-3 ${mine ? 'ml-auto rounded-br-sm border-primary bg-primary' : 'mr-auto rounded-bl-sm border-border bg-surface'} ${deleted ? 'opacity-60' : ''}`}
     >
       {deleted ? <Text className="font-body italic text-muted">This message was deleted</Text> : null}
@@ -83,6 +83,11 @@ export const MessageBubble = memo(function MessageBubble({
       ) : null}
       {!deleted && message.type === 'TEXT' ? (
         <Text className={`font-body text-base leading-6 ${mine ? 'text-white' : 'text-ink'}`}>{message.content}</Text>
+      ) : null}
+      {mine && !deleted && message.type !== 'TEXT' && onLongPress ? (
+        <Pressable accessibilityRole="button" accessibilityLabel="Attachment actions" onPress={onLongPress} className="min-h-11 min-w-11 self-end items-center justify-center">
+          <MaterialCommunityIcons name="dots-horizontal" size={22} color="#FFFFFF" />
+        </Pressable>
       ) : null}
       <View className="mt-1 flex-row items-center justify-end gap-2">
         <Text className={`font-label text-[10px] ${mine ? 'text-indigo-100' : 'text-muted'}`}>{time}{message.isEdited ? ' - Edited' : ''}</Text>

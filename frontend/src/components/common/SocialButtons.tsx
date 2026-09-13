@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { Platform, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Text, View } from 'react-native';
 import { getErrorMessage } from '@/api/client';
 import { useSocialAuth } from '@/hooks/use-auth';
 import { diag } from '@/lib/diag';
@@ -9,6 +9,8 @@ import { ErrorMessage } from './ErrorMessage';
 
 export function SocialButtons() {
   const apple = useSocialAuth('apple');
+  const appleBusy = useRef(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [providerError, setProviderError] = useState<string | null>(null);
 
@@ -19,7 +21,11 @@ export function SocialButtons() {
   }, []);
 
   const signInWithApple = async () => {
+    if (appleBusy.current) return;
+    appleBusy.current = true;
+    setAppleLoading(true);
     try {
+      apple.reset();
       setProviderError(null);
       diag.log('STEP1 Apple signInAsync() start');
       const credential = await AppleAuthentication.signInAsync({
@@ -41,7 +47,7 @@ export function SocialButtons() {
       if (!credential.identityToken)
         throw new Error('Apple did not return an identity token.');
       diag.log('STEP4c identityToken OK, calling apple.mutate()');
-      apple.mutate(credential.identityToken);
+      await apple.mutateAsync(credential.identityToken);
     } catch (error) {
       diag.error('APPLE signInAsync error', error);
       if ((error as { code?: string }).code !== 'ERR_REQUEST_CANCELED') {
@@ -49,6 +55,9 @@ export function SocialButtons() {
           error instanceof Error ? error.message : 'Apple sign-in failed.',
         );
       }
+    } finally {
+      appleBusy.current = false;
+      setAppleLoading(false);
     }
   };
 
@@ -66,7 +75,11 @@ export function SocialButtons() {
           <GoogleButton compact={appleAvailable} />
         </View>
         {appleAvailable ? (
-          <View className="flex-1">
+          <View
+            className="flex-1"
+            pointerEvents={appleLoading ? 'none' : 'auto'}
+            accessibilityState={{ busy: appleLoading, disabled: appleLoading }}
+          >
             <AppleAuthentication.AppleAuthenticationButton
               buttonType={
                 AppleAuthentication.AppleAuthenticationButtonType.CONTINUE
@@ -78,6 +91,22 @@ export function SocialButtons() {
               style={{ width: '100%', height: 56 }}
               onPress={() => void signInWithApple()}
             />
+            {appleLoading ? (
+              <View
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  borderRadius: 14,
+                  backgroundColor: '#FFFFFF',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                accessibilityLabel="Signing in with Apple"
+                accessibilityRole="progressbar"
+              >
+                <ActivityIndicator color="#000000" />
+              </View>
+            ) : null}
           </View>
         ) : null}
       </View>

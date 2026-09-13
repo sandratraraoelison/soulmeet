@@ -153,6 +153,7 @@ export default function Conversation() {
   const send = useSendMessage(conversationId, me.data?.id ?? '');
   const other = conversation.data?.participants.find((p) => p.userId !== me.data?.id);
   const otherId = other?.userId;
+  const [messageActionError, setMessageActionError] = useState<string | null>(null);
   const manageMessage = async ({
     id,
     method,
@@ -162,6 +163,8 @@ export default function Conversation() {
     method: 'PATCH' | 'DELETE';
     content?: string;
   }) => {
+    setMessageActionError(null);
+    try {
     await api(
       `/messages/${id}`,
       method === 'PATCH'
@@ -170,6 +173,10 @@ export default function Conversation() {
     );
     if (method === 'PATCH') setEditing(null);
     void refresh();
+    void qc.invalidateQueries({ queryKey: chatKeys.conversations });
+    } catch (error) {
+      setMessageActionError(error instanceof Error ? error.message : 'Could not update or delete this message. Please try again.');
+    }
   };
   const upload = async (files: File[], durationMs?: number) => {
     for (const file of files) {
@@ -390,6 +397,14 @@ export default function Conversation() {
                   </button>
                 ))}
               </div>
+              {item.senderId === me.data?.id && <div className="bubble-actions">
+                {item.items.map((photo, index) => <ConfirmButton key={photo.id}
+                  icon={<><Trash2 size={16} /> Photo {index + 1}</>} confirmIcon={<Check size={16} />}
+                  label={`Delete photo ${index + 1}`} ariaLabel={`Delete photo ${index + 1}`}
+                  className="button ghost chat-message-action chat-message-delete"
+                  onConfirm={() => void manageMessage({ id: photo.id, method: 'DELETE' })}
+                />)}
+              </div>}
               <time>{new Date(item.items.at(-1)!.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
             </article>
           ) : (
@@ -459,9 +474,9 @@ export default function Conversation() {
                     </span>
                   )}
                 </div>
-                {m.senderId === me.data?.id && m.type === 'TEXT' && (
+                {m.senderId === me.data?.id && (
                   <div className="bubble-actions">
-                    <button
+                    {m.type === 'TEXT' && <button
                       type="button"
                       className="button ghost icon-button chat-message-action"
                       aria-label="Edit message"
@@ -472,7 +487,7 @@ export default function Conversation() {
                       }}
                     >
                       <Pencil size={16} />
-                    </button>
+                    </button>}
                     <ConfirmButton
                       icon={<Trash2 size={16} />}
                       confirmIcon={<Check size={16} />}
@@ -491,6 +506,7 @@ export default function Conversation() {
         )}
       </div>
       <div className="chat-footer">
+      {messageActionError && <p className="error" role="alert">{messageActionError}</p>}
       {(send.isError || uploadState === 'error') && (
         <p className="error" role="alert">
           {send.isError ? send.error?.message : uploadError || 'Could not send the attachment. Try again.'}

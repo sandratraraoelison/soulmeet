@@ -66,6 +66,21 @@ describe('chat cache utilities', () => {
 });
 
 describe('MessageBubble', () => {
+  it.each(['IMAGE', 'AUDIO'] as const)('exposes actions for an owned %s attachment', async (type) => {
+    const onLongPress = jest.fn();
+    const view = await render(<MessageBubble message={makeMessage({ type, mediaUrl: '/api/v1/media/photo' })} mine onLongPress={onLongPress} />);
+    await fireEvent.press(view.getByLabelText('Attachment actions'));
+    expect(onLongPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides attachment actions after deletion and does not open its image', async () => {
+    const onImagePress = jest.fn();
+    const view = await render(<MessageBubble message={makeMessage({ type: 'IMAGE', mediaUrl: '/api/v1/media/photo', isDeleted: true })} mine onLongPress={jest.fn()} onImagePress={onImagePress} />);
+    expect(view.queryByLabelText('Attachment actions')).toBeNull();
+    await fireEvent.press(view.getByText('This message was deleted'));
+    expect(onImagePress).not.toHaveBeenCalled();
+  });
+
   it('renders sent message content and status', async () => {
     const view = await render(<MessageBubble message={makeMessage()} mine />);
     expect(view.getByText('Bonjour')).toBeTruthy();
