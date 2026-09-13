@@ -72,6 +72,12 @@
         "projectId": "1761de5b-33ba-4aaa-a629-d6fedef1fa6d"
       }
     },
-    "owner": "sandratraraoelison"
+    "owner": "sandratraraoelison",
+    "updates": {
+      "url": "https://u.expo.dev/1761de5b-33ba-4aaa-a629-d6fedef1fa6d"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }

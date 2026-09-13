@@ -282,7 +282,7 @@ export class ChatService {
     if (Date.now() - message.createdAt.getTime() > CHAT_CONFIG.deleteWindowMs)
       throw new ChatException(
         'DELETE_WINDOW_EXPIRED',
-        'The delete window has expired',
+        `This message or attachment can no longer be deleted. Deletion is only available within ${CHAT_CONFIG.deleteWindowMs / 60_000} minutes after sending.`,
         HttpStatus.FORBIDDEN,
       );
     const deletedAt = new Date();

@@ -171,6 +171,19 @@ describe('ChatService', () => {
     });
   });
 
+  it.each(['TEXT', 'IMAGE', 'AUDIO'])('explains the expired deletion window for %s', async (type) => {
+    prisma.message.findUnique.mockResolvedValue(message({
+      type,
+      createdAt: new Date(Date.now() - CHAT_CONFIG.deleteWindowMs - 1000),
+    }));
+    await expect(service.delete('user-a', 'message-id')).rejects.toMatchObject({
+      code: 'DELETE_WINDOW_EXPIRED',
+      message: 'This message or attachment can no longer be deleted. Deletion is only available within 15 minutes after sending.',
+    });
+    expect(prisma.message.update).not.toHaveBeenCalled();
+    expect(realtime.emit).not.toHaveBeenCalled();
+  });
+
   it('soft deletes owned messages and emits a realtime event', async () => {
     prisma.message.findUnique.mockResolvedValue(message());
     prisma.message.update.mockResolvedValue(

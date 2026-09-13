@@ -11,7 +11,7 @@ jest.mock('../services/chat.socket', () => ({ getChatSocket: jest.fn() }));
 jest.mock('react-native-safe-area-context', () => ({ SafeAreaView: jest.requireActual('react-native').View }));
 jest.mock('@/api/client', () => ({ getErrorMessage: () => 'Upload failed' }));
 
-const mockRecorder = { isRecording: false, currentTime: 2, uri: 'file:///voice.m4a', stop: jest.fn(), prepareToRecordAsync: jest.fn(), record: jest.fn() };
+const mockRecorder = { isRecording: false, currentTime: 1789290000000, getStatus: jest.fn(() => ({ durationMillis: 2000 })), uri: 'file:///voice.m4a', stop: jest.fn(), prepareToRecordAsync: jest.fn(), record: jest.fn() };
 jest.mock('expo-audio', () => ({
   useAudioPlayer: () => ({ play: jest.fn(), pause: jest.fn(), seekTo: jest.fn() }),
   useAudioPlayerStatus: () => ({ playing: false, currentTime: 0, duration: 0 }),
@@ -25,6 +25,7 @@ jest.mock('expo-audio', () => ({
 beforeEach(() => {
   jest.clearAllMocks();
   mockRecorder.isRecording = false;
+  mockRecorder.getStatus.mockReturnValue({ durationMillis: 2000 });
   jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 });
 afterEach(() => jest.useRealTimers());
@@ -71,4 +72,26 @@ it('sends a recorded voice message with a UUID', async () => {
   await fireEvent.press(view.getByLabelText('Stop voice recording'));
   await fireEvent.press(view.getByLabelText('Send attachments'));
   expect(upload).toHaveBeenCalledWith(expect.objectContaining({ type: 'AUDIO', durationMs: 2000, clientMessageId: '69e7cbab-6d0f-4a14-9304-d09d5ba3df4b' }));
+});
+
+ it('rejects recordings longer than five minutes with an understandable error', async () => {
+  mockRecorder.isRecording = true;
+  mockRecorder.getStatus.mockReturnValue({ durationMillis: 300001 });
+  const upload = jest.fn();
+  const view = await render(<MessageComposer conversationId="conversation" onSend={jest.fn()} onAttachment={upload} />);
+  await fireEvent.press(view.getByLabelText('Stop voice recording'));
+  expect(mockRecorder.stop).toHaveBeenCalled();
+  expect(Alert.alert).toHaveBeenCalledWith('Voice message too long', expect.stringContaining('5 minutes'));
+  expect(view.queryByLabelText('Send attachments')).toBeNull();
+  expect(upload).not.toHaveBeenCalled();
+});
+
+it('accepts a recording at the five-minute boundary', async () => {
+  mockRecorder.isRecording = true;
+  mockRecorder.getStatus.mockReturnValue({ durationMillis: 300000 });
+  const upload = jest.fn().mockResolvedValue({});
+  const view = await render(<MessageComposer conversationId="conversation" onSend={jest.fn()} onAttachment={upload} />);
+  await fireEvent.press(view.getByLabelText('Stop voice recording'));
+  await fireEvent.press(view.getByLabelText('Send attachments'));
+  expect(upload).toHaveBeenCalledWith(expect.objectContaining({ durationMs: 300000 }));
 });

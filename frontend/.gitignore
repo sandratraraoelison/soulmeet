@@ -43,3 +43,4 @@ app-example
 /ios
 /android
 .expo-export-oauth-check/
+.expo-export-eas-check/

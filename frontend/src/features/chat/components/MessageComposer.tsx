@@ -107,9 +107,19 @@ export function MessageComposer({
     recordingBusy.current = true;
     try {
       if (recorder.isRecording) {
-        const durationMs = Math.round(recorder.currentTime * 1000);
+        // Read the native duration before stop() resets the Android recorder.
+        // currentTime is a start timestamp on Android in expo-audio 1.1.
+        const durationMs = Math.round(recorder.getStatus().durationMillis);
         await recorder.stop();
         await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+        if (!Number.isFinite(durationMs) || durationMs < 0) {
+          Alert.alert('Recording unavailable', 'Could not read the recording duration. Please record your message again.');
+          return;
+        }
+        if (durationMs > 300_000) {
+          Alert.alert('Voice message too long', 'Voice messages can be up to 5 minutes long. Please record a shorter message.');
+          return;
+        }
         if (recorder.uri) setPendingAttachments([{ clientMessageId: Crypto.randomUUID(), uri: recorder.uri, name: `voice-${Date.now()}.m4a`, mimeType: 'audio/mp4', type: 'AUDIO', durationMs }]);
         return;
       }
