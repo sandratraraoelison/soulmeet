@@ -552,7 +552,7 @@ export default function Insights() {
             </button>
             {addOpen && (
               <form
-                className="grid"
+                className="grid motion-inline"
                 onSubmit={(e) => {
                   e.preventDefault();
                   const f = new FormData(e.currentTarget);

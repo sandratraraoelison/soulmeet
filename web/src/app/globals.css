@@ -989,6 +989,8 @@ a {
 .chat-image-button {
   display: block;
   width: 100%;
+  overflow: hidden;
+  border-radius: 14px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -4776,6 +4778,60 @@ a {
 @keyframes app-page-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .consent-overlay, .media-gallery { animation: surface-fade-in 160ms ease-out; }
+  .consent-dialog, .media-gallery > img {
+    animation: surface-pop-in 240ms cubic-bezier(.22, 1, .36, 1);
+  }
+  .emoji-picker-panel, .geo-options {
+    transform-origin: top right;
+    animation: surface-pop-in 180ms cubic-bezier(.22, 1, .36, 1);
+  }
+  .emoji-picker-panel { transform-origin: bottom right; }
+  .app-shell :is(.insight-section, .motion-inline, .attachment-preview, .recorder) {
+    animation: surface-slide-in 220ms cubic-bezier(.22, 1, .36, 1);
+  }
+  /* Limit staggered entrances to the first few items, even in long lists. */
+  .app-shell :is(.growth-grid, .discover-grid, .conversations) > :nth-child(-n+5) {
+    animation: surface-slide-in 240ms cubic-bezier(.22, 1, .36, 1) backwards;
+    animation-delay: var(--item-enter-delay, 0ms);
+  }
+  .app-shell :is(.growth-grid, .discover-grid, .conversations) > :nth-child(2) { --item-enter-delay: 25ms; }
+  .app-shell :is(.growth-grid, .discover-grid, .conversations) > :nth-child(3) { --item-enter-delay: 50ms; }
+  .app-shell :is(.growth-grid, .discover-grid, .conversations) > :nth-child(4) { --item-enter-delay: 75ms; }
+  .app-shell :is(.growth-grid, .discover-grid, .conversations) > :nth-child(5) { --item-enter-delay: 100ms; }
+  .coach-face-check { animation: selection-pop-in 200ms cubic-bezier(.22, 1, .36, 1); }
+  .app-shell :is(.insight-tab, .chip, .style-card, .chat-message-action, .media-gallery-nav button) {
+    transition: transform 160ms ease-out, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+  }
+  .app-shell :is(.insight-tab, .chip, .style-card, .chat-message-action, .media-gallery-nav button):not(:disabled):active {
+    transform: scale(.975);
+  }
+  .geo-combobox > button svg { transition: transform 180ms ease-out; }
+  .geo-combobox input[aria-expanded='true'] ~ button svg { transform: rotate(180deg); }
+  .settings-link > svg, .category-arrow { transition: transform 180ms ease-out; }
+  .app-shell :is(.chat-image, .media-group-grid img) { transition: transform 220ms ease-out; }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .settings-link:hover > svg:last-child, .category-card:hover .category-arrow { transform: translateX(3px); }
+  .chat-image-button:hover .chat-image, .media-group-grid button:hover img { transform: scale(1.025); }
+}
+@keyframes surface-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes surface-pop-in {
+  from { opacity: 0; transform: translateY(6px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes surface-slide-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes selection-pop-in {
+  from { opacity: 0; transform: scale(.7); }
+  to { opacity: 1; transform: scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
   .app-page-transition, .app-toast { animation: none; }

@@ -73,6 +73,7 @@ export function SoulprintEntryCard({
       <h3>{entry.key ?? 'A detail about you'}</h3>
       {editing ? (
         <form
+          className="motion-inline"
           onSubmit={(e) => {
             e.preventDefault();
             save();
