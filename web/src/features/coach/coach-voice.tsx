@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Mic, PhoneOff } from 'lucide-react';
 import { preferredEnglishVoice } from './browser-voice';
 import styles from './coach-voice.module.css';
+import type { CoachGender } from '@/types';
 
 type Recognition = {
   lang: string;
@@ -21,11 +22,13 @@ type SpeechWindow = Window & {
 };
 
 export function CoachVoice({
+  coachGender,
   busy,
   onSend,
   onStop,
   onActiveChange,
 }: {
+  coachGender?: CoachGender | null;
   busy: boolean;
   onSend: (text: string) => Promise<string | undefined>;
   onStop: () => void;
@@ -34,6 +37,10 @@ export function CoachVoice({
   const [phase, setPhase] = useState<'off' | 'listening' | 'thinking' | 'speaking'>('off');
   const [error, setError] = useState('');
   const voices = useRef<SpeechSynthesisVoice[]>([]);
+  const gender = useRef(coachGender);
+  useEffect(() => {
+    gender.current = coachGender;
+  }, [coachGender]);
   const generation = useRef(0);
   const recognition = useRef<Recognition | null>(null);
   const utterance = useRef<SpeechSynthesisUtterance | null>(null);
@@ -140,7 +147,7 @@ export function CoachVoice({
             }
             const speech = new SpeechSynthesisUtterance(reply);
             utterance.current = speech;
-            const voice = preferredEnglishVoice(voices.current);
+            const voice = preferredEnglishVoice(voices.current, gender.current);
             if (voice) speech.voice = voice;
             speech.lang = voice?.lang ?? 'en-US';
             speech.rate = 0.96;

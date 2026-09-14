@@ -307,6 +307,7 @@ export function CoachChat() {
       </div>
       <div className="chat-footer">
         <CoachVoice
+          coachGender={coach.data.gender}
           key={conversationId}
           busy={send.isPending}
           onSend={sendMessage}

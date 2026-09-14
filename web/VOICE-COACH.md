@@ -4,7 +4,9 @@ Click **Talk to your coach** in the web coach chat and allow microphone access. 
 
 Use Chrome with a microphone on http://localhost:3001 or HTTPS. Support varies by browser. This is a turn-based conversation; end and restart voice chat to interrupt a reply.
 
-Playback prefers English voices with Natural, Neural, Premium or Enhanced in their name, followed by Google English voices when available. This naming heuristic cannot guarantee quality. Voices refresh when the browser loads them. Rate is slightly slower (0.96), with normal pitch. Without a listed English voice, the browser resolves en-US itself.
+Playback first looks for an English voice matching the coach's FEMALE or MALE setting. Web Speech does not expose gender, so matching uses explicit Female/Male labels and recognized Microsoft voice names (Zira, Hazel, Susan, Aria, Jenny; David, Mark, George, Guy). It does not guess from arbitrary first names. For NON_GENDERED coaches or when no match is available, selection falls back to the available English voices.
+
+Within that selection, playback prefers voices with Natural, Neural, Premium or Enhanced in their name, followed by Google English voices when available. These naming heuristics cannot guarantee gender matching or quality on every device. Voices refresh when the browser loads them. Rate is slightly slower (0.96), with normal pitch. Without a listed English voice, the browser resolves en-US itself.
 
 Web Speech adds no paid voice service or API key. Recognition may require Internet and send audio to the browser provider. Soulmeet processes transcripts like written messages.
 
