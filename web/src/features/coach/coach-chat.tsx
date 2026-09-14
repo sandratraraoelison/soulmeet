@@ -10,10 +10,12 @@ import { useGenericMutation } from '@/lib/use-generic-mutation';
 import { Failure, Loading } from '@/components/remote';
 import { BackButton } from '@/components/ui/back-button';
 import type { GuidanceMessage } from '@/types';
+import { CoachVoice } from './coach-voice';
 export function CoachChat() {
   const router = useRouter();
   const qc = useQueryClient();
   const [draft, setDraft] = useState('');
+  const [voiceActive, setVoiceActive] = useState(false);
   const [stream, setStream] = useState('');
   const [failedMessage, setFailedMessage] = useState('');
   const [pendingDraft, setPendingDraft] = useState<{ id: string; content: string } | null>(null);
@@ -21,6 +23,8 @@ export function CoachChat() {
   const [earlier, setEarlier] = useState<GuidanceMessage[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
+  const sending = useRef(false);
+  useEffect(() => () => abort.current?.abort(), []);
   const containerRef = useRef<HTMLDivElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const nearBottom = useRef(true);
@@ -68,7 +72,8 @@ export function CoachChat() {
     prevEarlierCount.current = 0;
   }, [conversationId]);
   const loadEarlier = useMutation({
-    mutationFn: (cursorValue: string) => guidanceService.messages(conversation.data!.id, cursorValue),
+    mutationFn: (cursorValue: string) =>
+      guidanceService.messages(conversation.data!.id, cursorValue),
     onMutate: () => {
       prevScrollHeight.current = containerRef.current?.scrollHeight ?? 0;
     },
@@ -98,12 +103,17 @@ export function CoachChat() {
       setPendingDraft({ id: crypto.randomUUID(), content });
       abort.current = new AbortController();
       setStream('');
+      let reply = '';
       await streamCoachReply({
         conversationId: conversation.data.id,
         content,
         signal: abort.current.signal,
-        onToken: (token) => setStream((current) => current + token),
+        onToken: (token) => {
+          reply += token;
+          setStream(reply);
+        },
       });
+      return reply;
     },
     onSuccess: () =>
       qc
@@ -121,6 +131,15 @@ export function CoachChat() {
     },
   });
   const sendFailed = send.isError && send.error.name !== 'AbortError';
+  const sendMessage = async (content: string) => {
+    if (sending.current) throw new Error('A reply is already in progress.');
+    sending.current = true;
+    try {
+      return await send.mutateAsync(content);
+    } finally {
+      sending.current = false;
+    }
+  };
   const messageAction = useGenericMutation([['guidance', 'messages', conversation.data?.id]]);
   const copyMessage = async (id: string, content: string) => {
     await navigator.clipboard.writeText(content);
@@ -130,9 +149,9 @@ export function CoachChat() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const content = draft.trim();
-    if (!content || send.isPending) return;
+    if (!content || send.isPending || voiceActive) return;
     setDraft('');
-    void send.mutateAsync(content);
+    void sendMessage(content).catch(() => {});
   };
   if (profile.isLoading || coach.isLoading || conversation.isLoading || messages.isLoading)
     return (
@@ -199,56 +218,59 @@ export function CoachChat() {
             <article key={m.id} className={`bubble ${m.role === 'USER' ? 'user' : 'assistant'}`}>
               <div>{m.content}</div>
               <div className="bubble-actions">
-                    {m.role === 'USER' && m.content && (
-                      <button
-                        type="button"
-                        className="button ghost icon-button chat-message-action"
-                        aria-label={copiedId === m.id ? 'Message copied' : 'Copy message'}
-                        title={copiedId === m.id ? 'Copied' : 'Copy'}
-                        onClick={() => void copyMessage(m.id, m.content!)}
-                      >
-                        {copiedId === m.id ? <Check size={16} /> : <Copy size={16} />}
-                      </button>
-                    )}
-                    {m.role === 'ASSISTANT' && (
-                      <button
-                        type="button"
-                        className="button ghost icon-button chat-message-action"
-                        aria-label="Regenerate reply"
-                        title="Regenerate"
-                        disabled={messageAction.isPending}
-                        onClick={() =>
-                          messageAction.mutate({
-                            path: `/guidance/messages/${m.id}/regenerate`,
-                            method: 'POST',
-                          })
-                        }
-                      >
-                        <RotateCw size={16} />
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="button ghost icon-button chat-message-action chat-message-delete"
-                      disabled={messageAction.isPending}
-                      aria-label="Delete message"
-                      title="Delete message"
-                      onClick={() => {
-                        if (!window.confirm('Delete this message?')) return;
-                        messageAction.mutate({
-                          path: `/guidance/messages/${m.id}`,
-                          method: 'DELETE',
-                        });
-                      }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                {m.role === 'USER' && m.content && (
+                  <button
+                    type="button"
+                    className="button ghost icon-button chat-message-action"
+                    aria-label={copiedId === m.id ? 'Message copied' : 'Copy message'}
+                    title={copiedId === m.id ? 'Copied' : 'Copy'}
+                    onClick={() => void copyMessage(m.id, m.content!)}
+                  >
+                    {copiedId === m.id ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                )}
+                {m.role === 'ASSISTANT' && (
+                  <button
+                    type="button"
+                    className="button ghost icon-button chat-message-action"
+                    aria-label="Regenerate reply"
+                    title="Regenerate"
+                    disabled={messageAction.isPending}
+                    onClick={() =>
+                      messageAction.mutate({
+                        path: `/guidance/messages/${m.id}/regenerate`,
+                        method: 'POST',
+                      })
+                    }
+                  >
+                    <RotateCw size={16} />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="button ghost icon-button chat-message-action chat-message-delete"
+                  disabled={messageAction.isPending}
+                  aria-label="Delete message"
+                  title="Delete message"
+                  onClick={() => {
+                    if (!window.confirm('Delete this message?')) return;
+                    messageAction.mutate({
+                      path: `/guidance/messages/${m.id}`,
+                      method: 'DELETE',
+                    });
+                  }}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </article>
           ))}
         {pendingDraft && <article className="bubble user">{pendingDraft.content}</article>}
         {send.isPending && !stream && (
-          <article className="bubble assistant coach-reply coach-thinking" aria-label="Coach is thinking">
+          <article
+            className="bubble assistant coach-reply coach-thinking"
+            aria-label="Coach is thinking"
+          >
             <span />
             <span />
             <span />
@@ -257,7 +279,10 @@ export function CoachChat() {
         {stream && (
           <article className="bubble assistant coach-reply">
             {stream}
-            <span className="stream-cursor" aria-label="Generating"> ▍</span>
+            <span className="stream-cursor" aria-label="Generating">
+              {' '}
+              ▍
+            </span>
           </article>
         )}
         {sendFailed && (
@@ -267,7 +292,7 @@ export function CoachChat() {
               type="button"
               className="button secondary"
               disabled={!failedMessage}
-              onClick={() => void send.mutateAsync(failedMessage)}
+              onClick={() => void sendMessage(failedMessage).catch(() => {})}
             >
               Try again
             </button>
@@ -280,8 +305,16 @@ export function CoachChat() {
         )}
         <div ref={bottom} />
       </div>
+      <CoachVoice
+        key={conversationId}
+        busy={send.isPending}
+        onSend={sendMessage}
+        onActiveChange={setVoiceActive}
+        onStop={() => abort.current?.abort()}
+      />
       <form className="composer" onSubmit={submit}>
         <textarea
+          disabled={voiceActive}
           aria-label={`Message ${coach.data.name}`}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -304,7 +337,11 @@ export function CoachChat() {
             <Square size={18} />
           </button>
         ) : (
-          <button className="button" aria-label="Send message" disabled={!draft.trim()}>
+          <button
+            className="button"
+            aria-label="Send message"
+            disabled={!draft.trim() || voiceActive}
+          >
             <Send size={18} />
           </button>
         )}
