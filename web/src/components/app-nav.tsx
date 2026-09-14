@@ -16,6 +16,7 @@ import {
 import { Brand } from './brand';
 import { useChatSocketLifecycle, useConversations } from '@/features/chat/use-chat';
 import { useMeQuery } from '@/providers/me';
+import { NavIndicator } from '@/components/ui/nav-indicator';
 
 const items = [
   ['/app', 'Discover', MessageCircleHeart],
@@ -38,6 +39,9 @@ function readMessagesSeenAt(userId?: string) {
 export function AppNav() {
   const router = useRouter();
   const pathname = usePathname();
+  const matchesRoute = (href: string) => pathname === href || (href !== '/app' && pathname.startsWith(`${href}/`));
+  const activeHref = [...items.map(([href]) => href), '/app/settings'].filter(matchesRoute).sort((a, b) => b.length - a.length)[0];
+  const mobileActiveHref = items.slice(0, 6).map(([href]) => href).filter(matchesRoute).sort((a, b) => b.length - a.length)[0];
   const [signingOut, setSigningOut] = useState(false);
   const [messageNotice, setMessageNotice] = useState<{
     conversationId: string;
@@ -110,13 +114,15 @@ export function AppNav() {
   return (
     <>
       <aside className="sidebar">
+        <NavIndicator activeHref={activeHref} />
         <Brand />
-        <nav className="nav">
+        <nav className="nav" aria-label="Main navigation">
           {items.map(([href, label, Icon]) => (
             <Link
               key={href}
               href={href}
-              className={pathname === href ? 'active' : ''}
+              className={activeHref === href ? 'active' : ''}
+              aria-current={activeHref === href ? 'page' : undefined}
               onClick={href === '/app/messages' ? openMessages : undefined}
             >
               <Icon size={19} />
@@ -132,8 +138,9 @@ export function AppNav() {
         <footer>
           <Link
             href="/app/settings"
+            aria-current={activeHref === '/app/settings' ? 'page' : undefined}
             className={
-              pathname === '/app/settings' ? 'nav-footer-link active' : 'nav-footer-link'
+              activeHref === '/app/settings' ? 'nav-footer-link active' : 'nav-footer-link'
             }
           >
             <Settings size={19} />
@@ -152,11 +159,13 @@ export function AppNav() {
       </aside>
 
       <nav className="mobile-nav" aria-label="Main navigation">
+        <NavIndicator activeHref={mobileActiveHref} />
         {items.slice(0, 6).map(([href, label, Icon]) => (
           <Link
             key={href}
             href={href}
-            className={pathname === href ? 'active' : ''}
+            className={mobileActiveHref === href ? 'active' : ''}
+            aria-current={mobileActiveHref === href ? 'page' : undefined}
             onClick={href === '/app/messages' ? openMessages : undefined}
           >
             <span className="mobile-nav-icon">
