@@ -4712,14 +4712,14 @@ a {
 }
 .app-toast {
   display: grid;
-  grid-template-columns: 22px 1fr 26px;
+  grid-template-columns: 22px minmax(0, 1fr) 44px;
   align-items: center;
   gap: 12px;
   padding: 14px 14px 14px 16px;
   border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
-  border-radius: 14px;
-  color: var(--text, #f7f7fb);
-  background: color-mix(in srgb, var(--panel, #12182a) 94%, transparent);
+  border-radius: 8px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
   box-shadow: 0 16px 45px rgba(0, 0, 0, .28);
   backdrop-filter: blur(16px);
   pointer-events: auto;
@@ -4733,3 +4733,24 @@ a {
 .app-toast button svg { width: 18px; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } }
 @media (max-width: 600px) { .toast-viewport { top: 12px; right: 16px; } }
+
+.toast-viewport { top: max(20px, env(safe-area-inset-top)); }
+.app-toast span { overflow-wrap: anywhere; }
+.app-toast button { min-width: 44px; min-height: 44px; }
+.app-page-transition { min-width: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .app-page-transition { animation: app-page-in 260ms cubic-bezier(.2, 0, 0, 1); }
+  .app-shell :is(.button, .trait-card, .coach-face, [role='switch']) {
+    transition: transform 180ms cubic-bezier(.2, 0, 0, 1), background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  }
+  .app-shell :is(.button, .trait-card, .coach-face, [role='switch']):not(:disabled):active { transform: scale(.975); }
+  .app-shell :is(input, textarea, select) { transition: border-color 180ms ease, box-shadow 180ms ease; }
+}
+@keyframes app-page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-page-transition, .app-toast { animation: none; }
+  .app-shell *, .app-shell *::before, .app-shell *::after { transition: none !important; animation: none !important; }
+}

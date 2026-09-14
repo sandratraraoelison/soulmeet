@@ -1,4 +1,5 @@
-import { Pressable, Text, View, type PressableProps } from 'react-native';
+import { Text, View, type PressableProps } from 'react-native';
+import { MotionPressable as Pressable } from '@/components/motion/MotionPressable';
 
 interface Props extends PressableProps {
   label: string;

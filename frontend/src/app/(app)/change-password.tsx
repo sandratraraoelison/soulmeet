@@ -19,6 +19,7 @@ export default function ChangePasswordScreen() {
   const [confirmation, setConfirmation] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const changePassword = useMutation({
+    meta: { errorMessage: true },
     mutationFn: authApi.changePassword,
     onSuccess: () => Alert.alert('Password changed', 'All active sessions have been signed out. Sign in again with your new password.', [{ text: 'Sign in again', onPress: () => logout.mutate() }], { cancelable: false }),
   });

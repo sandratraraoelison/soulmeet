@@ -20,6 +20,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { NotificationPermissionPrompt } from '@/components/notifications/NotificationPermissionPrompt';
 import { useThemePalette, useThemeStore } from '@/store/theme.store';
 import { SoulprintConsentPrompt } from '@/features/consent/consent';
+import { ToastViewport } from '@/components/notifications/ToastViewport';
 
 function Navigation() {
   const { isAuthenticated, isRestoring } = useAuthStore();
@@ -144,6 +145,7 @@ export default function RootLayout() {
         <View className="flex-1 bg-canvas" style={vars(themeVars)}>
           <StatusBar style={mode === 'light' ? 'dark' : 'light'} backgroundColor={canvas} />
           <Navigation />
+          <ToastViewport />
         </View>
       </QueryClientProvider>
     </KeyboardProvider>

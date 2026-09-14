@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Pressable, Switch, Text, View } from 'react-native';
+import { Alert, Linking, Switch, Text, View } from 'react-native';
+import { MotionPressable as Pressable } from '@/components/motion/MotionPressable';
+import { showToast } from '@/store/toast.store';
+import { getErrorMessage } from '@/api/client';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { Button } from '@/components/common/Button';
@@ -34,22 +37,41 @@ export default function SettingsScreen() {
   useEffect(() => {
     void Promise.all([notificationService.status(), notificationService.preferences()])
       .then(([status, preferences]) => { setNotificationsEnabled(status.enabled); setNotificationPreferences(preferences); })
+      .catch((error) => showToast('error', getErrorMessage(error)))
       .finally(() => setNotificationBusy(false));
   }, []);
   const toggleNotifications = async (value: boolean) => {
     setNotificationBusy(true);
-    if (!value) { await notificationService.disable(); setNotificationsEnabled(false); }
-    else {
-      const granted = await notificationService.request();
-      setNotificationsEnabled(granted);
-      if (!granted) Alert.alert('Notifications are disabled', 'You can allow Soulmeet notifications from your device settings.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Open settings', onPress: () => void Linking.openSettings() }]);
+    try {
+      if (!value) {
+        await notificationService.disable();
+        setNotificationsEnabled(false);
+        showToast('success', 'Notifications disabled on this device.');
+      } else {
+        const granted = await notificationService.request();
+        setNotificationsEnabled(granted);
+        if (granted) showToast('success', 'Notifications enabled.');
+        else Alert.alert('Notifications are disabled', 'You can allow Soulmeet notifications from your device settings.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Open settings', onPress: () => void Linking.openSettings() }]);
+      }
+    } catch (error) {
+      showToast('error', getErrorMessage(error));
+    } finally {
+      setNotificationBusy(false);
     }
-    setNotificationBusy(false);
   };
   const updateNotificationPreference = async <K extends keyof NotificationPreferences>(key: K, value: NotificationPreferences[K]) => {
+    if (notificationBusy) return;
     const next = { ...notificationPreferences, [key]: value };
-    setNotificationPreferences(next);
-    await notificationService.savePreferences(next);
+    setNotificationBusy(true);
+    try {
+      await notificationService.savePreferences(next);
+      setNotificationPreferences(next);
+      showToast('success', 'Notification preferences saved on this device.');
+    } catch (error) {
+      showToast('error', getErrorMessage(error));
+    } finally {
+      setNotificationBusy(false);
+    }
   };
   const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
   const openUrl = async (url: string) => {

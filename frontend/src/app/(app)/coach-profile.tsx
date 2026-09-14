@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { MotionPressable as Pressable } from '@/components/motion/MotionPressable';
 import { coachApi } from '@/api/coach.api';
 import { getErrorMessage } from '@/api/client';
 import { Button } from '@/components/common/Button';
@@ -51,10 +52,10 @@ export default function CoachProfileScreen() {
   }, [data]);
 
   const save = useMutation({
+    meta: { successMessage: 'Coach updated.', errorMessage: true },
     mutationFn: () => coachApi.update({ name: name.trim(), gender, traits: selected, customInstructions: instructions.trim(), appearance: appearance ?? undefined }),
     onSuccess: (coach) => {
       queryClient.setQueryData(['coach'], coach);
-      router.back();
     },
   });
   const toggle = (trait: CoachPersonality) =>

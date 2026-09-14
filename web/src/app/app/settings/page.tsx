@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { api, json } from '@/services/api';
 import { consentService } from '@/services/consent';
 import { consentKey } from '@/components/consent-gate';
+import { showToast } from '@/components/ui/toast';
 
 type Preferences = {
   newMessages: boolean;
@@ -74,14 +75,24 @@ export default function Settings() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
   const chooseTheme = (next: 'dark' | 'light') => {
-    setTheme(next);
-    localStorage.setItem('sm_theme', next);
-    document.documentElement.dataset.theme = next;
+    try {
+      localStorage.setItem('sm_theme', next);
+      setTheme(next);
+      document.documentElement.dataset.theme = next;
+      showToast('success', 'Appearance saved.');
+    } catch {
+      showToast('error', 'Unable to save appearance on this device.');
+    }
   };
   const chooseStyle = (next: VisualStyle) => {
-    setVisualStyle(next);
-    localStorage.setItem('sm_style', next);
-    document.documentElement.setAttribute('data-style', next);
+    try {
+      localStorage.setItem('sm_style', next);
+      setVisualStyle(next);
+      document.documentElement.setAttribute('data-style', next);
+      showToast('success', 'Visual style saved.');
+    } catch {
+      showToast('error', 'Unable to save visual style on this device.');
+    }
   };
   if (preferences.isLoading)
     return (

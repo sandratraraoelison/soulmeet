@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import { getErrorMessage } from '@/api/client';
 import { profileApi } from '@/api/profile.api';
 import { Button } from '@/components/common/Button';
@@ -44,11 +44,11 @@ export default function ProfileScreen() {
   }, [data]);
 
   const save = useMutation({
+    meta: { successMessage: 'Profile updated.', errorMessage: true },
     mutationFn: () =>
       profileApi.save({ firstName, birthDate, gender, country, city, occupation }),
     onSuccess: (profile) => {
       queryClient.setQueryData(['profile'], profile);
-      router.back();
     },
   });
 
@@ -78,7 +78,7 @@ export default function ProfileScreen() {
           <Text className="font-label text-sm font-semibold text-ink">Gender</Text>
           <View className="flex-row gap-2">
             {genders.map((item) => (
-              <Pressable
+              <MotionPressable
                 key={item.value}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: gender === item.value }}
@@ -88,7 +88,7 @@ export default function ProfileScreen() {
                 <Text className={`text-xs font-semibold ${gender === item.value ? 'text-primary' : 'text-muted'}`}>
                   {item.label}
                 </Text>
-              </Pressable>
+              </MotionPressable>
             ))}
           </View>
         </View>
