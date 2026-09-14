@@ -305,47 +305,49 @@ export function CoachChat() {
         )}
         <div ref={bottom} />
       </div>
-      <CoachVoice
-        key={conversationId}
-        busy={send.isPending}
-        onSend={sendMessage}
-        onActiveChange={setVoiceActive}
-        onStop={() => abort.current?.abort()}
-      />
-      <form className="composer" onSubmit={submit}>
-        <textarea
-          disabled={voiceActive}
-          aria-label={`Message ${coach.data.name}`}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              e.currentTarget.closest('form')?.requestSubmit();
-            }
-          }}
-          placeholder="Talk to your Coach..."
-          maxLength={8000}
+      <div className="chat-footer">
+        <CoachVoice
+          key={conversationId}
+          busy={send.isPending}
+          onSend={sendMessage}
+          onActiveChange={setVoiceActive}
+          onStop={() => abort.current?.abort()}
         />
-        {send.isPending ? (
-          <button
-            type="button"
-            className="button secondary"
-            aria-label="Stop generating"
-            onClick={() => abort.current?.abort()}
-          >
-            <Square size={18} />
-          </button>
-        ) : (
-          <button
-            className="button"
-            aria-label="Send message"
-            disabled={!draft.trim() || voiceActive}
-          >
-            <Send size={18} />
-          </button>
-        )}
-      </form>
+        <form className="composer" onSubmit={submit}>
+          <textarea
+            disabled={voiceActive}
+            aria-label={`Message ${coach.data.name}`}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                e.currentTarget.closest('form')?.requestSubmit();
+              }
+            }}
+            placeholder="Talk to your Coach..."
+            maxLength={8000}
+          />
+          {send.isPending ? (
+            <button
+              type="button"
+              className="button secondary"
+              aria-label="Stop generating"
+              onClick={() => abort.current?.abort()}
+            >
+              <Square size={18} />
+            </button>
+          ) : (
+            <button
+              className="button"
+              aria-label="Send message"
+              disabled={!draft.trim() || voiceActive}
+            >
+              <Send size={18} />
+            </button>
+          )}
+        </form>
+      </div>
     </section>
   );
 }

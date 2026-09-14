@@ -1,13 +1,15 @@
-# Test du coach vocal sur le web
+﻿# Web voice coach test
 
-Dans le chat du coach de l’application `web`, cliquez sur **Parler au coach**, choisissez français ou anglais avant de démarrer et autorisez le microphone. Faites une pause après votre phrase : le texte est envoyé au coach existant, sa réponse est lue, puis l’écoute reprend automatiquement. **Arrêter le vocal** coupe le micro, la lecture et la requête en cours. Le texte reste accessible dans la conversation.
+Click **Talk to your coach** in the web coach chat and allow microphone access. Voice chat uses English recognition and playback. Pause to send your message. The coach replies aloud, then listening resumes. **End voice chat** stops capture, playback and the current request. Messages remain in the conversation; keyboard input is disabled during voice sessions.
 
-Utilisez Chrome avec un microphone, sur `http://localhost:3001` ou HTTPS. La compatibilité dépend du navigateur et de ses services vocaux. Cette version fonctionne par tours de parole ; pour interrompre une réponse, arrêtez puis relancez le vocal. Le clavier est désactivé pendant la session vocale.
+Use Chrome with a microphone on http://localhost:3001 or HTTPS. Support varies by browser. This is a turn-based conversation; end and restart voice chat to interrupt a reply.
 
-La reconnaissance et la synthèse utilisent les API Web Speech du navigateur : aucune clé ni service vocal payant ajouté. La reconnaissance peut nécessiter Internet et transmettre l’audio au fournisseur du navigateur. Soulmeet utilise la transcription avec le même traitement que les messages écrits.
+Playback prefers English voices with Natural, Neural, Premium or Enhanced in their name, followed by Google English voices when available. This naming heuristic cannot guarantee quality. Voices refresh when the browser loads them. Rate is slightly slower (0.96), with normal pitch. Without a listed English voice, the browser resolves en-US itself.
 
-Le fournisseur IA du backend reste inchangé. Pour un test sans API IA payante, le backend prend déjà en charge Ollama : démarrer Ollama, télécharger `llama3.1:8b`, configurer `LLM_PROVIDER=ollama`, `OLLAMA_BASE_URL=http://localhost:11434` et `OLLAMA_MODEL=llama3.1:8b` dans l’environnement de test, puis redémarrer le backend. Le modèle tourne sur votre machine et nécessite des ressources locales.
+Web Speech adds no paid voice service or API key. Recognition may require Internet and send audio to the browser provider. Soulmeet processes transcripts like written messages.
 
-Vérifications manuelles : autorisation et refus du micro ; une phrase suivie d’une réponse audible ; reprise de l’écoute après lecture ; arrêt pendant l’écoute, la génération et la lecture ; navigation hors du chat ; navigateur incompatible et coupure réseau. Les tests automatisés simulent les API vocales ; un essai avec un vrai microphone reste nécessaire.
+The AI provider is unchanged. For a test without paid AI API usage, start Ollama, download llama3.1:8b, configure LLM_PROVIDER=ollama, OLLAMA_BASE_URL=http://localhost:11434 and OLLAMA_MODEL=llama3.1:8b in your test environment, then restart the backend. Local computing resources are required.
 
-Référence : [Web Speech API sur MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API).
+Manual checks: microphone permission/denial, English transcription, audible reply, resumed listening, stopping in each phase, navigation away, unsupported browsers, network errors, narrow screens and light/dark themes. Automated tests simulate speech APIs; actual voice quality requires a real browser and microphone.
+
+References: [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API), [voice loading](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis/voiceschanged_event).
